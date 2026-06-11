@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
+import { getOrCreateWallet } from "@/lib/wallet";
 import { getCart } from "@/app/panier/queries";
 import { CheckoutForm } from "./checkout-form";
 
@@ -21,6 +22,8 @@ export default async function CommandePage() {
     .from(addresses)
     .where(eq(addresses.userId, user.id))
     .orderBy(desc(addresses.isDefault), asc(addresses.createdAt));
+
+  const wallet = await getOrCreateWallet(user.id);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -41,6 +44,8 @@ export default async function CommandePage() {
               district: address.district,
               isDefault: address.isDefault,
             }))}
+            walletBalance={wallet.balanceFcfa}
+            total={cart.total}
           />
 
           <div className="lg:sticky lg:top-6 lg:self-start">

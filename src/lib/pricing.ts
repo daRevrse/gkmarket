@@ -28,3 +28,12 @@ export function isWholesaleApplied(
 // Frais de livraison provisoires du MVP : forfait par vendeur, Lomé uniquement.
 // Remplacés par le vrai calcul au module Livraison.
 export const DELIVERY_FEE_PER_SELLER_FCFA = 1000;
+
+// Commission plateforme (MVP n°114), prélevée sur le sous-total marchand
+// au versement vendeur. Les frais de livraison restent à la plateforme
+// (ils financeront les livreurs au module Livraison).
+export const PLATFORM_COMMISSION_RATE = 0.05;
+
+export function commissionFcfa(subtotalFcfa: number): number {
+  return Math.round(subtotalFcfa * PLATFORM_COMMISSION_RATE);
+}

@@ -19,16 +19,27 @@ export type CheckoutAddress = {
   isDefault: boolean;
 };
 
-const paymentMethods = [
-  { id: "mobile-money", label: "Mobile Money (Flooz, Tmoney, MTN, Moov)" },
-  { id: "card", label: "Carte bancaire (Visa, Mastercard)" },
-  { id: "wallet", label: "Wallet GK Market" },
+const disabledMethods = [
+  "Mobile Money (Flooz, Tmoney, MTN, Moov) — paiement direct",
+  "Carte bancaire (Visa, Mastercard) — paiement direct",
 ];
 
-export function CheckoutForm({ addresses }: { addresses: CheckoutAddress[] }) {
+export function CheckoutForm({
+  addresses,
+  walletBalance,
+  total,
+}: {
+  addresses: CheckoutAddress[];
+  walletBalance: number;
+  total: number;
+}) {
   const router = useRouter();
   const [addressId, setAddressId] = useState(
     addresses.find((a) => a.isDefault)?.id ?? addresses[0]?.id ?? "",
+  );
+  const walletSufficient = walletBalance >= total;
+  const [payment, setPayment] = useState<"wallet" | "later">(
+    walletSufficient ? "wallet" : "later",
   );
   const [cgvAccepted, setCgvAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +53,7 @@ export function CheckoutForm({ addresses }: { addresses: CheckoutAddress[] }) {
       return;
     }
     setLoading(true);
-    const result = await createOrder(addressId);
+    const result = await createOrder(addressId, payment === "wallet");
     if (result.error || !result.groupId) {
       setError(result.error ?? "La commande a échoué.");
       setLoading(false);
@@ -111,24 +122,78 @@ export function CheckoutForm({ addresses }: { addresses: CheckoutAddress[] }) {
       <Card>
         <h2 className="font-display text-lg font-bold">Mode de paiement</h2>
         <div className="mt-4 flex flex-col gap-3">
-          {paymentMethods.map((method) => (
+          <label
+            className={cn(
+              "flex items-start gap-3 rounded-md border p-4 transition-colors",
+              payment === "wallet"
+                ? "border-emerald bg-emerald/5"
+                : "border-white/10 hover:border-white/25",
+              walletSufficient ? "cursor-pointer" : "cursor-not-allowed opacity-60",
+            )}
+          >
+            <input
+              type="radio"
+              name="payment"
+              checked={payment === "wallet"}
+              disabled={!walletSufficient}
+              onChange={() => setPayment("wallet")}
+              className="mt-1 accent-emerald"
+            />
+            <span className="text-sm">
+              <span className="font-medium">Wallet GK Market</span> — solde :{" "}
+              {walletBalance.toLocaleString("fr-FR")} FCFA
+              <span className="block text-ink-muted">
+                Paiement immédiat, fonds bloqués en Escrow jusqu&apos;à la
+                livraison confirmée.
+              </span>
+              {!walletSufficient ? (
+                <Link
+                  href="/compte/wallet"
+                  className="mt-1 block text-emerald hover:underline"
+                >
+                  Solde insuffisant — recharger mon wallet →
+                </Link>
+              ) : null}
+            </span>
+          </label>
+
+          <label
+            className={cn(
+              "flex cursor-pointer items-start gap-3 rounded-md border p-4 transition-colors",
+              payment === "later"
+                ? "border-emerald bg-emerald/5"
+                : "border-white/10 hover:border-white/25",
+            )}
+          >
+            <input
+              type="radio"
+              name="payment"
+              checked={payment === "later"}
+              onChange={() => setPayment("later")}
+              className="mt-1 accent-emerald"
+            />
+            <span className="text-sm">
+              <span className="font-medium">Payer plus tard</span>
+              <span className="block text-ink-muted">
+                La commande est créée « en attente de paiement » — le vendeur
+                ne la traite qu&apos;une fois payée.
+              </span>
+            </span>
+          </label>
+
+          {disabledMethods.map((label) => (
             <label
-              key={method.id}
+              key={label}
               className="flex cursor-not-allowed items-center gap-3 rounded-md border border-white/10 p-4 opacity-50"
             >
               <input type="radio" name="payment" disabled className="accent-emerald" />
-              <span className="text-sm">{method.label}</span>
+              <span className="text-sm">{label}</span>
               <span className="ml-auto rounded-sm bg-white/10 px-2 py-0.5 text-xs text-ink-muted">
                 Bientôt
               </span>
             </label>
           ))}
         </div>
-        <p className="mt-3 rounded-md border border-gold/40 bg-gold/10 px-4 py-3 text-sm">
-          Le paiement sécurisé Escrow arrive à la prochaine itération. Votre
-          commande sera créée <strong>« en attente de paiement »</strong> — le
-          vendeur ne la traitera qu&apos;une fois le paiement effectué.
-        </p>
       </Card>
 
       <label className="flex items-start gap-3 text-sm">

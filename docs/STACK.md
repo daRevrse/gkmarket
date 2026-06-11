@@ -111,6 +111,26 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
   (itération 5) fera basculer vers `paid` → `processing` → `shipped` →
   `delivered`.
 
+## Wallet & Escrow (conception — itération 5)
+
+- **Un wallet par compte** (multi-casquettes oblige), créé automatiquement au
+  premier accès. Solde maintenu sur `wallets`, chaque mouvement tracé dans
+  `wallet_transactions` (grand livre, montants signés).
+- **Recharge/retrait Mobile Money simulés en local** (comme les SMS) — en
+  production, brancher un agrégateur (CinetPay/Semoa) dans
+  `src/app/compte/wallet/actions.ts` (le garde-fou `SIMULATED` refuse tout
+  paiement réel non configuré).
+- **Cycle Escrow** : paiement wallet (au checkout ou depuis la commande) →
+  fonds débités, commande `paid`, **rien n'est versé au vendeur** → le vendeur
+  prépare puis expédie → **l'acheteur confirme la réception** → versement au
+  vendeur **net de commission** (5 %, `PLATFORM_COMMISSION_RATE`). Les frais
+  de livraison restent à la plateforme (financeront les livreurs).
+- **Annulation** (avant expédition) : remboursement wallet intégral + re-stock.
+- Tous les mouvements d'argent sont **transactionnels** avec garde de solde
+  (`WHERE balance >= montant`) — pas de découvert possible.
+- À venir : déblocage automatique après délai (n°119, module Litiges),
+  remboursement sur litige (n°120), factures PDF (n°122-124).
+
 ## Administration
 
 - L'admin est un booléen `is_admin` sur `users` ; promotion manuelle en SQL :
@@ -119,6 +139,8 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
   des vendeurs : approuver / refuser avec motif (visible par le demandeur,
   re-soumission possible après refus).
 - Compte admin de test local : `admin@gkmarket.tg` / `admintest123`.
+- Compte vendeur de test local : `+228 99 88 77 66` / `123456789`
+  (boutique « Encart Électronique », approuvée).
 
 ## Gestion PostgreSQL (résumé opérationnel)
 

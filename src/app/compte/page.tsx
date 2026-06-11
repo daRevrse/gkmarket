@@ -112,10 +112,12 @@ export default async function ComptePage() {
                 <span className="text-emerald">Voir →</span>
               </CardSection>
             </Link>
-            <CardSection className="flex items-center justify-between p-4 opacity-60">
-              <span>Mon wallet</span>
-              <Badge>À venir</Badge>
-            </CardSection>
+            <Link href="/compte/wallet" className="group">
+              <CardSection className="flex items-center justify-between p-4 transition-colors group-hover:bg-white/[0.06]">
+                <span>Mon wallet</span>
+                <span className="text-emerald">Gérer →</span>
+              </CardSection>
+            </Link>
             <Link href="/compte/adresses" className="group">
               <CardSection className="flex items-center justify-between p-4 transition-colors group-hover:bg-white/[0.06]">
                 <span>Mes adresses de livraison</span>

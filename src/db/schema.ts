@@ -219,6 +219,10 @@ export const orders = pgTable("orders", {
   subtotalFcfa: integer("subtotal_fcfa").notNull(),
   deliveryFeeFcfa: integer("delivery_fee_fcfa").notNull(),
   totalFcfa: integer("total_fcfa").notNull(),
+  // Escrow : commission plateforme prélevée au versement vendeur
+  commissionFcfa: integer("commission_fcfa"),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -242,6 +246,49 @@ export const orderItems = pgTable("order_items", {
   unitPriceFcfa: integer("unit_price_fcfa").notNull(),
   quantity: integer("quantity").notNull(),
   totalFcfa: integer("total_fcfa").notNull(),
+});
+
+// Wallet plateforme (itération 5) : un wallet par compte (multi-casquettes),
+// créé automatiquement au premier accès. Le solde est maintenu sur le wallet,
+// chaque mouvement est tracé dans wallet_transactions (grand livre).
+export const wallets = pgTable("wallets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  balanceFcfa: integer("balance_fcfa").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const walletTransactionTypeEnum = pgEnum("wallet_transaction_type", [
+  "recharge",      // dépôt Mobile Money / carte (simulé en local)
+  "withdrawal",    // retrait vers Mobile Money (simulé en local)
+  "order_payment", // paiement d'une commande (fonds bloqués en Escrow)
+  "order_refund",  // remboursement après annulation
+  "sale_income",   // versement vendeur après livraison (net de commission)
+]);
+
+// Montants signés : crédit positif, débit négatif.
+export const walletTransactions = pgTable("wallet_transactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  walletId: uuid("wallet_id")
+    .notNull()
+    .references(() => wallets.id, { onDelete: "cascade" }),
+  type: walletTransactionTypeEnum("type").notNull(),
+  amountFcfa: integer("amount_fcfa").notNull(),
+  orderId: uuid("order_id").references(() => orders.id, {
+    onDelete: "set null",
+  }),
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // Adresses de livraison (MVP n°12 — ajout/modification/suppression)

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
+import { SellerOrderActions } from "./seller-order-actions";
 
 export default async function VendeurCommandesPage() {
   const user = await getCurrentUser();
@@ -99,6 +100,10 @@ export default async function VendeurCommandesPage() {
                     </li>
                   ))}
                 </ul>
+                <SellerOrderActions
+                  orderId={order.id}
+                  status={order.status}
+                />
               </Card>
             );
           })}

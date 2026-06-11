@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
+import { OrderActions } from "./order-actions";
 
 export default async function CommandeDetailPage({
   params,
@@ -111,6 +112,8 @@ export default async function CommandeDetailPage({
             </p>
           </div>
         </Card>
+
+        <OrderActions orderId={row.order.id} status={row.order.status} />
 
         <Card>
           <h2 className="font-display text-lg font-bold">

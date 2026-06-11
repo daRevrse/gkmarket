@@ -36,6 +36,13 @@
       "when": 1781202844627,
       "tag": "0004_material_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781212444191,
+      "tag": "0005_known_firebird",
+      "breakpoints": true
     }
   ]
 }

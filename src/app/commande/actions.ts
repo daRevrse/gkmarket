@@ -13,7 +13,9 @@ import {
   products,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { formatFcfa } from "@/lib/format";
 import { DELIVERY_FEE_PER_SELLER_FCFA, unitPriceFcfa } from "@/lib/pricing";
+import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
 function generateOrderNumber(): string {
   const now = new Date();
@@ -28,6 +30,7 @@ function generateOrderNumber(): string {
 
 export async function createOrder(
   addressId: string,
+  payWithWallet: boolean,
 ): Promise<{ error?: string; groupId?: string }> {
   const user = await getCurrentUser();
   if (!user) return { error: "Vous devez être connecté." };
@@ -75,6 +78,7 @@ export async function createOrder(
   }
 
   const groupId = randomUUID();
+  const wallet = payWithWallet ? await getOrCreateWallet(user.id) : null;
 
   try {
     await db.transaction(async (tx) => {
@@ -93,13 +97,18 @@ export async function createOrder(
           0,
         );
 
+        const total = subtotal + DELIVERY_FEE_PER_SELLER_FCFA;
+        const number = generateOrderNumber();
         const [order] = await tx
           .insert(orders)
           .values({
-            number: generateOrderNumber(),
+            number,
             groupId,
             buyerId: user.id,
             sellerId,
+            // Paiement wallet immédiat : fonds débités et bloqués en Escrow
+            status: wallet ? "paid" : "pending_payment",
+            paidAt: wallet ? new Date() : null,
             shippingName: address.recipientName,
             shippingPhone: address.recipientPhone,
             shippingCity: address.city,
@@ -107,9 +116,19 @@ export async function createOrder(
             shippingDetails: address.details,
             subtotalFcfa: subtotal,
             deliveryFeeFcfa: DELIVERY_FEE_PER_SELLER_FCFA,
-            totalFcfa: subtotal + DELIVERY_FEE_PER_SELLER_FCFA,
+            totalFcfa: total,
           })
           .returning({ id: orders.id });
+
+        if (wallet) {
+          const ok = await applyWalletMovement(tx, wallet.id, {
+            type: "order_payment",
+            amountFcfa: -total,
+            orderId: order.id,
+            description: `Paiement commande ${number} (fonds en Escrow)`,
+          });
+          if (!ok) throw new Error("wallet");
+        }
 
         await tx.insert(orderItems).values(
           sellerLines.map((line) => {
@@ -155,6 +174,11 @@ export async function createOrder(
     if (message.startsWith("stock:")) {
       return {
         error: `Stock insuffisant pour « ${message.slice(6)} » — un autre acheteur est passé avant vous.`,
+      };
+    }
+    if (message === "wallet") {
+      return {
+        error: `Solde wallet insuffisant (${formatFcfa(wallet?.balanceFcfa ?? 0)} disponibles). Rechargez votre wallet ou choisissez « Payer plus tard ».`,
       };
     }
     console.error("Création de commande échouée:", err);

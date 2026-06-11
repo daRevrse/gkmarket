@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { AuthCard, FormError, FormField } from "@/components/auth/auth-card";
 import { AuthTabs, type AuthMethod } from "@/components/auth/auth-tabs";
+import { GoogleButton } from "@/components/auth/google-button";
 import { PhoneSignupForm } from "@/components/auth/phone-signup-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +65,9 @@ export default function InscriptionPage() {
       title="Créer un compte"
       subtitle="Rejoignez la marketplace B2B & B2C du Togo."
     >
+      <div className="mb-4">
+        <GoogleButton label="S'inscrire avec Google" />
+      </div>
       <AuthTabs value={method} onChange={setMethod} />
       {method === "phone" ? (
         <PhoneSignupForm />

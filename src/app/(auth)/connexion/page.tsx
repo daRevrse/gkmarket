@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { AuthCard, FormError, FormField } from "@/components/auth/auth-card";
 import { AuthTabs, type AuthMethod } from "@/components/auth/auth-tabs";
+import { GoogleButton } from "@/components/auth/google-button";
 import { PhoneLoginForm } from "@/components/auth/phone-login-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,9 @@ export default function ConnexionPage() {
       title="Se connecter"
       subtitle="Heureux de vous revoir sur GK Market."
     >
+      <div className="mb-4">
+        <GoogleButton label="Continuer avec Google" />
+      </div>
       <AuthTabs value={method} onChange={setMethod} />
       {method === "phone" ? (
         <PhoneLoginForm />

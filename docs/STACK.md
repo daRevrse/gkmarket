@@ -49,6 +49,31 @@ Le cahier des charges demande la « connexion téléphone/mot de passe » (MVP n
   (filtré dans la route session). Normalisation des numéros togolais en E.164 dans `src/lib/phone.ts`.
 - En local, l'émulateur Firebase Auth simule les SMS (codes visibles sur
   `http://127.0.0.1:9099/emulator/v1/projects/demo-gkmarket/verificationCodes`).
+- **Mot de passe oublié par SMS** : OTP de vérification, puis `updatePassword`.
+  Attention, Firebase révoque les jetons après un changement de mot de passe :
+  le formulaire se reconnecte aussitôt avec le nouveau mot de passe.
+- **Connexion Google** : `signInWithPopup` ; l'émulateur affiche un faux
+  sélecteur de compte (aucune configuration Google requise en local).
+
+## Suppression de compte (conception)
+
+Archivage intelligent plutôt qu'effacement total :
+
+- L'identité (email, téléphone, nom, casquettes) est copiée dans `user_archives`
+  — trace pour litiges, obligations légales et anti-fraude.
+- La ligne `users` est **anonymisée mais conservée** (`status = deleted`,
+  email/téléphone à NULL, nom remplacé) : l'`id` reste valide pour l'intégrité
+  des futures commandes/avis.
+- Adresses et profils vendeur/livreur sont purgés.
+- Le compte **Firebase est supprimé** : l'email et le numéro sont libérés pour
+  une éventuelle réinscription.
+
+## Émulateur Firebase : persistance locale
+
+`npm run emulators` importe/exporte automatiquement les comptes de test dans
+`.firebase-emulator/` (ignoré par git). Les comptes survivent donc aux
+redémarrages. Pour repartir de zéro : supprimer ce dossier **et** vider les
+tables utilisateurs de PostgreSQL (sinon données orphelines).
 
 ## Gestion PostgreSQL (résumé opérationnel)
 

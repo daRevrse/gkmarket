@@ -27,6 +27,7 @@
 # firebase emulator
 firebase-debug.log
 .firebase/
+.firebase-emulator/
 
 # fichiers de verrou Office
 ~$*

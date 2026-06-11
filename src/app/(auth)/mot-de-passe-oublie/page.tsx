@@ -4,12 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { AuthCard, FormError, FormField } from "@/components/auth/auth-card";
+import { AuthTabs, type AuthMethod } from "@/components/auth/auth-tabs";
+import { PhoneResetForm } from "@/components/auth/phone-reset-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/firebase/client";
 import { authErrorMessage } from "@/lib/firebase/errors";
 
 export default function MotDePasseOubliePage() {
+  const [method, setMethod] = useState<AuthMethod>("email");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -32,9 +35,12 @@ export default function MotDePasseOubliePage() {
   return (
     <AuthCard
       title="Mot de passe oublié"
-      subtitle="Nous vous enverrons un lien de réinitialisation par email."
+      subtitle="Réinitialisez votre mot de passe par email ou par SMS."
     >
-      {sent ? (
+      <AuthTabs value={method} onChange={setMethod} />
+      {method === "phone" ? (
+        <PhoneResetForm />
+      ) : sent ? (
         <p className="rounded-md border border-emerald/40 bg-emerald/10 px-4 py-3 text-sm text-emerald-light">
           Si un compte existe avec cet email, un lien de réinitialisation
           vient de lui être envoyé. Pensez à vérifier vos spams.

@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+ * Design system GK Market — transposé depuis docs/DESIGN.md
+ * Premium Dark Glassmorphism : fond midnight navy, accents or et émeraude.
+ */
+@theme {
+  /* Couleurs */
+  --color-navy: #0d1b2a;
+  --color-navy-deep: #08121c;
+  --color-navy-surface: #10212f;
+  --color-gold: #f5a623;
+  --color-gold-light: #ffb955;
+  --color-gold-dark: #c8851a;
+  --color-emerald: #00c896;
+  --color-emerald-light: #43e5b1;
+  --color-ink: #ffffff;
+  --color-ink-muted: #8899aa;
+  --color-danger: #ffb4ab;
+  --color-danger-deep: #93000a;
+
+  /* Typographie */
+  --font-display: var(--font-jakarta), sans-serif;
+  --font-body: var(--font-hanken), sans-serif;
+  --font-label: var(--font-geist), sans-serif;
+
+  /* Rayons — cartes 24px, sections internes 16px, boutons/inputs 12px */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Ombres — profondes et très diffuses */
+  --shadow-card: 0 20px 40px rgb(0 0 0 / 0.4);
+
+  /* Grille */
+  --container-page: 1280px;
+}
+
+/* Couche verre : fond translucide, blur 12px, bordure 1px définissant les contours */
+@utility glass {
+  background: rgb(255 255 255 / 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+/* Sous-lueur dorée derrière les éléments premium (couche accent) */
+@utility glow-gold {
+  position: relative;
+}
+.glow-gold::before {
+  content: "";
+  position: absolute;
+  inset: -2rem;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(245 166 35 / 0.08) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+body {
+  background: var(--color-navy);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}

@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gkmarket-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gkmarket
+      POSTGRES_PASSWORD: gkmarket_dev
+      POSTGRES_DB: gkmarket
+    ports:
+      - "5432:5432"
+    volumes:
+      - gkmarket_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gkmarket -d gkmarket"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  gkmarket_pgdata:

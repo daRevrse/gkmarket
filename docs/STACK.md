@@ -38,6 +38,9 @@ pour le MVP et les points encore ouverts.
 ## Gestion PostgreSQL (résumé opérationnel)
 
 1. **Exécution** : conteneur Docker `postgres:16` via `docker-compose.yml` versionné — même version en local, staging et prod.
+   *Exception temporaire (2026-06-11)* : en local, PostgreSQL 16 natif Windows est utilisé en attendant
+   l'installation de Docker Desktop (contrainte de stockage). Même version majeure, même URL de connexion
+   (`gkmarket:gkmarket_dev@localhost:5432/gkmarket`) — la bascule vers Docker sera transparente.
 2. **Sécurité** : base jamais exposée à Internet (réseau interne uniquement) ; UFW (80/443/SSH), SSH par clé, secrets en variables d'environnement.
 3. **Migrations** : tout changement de schéma = fichier SQL numéroté commité (Drizzle Kit ou Prisma Migrate). Local → CI/staging → prod. Jamais de modification manuelle en prod.
 4. **Sauvegardes** : `pg_dump` quotidien chiffré vers stockage externe (Backblaze B2 / Contabo Object Storage, ~1 €/mois) ; archivage WAL (`wal-g`) pour restauration point-in-time dès que de l'argent réel circule ; test de restauration mensuel.

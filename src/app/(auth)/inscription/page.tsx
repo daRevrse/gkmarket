@@ -8,6 +8,8 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { AuthCard, FormError, FormField } from "@/components/auth/auth-card";
+import { AuthTabs, type AuthMethod } from "@/components/auth/auth-tabs";
+import { PhoneSignupForm } from "@/components/auth/phone-signup-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/firebase/client";
@@ -15,6 +17,7 @@ import { authErrorMessage } from "@/lib/firebase/errors";
 
 export default function InscriptionPage() {
   const router = useRouter();
+  const [method, setMethod] = useState<AuthMethod>("email");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,6 +64,10 @@ export default function InscriptionPage() {
       title="Créer un compte"
       subtitle="Rejoignez la marketplace B2B & B2C du Togo."
     >
+      <AuthTabs value={method} onChange={setMethod} />
+      {method === "phone" ? (
+        <PhoneSignupForm />
+      ) : (
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormError message={error} />
         <FormField label="Nom complet" htmlFor="fullName">
@@ -110,6 +117,7 @@ export default function InscriptionPage() {
           {loading ? "Création du compte…" : "Créer mon compte"}
         </Button>
       </form>
+      )}
       <p className="mt-6 text-center text-sm text-ink-muted">
         Déjà un compte ?{" "}
         <Link href="/connexion" className="text-emerald hover:underline">

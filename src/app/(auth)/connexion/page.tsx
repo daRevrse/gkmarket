@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { AuthCard, FormError, FormField } from "@/components/auth/auth-card";
+import { AuthTabs, type AuthMethod } from "@/components/auth/auth-tabs";
+import { PhoneLoginForm } from "@/components/auth/phone-login-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/firebase/client";
@@ -12,6 +14,7 @@ import { authErrorMessage } from "@/lib/firebase/errors";
 
 export default function ConnexionPage() {
   const router = useRouter();
+  const [method, setMethod] = useState<AuthMethod>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +52,10 @@ export default function ConnexionPage() {
       title="Se connecter"
       subtitle="Heureux de vous revoir sur GK Market."
     >
+      <AuthTabs value={method} onChange={setMethod} />
+      {method === "phone" ? (
+        <PhoneLoginForm />
+      ) : (
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormError message={error} />
         <FormField label="Email" htmlFor="email">
@@ -84,6 +91,7 @@ export default function ConnexionPage() {
           {loading ? "Connexion…" : "Se connecter"}
         </Button>
       </form>
+      )}
       <p className="mt-6 text-center text-sm text-ink-muted">
         Pas encore de compte ?{" "}
         <Link href="/inscription" className="text-emerald hover:underline">

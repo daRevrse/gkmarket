@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { adminAuth } from "@/lib/firebase/admin";
+import { isPhoneAliasEmail } from "@/lib/phone";
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 5; // 5 jours
 
@@ -26,18 +27,21 @@ export async function POST(request: NextRequest) {
       expiresIn: SESSION_DURATION_MS,
     });
 
+    // L'identifiant interne dérivé du téléphone n'est pas un vrai email.
+    const email = isPhoneAliasEmail(decoded.email) ? null : (decoded.email ?? null);
+
     await db
       .insert(users)
       .values({
         firebaseUid: decoded.uid,
-        email: decoded.email ?? null,
+        email,
         phone: decoded.phone_number ?? null,
         fullName: fullName ?? decoded.name ?? null,
       })
       .onConflictDoUpdate({
         target: users.firebaseUid,
         set: {
-          email: decoded.email ?? null,
+          email,
           phone: decoded.phone_number ?? null,
           ...(fullName ? { fullName } : {}),
           updatedAt: sql`now()`,

@@ -19,4 +19,6 @@ if (emulatorHost && !auth.emulatorConfig) {
   connectAuthEmulator(auth, `http://${emulatorHost}`, {
     disableWarnings: true,
   });
+  // L'émulateur ne vérifie pas le reCAPTCHA — on le neutralise pour les tests.
+  auth.settings.appVerificationDisabledForTesting = true;
 }

@@ -18,6 +18,16 @@ export function authErrorMessage(error: unknown): string {
         return "Trop de tentatives. Réessayez dans quelques minutes.";
       case "auth/network-request-failed":
         return "Problème de connexion réseau. Vérifiez votre connexion.";
+      case "auth/invalid-phone-number":
+        return "Numéro de téléphone invalide.";
+      case "auth/invalid-verification-code":
+        return "Code de vérification incorrect.";
+      case "auth/code-expired":
+        return "Le code a expiré. Demandez-en un nouveau.";
+      case "auth/account-exists-with-different-credential":
+      case "auth/credential-already-in-use":
+      case "auth/provider-already-linked":
+        return "Un compte existe déjà avec ce numéro.";
     }
   }
   return "Une erreur est survenue. Réessayez.";

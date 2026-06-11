@@ -35,6 +35,21 @@ pour le MVP et les points encore ouverts.
 - **Hetzner** : remplacé par Contabo (décision du 2026-06-10).
 - **Supabase** : proposé comme alternative zéro-ops, non retenu au profit du VPS auto-géré.
 
+## Authentification téléphone (conception)
+
+Le cahier des charges demande la « connexion téléphone/mot de passe » (MVP n°4) et la
+« vérification téléphone OTP » (MVP n°7). Implémentation retenue pour minimiser les coûts SMS :
+
+- **Inscription** : OTP SMS envoyé une seule fois pour vérifier le numéro (Firebase Phone Auth),
+  puis un identifiant interne dérivé du numéro (`22890123456@tel.gkmarket.app`) est lié au compte
+  avec le mot de passe choisi.
+- **Connexion** : téléphone + mot de passe via cet identifiant interne — **aucun SMS**.
+- Coût : **1 SMS par compte créé** (au lieu d'un SMS à chaque connexion).
+- L'identifiant interne n'est jamais montré à l'utilisateur ni stocké comme email en base
+  (filtré dans la route session). Normalisation des numéros togolais en E.164 dans `src/lib/phone.ts`.
+- En local, l'émulateur Firebase Auth simule les SMS (codes visibles sur
+  `http://127.0.0.1:9099/emulator/v1/projects/demo-gkmarket/verificationCodes`).
+
 ## Gestion PostgreSQL (résumé opérationnel)
 
 1. **Exécution** : conteneur Docker `postgres:16` via `docker-compose.yml` versionné — même version en local, staging et prod.

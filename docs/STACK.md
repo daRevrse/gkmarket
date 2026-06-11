@@ -90,6 +90,27 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
 - La demande vendeur référence les chemins en base (`seller_profiles`) ; le
   serveur vérifie que les chemins appartiennent bien au dossier du demandeur.
 
+## Panier & commandes (conception)
+
+- **Panier en base** (`cart_items`, lié au compte) : connexion requise pour
+  acheter ; un article par produit, quantité bornée par le stock et la
+  quantité minimum.
+- **Prix de gros B2B** : appliqué automatiquement dès que la quantité atteint
+  le palier du vendeur (`src/lib/pricing.ts`, partagé client/serveur — le
+  serveur recalcule toujours, jamais confiance au client).
+- **Un checkout = une commande par vendeur**, reliées par `group_id`
+  (MVP n°101-102). Numéro unique `GK-AAMMJJ-XXXX`.
+- **Snapshots** : les lignes de commande figent titre, prix appliqué et photo ;
+  l'adresse de livraison est copiée dans la commande (modifier/supprimer
+  l'adresse ensuite ne touche pas l'historique).
+- **Stock décrémenté à la commande**, garanti par un `WHERE stock >= qté`
+  transactionnel (échec propre si un autre acheteur passe avant).
+- **Frais de livraison provisoires** : forfait 1 000 FCFA par vendeur (Lomé),
+  remplacé par le vrai calcul au module Livraison.
+- Les commandes naissent **`pending_payment`** : le paiement Escrow
+  (itération 5) fera basculer vers `paid` → `processing` → `shipped` →
+  `delivered`.
+
 ## Administration
 
 - L'admin est un booléen `is_admin` sur `users` ; promotion manuelle en SQL :

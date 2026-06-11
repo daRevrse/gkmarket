@@ -48,9 +48,14 @@ export default async function VendeurProduitsPage() {
             {rows.length > 1 ? "s" : ""}
           </p>
         </div>
-        <LinkButton href="/vendeur/produits/nouveau">
-          + Nouveau produit
-        </LinkButton>
+        <div className="flex items-center gap-3">
+          <LinkButton href="/vendeur/commandes" variant="secondary">
+            Commandes reçues
+          </LinkButton>
+          <LinkButton href="/vendeur/produits/nouveau">
+            + Nouveau produit
+          </LinkButton>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">

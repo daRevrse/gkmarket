@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
@@ -164,6 +165,83 @@ export const productImages = pgTable("product_images", {
   path: text("path").notNull(),
   url: text("url").notNull(),
   position: integer("position").notNull().default(0),
+});
+
+// Panier (itération 4) — lié au compte, un article par produit.
+export const cartItems = pgTable(
+  "cart_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [uniqueIndex("cart_user_product_idx").on(table.userId, table.productId)],
+);
+
+export const orderStatusEnum = pgEnum("order_status", [
+  "pending_payment", // créée — le paiement Escrow arrive à l'itération 5
+  "paid",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+]);
+
+// Commandes (itération 4) : un checkout multi-vendeurs crée une commande par
+// vendeur, reliées par groupId. L'adresse est figée en snapshot.
+export const orders = pgTable("orders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  number: text("number").notNull().unique(),
+  groupId: uuid("group_id").notNull(),
+  buyerId: uuid("buyer_id")
+    .notNull()
+    .references(() => users.id),
+  sellerId: uuid("seller_id")
+    .notNull()
+    .references(() => sellerProfiles.id),
+  status: orderStatusEnum("status").notNull().default("pending_payment"),
+  shippingName: text("shipping_name").notNull(),
+  shippingPhone: text("shipping_phone").notNull(),
+  shippingCity: text("shipping_city").notNull(),
+  shippingDistrict: text("shipping_district"),
+  shippingDetails: text("shipping_details"),
+  subtotalFcfa: integer("subtotal_fcfa").notNull(),
+  deliveryFeeFcfa: integer("delivery_fee_fcfa").notNull(),
+  totalFcfa: integer("total_fcfa").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Lignes de commande : snapshot du produit au moment de l'achat
+// (titre, prix appliqué — gros ou détail — et photo).
+export const orderItems = pgTable("order_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  productId: uuid("product_id").references(() => products.id, {
+    onDelete: "set null",
+  }),
+  title: text("title").notNull(),
+  imageUrl: text("image_url"),
+  unitPriceFcfa: integer("unit_price_fcfa").notNull(),
+  quantity: integer("quantity").notNull(),
+  totalFcfa: integer("total_fcfa").notNull(),
 });
 
 // Adresses de livraison (MVP n°12 — ajout/modification/suppression)

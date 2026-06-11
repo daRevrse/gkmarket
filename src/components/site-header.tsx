@@ -1,10 +1,22 @@
 import Link from "next/link";
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { cartItems } from "@/db/schema";
 import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 
-/** En-tête public : logo, recherche globale, accès compte. */
+/** En-tête public : logo, recherche globale, panier, accès compte. */
 export async function SiteHeader({ query }: { query?: string }) {
   const user = await getCurrentUser();
+
+  let cartCount = 0;
+  if (user) {
+    const [row] = await db
+      .select({ count: sql<number>`coalesce(sum(${cartItems.quantity}), 0)::int` })
+      .from(cartItems)
+      .where(eq(cartItems.userId, user.id));
+    cartCount = row?.count ?? 0;
+  }
 
   return (
     <header className="border-b border-white/[0.06]">
@@ -27,6 +39,17 @@ export async function SiteHeader({ query }: { query?: string }) {
             className="text-sm text-ink-muted transition-colors hover:text-ink"
           >
             Catalogue
+          </Link>
+          <Link
+            href="/panier"
+            className="relative text-sm text-ink-muted transition-colors hover:text-ink"
+          >
+            Panier
+            {cartCount > 0 ? (
+              <span className="absolute -top-2 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-navy-deep">
+                {cartCount}
+              </span>
+            ) : null}
           </Link>
           {user ? (
             <LinkButton href="/compte" variant="secondary" size="sm">

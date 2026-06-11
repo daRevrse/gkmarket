@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, productImages, products, sellerProfiles } from "@/db/schema";
+import { AddToCart } from "@/components/add-to-cart";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
 import { formatFcfa } from "@/lib/format";
@@ -134,9 +134,18 @@ export default async function ProduitPage({
               </li>
             </ul>
 
-            <Button size="lg" disabled className="self-start">
-              Ajouter au panier — bientôt
-            </Button>
+            {inStock ? (
+              <AddToCart
+                productId={product.id}
+                product={{
+                  priceFcfa: product.priceFcfa,
+                  wholesalePriceFcfa: product.wholesalePriceFcfa,
+                  wholesaleMinQty: product.wholesaleMinQty,
+                }}
+                minOrderQty={product.minOrderQty}
+                stock={product.stock}
+              />
+            ) : null}
 
             <Card className="p-4">
               <p className="text-xs text-ink-muted">Vendu par</p>

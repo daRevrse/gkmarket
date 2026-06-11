@@ -1,0 +1,168 @@
+"use server";
+
+import { randomUUID } from "node:crypto";
+import { revalidatePath } from "next/cache";
+import { and, eq, sql } from "drizzle-orm";
+import { db } from "@/db";
+import {
+  addresses,
+  cartItems,
+  orderItems,
+  orders,
+  productImages,
+  products,
+} from "@/db/schema";
+import { getCurrentUser } from "@/lib/auth";
+import { DELIVERY_FEE_PER_SELLER_FCFA, unitPriceFcfa } from "@/lib/pricing";
+
+function generateOrderNumber(): string {
+  const now = new Date();
+  const date = [
+    String(now.getFullYear()).slice(2),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("");
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `GK-${date}-${suffix}`;
+}
+
+export async function createOrder(
+  addressId: string,
+): Promise<{ error?: string; groupId?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Vous devez être connecté." };
+
+  const [address] = await db
+    .select()
+    .from(addresses)
+    .where(and(eq(addresses.id, addressId), eq(addresses.userId, user.id)))
+    .limit(1);
+  if (!address) return { error: "Choisissez une adresse de livraison." };
+
+  const lines = await db
+    .select({
+      item: cartItems,
+      product: products,
+      imageUrl: productImages.url,
+    })
+    .from(cartItems)
+    .innerJoin(products, eq(products.id, cartItems.productId))
+    .leftJoin(
+      productImages,
+      and(
+        eq(productImages.productId, products.id),
+        eq(productImages.position, 0),
+      ),
+    )
+    .where(eq(cartItems.userId, user.id));
+
+  if (lines.length === 0) return { error: "Votre panier est vide." };
+
+  for (const line of lines) {
+    if (line.product.status !== "published") {
+      return { error: `« ${line.product.title} » n'est plus disponible — retirez-le du panier.` };
+    }
+    if (line.item.quantity > line.product.stock) {
+      return {
+        error: `Stock insuffisant pour « ${line.product.title} » (${line.product.stock} restant${line.product.stock > 1 ? "s" : ""}).`,
+      };
+    }
+    if (line.item.quantity < line.product.minOrderQty) {
+      return {
+        error: `Quantité minimum de ${line.product.minOrderQty} pour « ${line.product.title} ».`,
+      };
+    }
+  }
+
+  const groupId = randomUUID();
+
+  try {
+    await db.transaction(async (tx) => {
+      // Une commande par vendeur (MVP n°101-102)
+      const bySeller = new Map<string, typeof lines>();
+      for (const line of lines) {
+        const list = bySeller.get(line.product.sellerId) ?? [];
+        list.push(line);
+        bySeller.set(line.product.sellerId, list);
+      }
+
+      for (const [sellerId, sellerLines] of bySeller) {
+        const subtotal = sellerLines.reduce(
+          (sum, line) =>
+            sum + unitPriceFcfa(line.product, line.item.quantity) * line.item.quantity,
+          0,
+        );
+
+        const [order] = await tx
+          .insert(orders)
+          .values({
+            number: generateOrderNumber(),
+            groupId,
+            buyerId: user.id,
+            sellerId,
+            shippingName: address.recipientName,
+            shippingPhone: address.recipientPhone,
+            shippingCity: address.city,
+            shippingDistrict: address.district,
+            shippingDetails: address.details,
+            subtotalFcfa: subtotal,
+            deliveryFeeFcfa: DELIVERY_FEE_PER_SELLER_FCFA,
+            totalFcfa: subtotal + DELIVERY_FEE_PER_SELLER_FCFA,
+          })
+          .returning({ id: orders.id });
+
+        await tx.insert(orderItems).values(
+          sellerLines.map((line) => {
+            const unitPrice = unitPriceFcfa(line.product, line.item.quantity);
+            return {
+              orderId: order.id,
+              productId: line.product.id,
+              title: line.product.title,
+              imageUrl: line.imageUrl,
+              unitPriceFcfa: unitPrice,
+              quantity: line.item.quantity,
+              totalFcfa: unitPrice * line.item.quantity,
+            };
+          }),
+        );
+
+        // Décrément du stock, garanti par le WHERE (échoue si le stock a
+        // changé entre la vérification et maintenant).
+        for (const line of sellerLines) {
+          const updated = await tx
+            .update(products)
+            .set({
+              stock: sql`${products.stock} - ${line.item.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(products.id, line.product.id),
+                sql`${products.stock} >= ${line.item.quantity}`,
+              ),
+            )
+            .returning({ id: products.id });
+          if (updated.length === 0) {
+            throw new Error(`stock:${line.product.title}`);
+          }
+        }
+      }
+
+      await tx.delete(cartItems).where(eq(cartItems.userId, user.id));
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    if (message.startsWith("stock:")) {
+      return {
+        error: `Stock insuffisant pour « ${message.slice(6)} » — un autre acheteur est passé avant vous.`,
+      };
+    }
+    console.error("Création de commande échouée:", err);
+    return { error: "La commande a échoué. Réessayez." };
+  }
+
+  revalidatePath("/panier");
+  revalidatePath("/compte/commandes");
+  revalidatePath("/produits");
+  return { groupId };
+}

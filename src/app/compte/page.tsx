@@ -106,10 +106,12 @@ export default async function ComptePage() {
             itérations.
           </p>
           <div className="flex flex-col gap-3">
-            <CardSection className="flex items-center justify-between p-4 opacity-60">
-              <span>Mes commandes</span>
-              <Badge>À venir</Badge>
-            </CardSection>
+            <Link href="/compte/commandes" className="group">
+              <CardSection className="flex items-center justify-between p-4 transition-colors group-hover:bg-white/[0.06]">
+                <span>Mes commandes</span>
+                <span className="text-emerald">Voir →</span>
+              </CardSection>
+            </Link>
             <CardSection className="flex items-center justify-between p-4 opacity-60">
               <span>Mon wallet</span>
               <Badge>À venir</Badge>

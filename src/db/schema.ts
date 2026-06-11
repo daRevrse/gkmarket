@@ -1,10 +1,12 @@
 import {
   boolean,
+  integer,
   pgEnum,
   pgTable,
   text,
   timestamp,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // Modèle multi-rôles (décision itération 1) : tout compte est acheteur par défaut ;
@@ -105,6 +107,63 @@ export const courierProfiles = pgTable("courier_profiles", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+});
+
+// Catégories du catalogue : deux niveaux (catégorie -> sous-catégorie via parentId).
+// Les produits sont rattachés aux sous-catégories.
+export const categories = pgTable("categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  parentId: uuid("parent_id").references((): AnyPgColumn => categories.id),
+  position: integer("position").notNull().default(0),
+});
+
+export const productStatusEnum = pgEnum("product_status", [
+  "draft",
+  "published",
+  "archived",
+]);
+
+// Produits (itération 3). Prix en FCFA entiers (pas de centimes en XOF).
+// Le prix de gros (optionnel) couvre le B2B : appliqué à partir de
+// wholesaleMinQty unités.
+export const products = pgTable("products", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sellerId: uuid("seller_id")
+    .notNull()
+    .references(() => sellerProfiles.id, { onDelete: "cascade" }),
+  categoryId: uuid("category_id")
+    .notNull()
+    .references(() => categories.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  originCountry: text("origin_country").notNull().default("Togo"),
+  priceFcfa: integer("price_fcfa").notNull(),
+  wholesalePriceFcfa: integer("wholesale_price_fcfa"),
+  wholesaleMinQty: integer("wholesale_min_qty"),
+  stock: integer("stock").notNull().default(0),
+  minOrderQty: integer("min_order_qty").notNull().default(1),
+  weightGrams: integer("weight_grams"),
+  prepDelayDays: integer("prep_delay_days").notNull().default(1),
+  status: productStatusEnum("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Photos produit (3 à 10) ; position 0 = photo principale.
+export const productImages = pgTable("product_images", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  path: text("path").notNull(),
+  url: text("url").notNull(),
+  position: integer("position").notNull().default(0),
 });
 
 // Adresses de livraison (MVP n°12 — ajout/modification/suppression)

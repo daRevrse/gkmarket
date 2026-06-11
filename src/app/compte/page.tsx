@@ -46,7 +46,11 @@ export default async function ComptePage() {
               <span className="font-medium">Vendeur</span>
               {user.sellerProfile ? (
                 <Link
-                  href="/compte/devenir-vendeur"
+                  href={
+                    user.sellerProfile.status === "approved"
+                      ? "/vendeur/produits"
+                      : "/compte/devenir-vendeur"
+                  }
                   className="flex items-center gap-2"
                 >
                   <Badge
@@ -58,7 +62,11 @@ export default async function ComptePage() {
                   >
                     {profileStatusLabel[user.sellerProfile.status]}
                   </Badge>
-                  <span className="text-sm text-emerald">Détails →</span>
+                  <span className="text-sm text-emerald">
+                    {user.sellerProfile.status === "approved"
+                      ? "Mes produits →"
+                      : "Détails →"}
+                  </span>
                 </Link>
               ) : (
                 <LinkButton

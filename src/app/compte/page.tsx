@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Badge } from "@/components/ui/badge";
@@ -94,10 +95,12 @@ export default async function ComptePage() {
               <span>Mon wallet</span>
               <Badge>À venir</Badge>
             </CardSection>
-            <CardSection className="flex items-center justify-between p-4 opacity-60">
-              <span>Mes adresses de livraison</span>
-              <Badge>À venir</Badge>
-            </CardSection>
+            <Link href="/compte/adresses" className="group">
+              <CardSection className="flex items-center justify-between p-4 transition-colors group-hover:bg-white/[0.06]">
+                <span>Mes adresses de livraison</span>
+                <span className="text-emerald">Gérer →</span>
+              </CardSection>
+            </Link>
           </div>
         </Card>
       </div>

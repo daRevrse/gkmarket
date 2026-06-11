@@ -1,5 +1,6 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getStorage } from "firebase-admin/storage";
 
 // Deux modes :
 // - Émulateur local : FIREBASE_AUTH_EMULATOR_HOST est défini, aucune clé requise.
@@ -9,7 +10,10 @@ function getAdminApp() {
   if (existing) return existing;
 
   if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-    return initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID });
+    return initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    });
   }
 
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -18,7 +22,12 @@ function getAdminApp() {
       "FIREBASE_SERVICE_ACCOUNT manquant (ou FIREBASE_AUTH_EMULATOR_HOST pour le développement local).",
     );
   }
-  return initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
+  return initializeApp({
+    credential: cert(JSON.parse(serviceAccount)),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  });
 }
 
-export const adminAuth = getAuth(getAdminApp());
+const adminApp = getAdminApp();
+export const adminAuth = getAuth(adminApp);
+export const adminStorage = getStorage(adminApp);

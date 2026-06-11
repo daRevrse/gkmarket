@@ -36,6 +36,17 @@ Modèle Alibaba/Amazon : un seul compte, plusieurs capacités.
 `courier_profiles` (l'existence d'un profil = la casquette ; son `status` = l'état de vérification).
 L'admin est un booléen `is_admin` sur `users`.
 
+---
+
+## 3. Suivi d'avancement dans l'explosion du projet (2026-06-11)
+
+**Convention :** `docs/Explosion du projet.xlsx` reste la référence **intacte** (spec d'origine).
+Le suivi d'avancement se fait dans **`docs/Explosion du projet - MAJ.xlsx`**, à mettre à jour
+**à la fin de chaque itération** :
+- colonne *Statut* : `✅ Réalisé` (fond vert) ou `🟡 Partiel` (fond orange) ;
+- colonne *Commentaire* : n° d'itération + précisions ;
+- l'onglet *Récapitulatif* compte les réalisations automatiquement (formules `COUNTIF`).
+
 **Précisions (2026-06-10) :**
 - **Attribution des courses :** une **proposition intelligente de livreurs** est faite au vendeur (matching automatique — critères à définir : proximité, disponibilité, note, historique). Le vendeur choisit parmi les livreurs proposés.
 - **Paiement du livreur :** le livreur est **payé par le vendeur**, via le **Wallet** et le **système Escrow** (mêmes mécanismes que le reste de la plateforme). Le livreur dispose donc d'un Wallet livreur.

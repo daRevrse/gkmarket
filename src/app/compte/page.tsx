@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { DeleteAccount } from "@/components/auth/delete-account";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,6 +104,10 @@ export default async function ComptePage() {
             </Link>
           </div>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <DeleteAccount />
       </div>
     </main>
   );

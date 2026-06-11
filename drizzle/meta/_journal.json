@@ -8,6 +8,13 @@
       "when": 1781166753649,
       "tag": "0000_violet_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781178628910,
+      "tag": "0001_normal_wendell_vaughn",
+      "breakpoints": true
     }
   ]
 }

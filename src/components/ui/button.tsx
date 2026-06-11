@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
 };
 
@@ -14,6 +14,8 @@ const variants = {
   secondary:
     "border border-emerald text-emerald hover:bg-emerald/10 active:bg-emerald/20",
   ghost: "text-ink-muted hover:text-ink hover:bg-white/5",
+  // Actions destructives
+  danger: "border border-danger/60 text-danger hover:bg-danger/10",
 };
 
 const sizes = {
@@ -40,7 +42,7 @@ export function Button({
 }
 
 type LinkButtonProps = React.ComponentProps<typeof Link> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
 };
 

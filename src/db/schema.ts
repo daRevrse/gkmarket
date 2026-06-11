@@ -14,6 +14,7 @@ export const userStatusEnum = pgEnum("user_status", [
   "active",
   "suspended",
   "banned",
+  "deleted",
 ]);
 
 export const profileStatusEnum = pgEnum("profile_status", [
@@ -32,10 +33,30 @@ export const users = pgTable("users", {
   fullName: text("full_name"),
   isAdmin: boolean("is_admin").notNull().default(false),
   status: userStatusEnum("status").notNull().default("active"),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Archive des comptes supprimés : la ligne `users` est anonymisée (l'id reste
+// pour l'intégrité des commandes futures), l'identité est conservée ici comme
+// trace (litiges, obligations légales, lutte anti-fraude).
+export const userArchives = pgTable("user_archives", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  firebaseUid: text("firebase_uid").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  fullName: text("full_name"),
+  hadSellerProfile: boolean("had_seller_profile").notNull().default(false),
+  hadCourierProfile: boolean("had_courier_profile").notNull().default(false),
+  archivedAt: timestamp("archived_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });

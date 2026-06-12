@@ -1,6 +1,6 @@
-import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getStorage } from "firebase-admin/storage";
+import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+import { getAuth, type Auth } from "firebase-admin/auth";
+import { getStorage, type Storage } from "firebase-admin/storage";
 
 // Deux modes :
 // - Émulateur local : FIREBASE_AUTH_EMULATOR_HOST est défini, aucune clé requise.
@@ -28,6 +28,22 @@ function getAdminApp() {
   });
 }
 
-const adminApp = getAdminApp();
-export const adminAuth = getAuth(adminApp);
-export const adminStorage = getStorage(adminApp);
+// Initialisation paresseuse : `next build` importe les modules serveur sans
+// les exécuter (« Collecting page data ») — exiger les clés à ce moment-là
+// ferait échouer tout build sans environnement (CI, Vercel). L'app n'est
+// donc créée qu'au premier accès réel, à l'exécution.
+let app: App | undefined;
+
+function lazy<T extends object>(factory: (app: App) => T): T {
+  let instance: T | undefined;
+  return new Proxy({} as T, {
+    get(_, prop) {
+      instance ??= factory((app ??= getAdminApp()));
+      const value = instance[prop as keyof T];
+      return typeof value === "function" ? value.bind(instance) : value;
+    },
+  });
+}
+
+export const adminAuth: Auth = lazy((app) => getAuth(app));
+export const adminStorage: Storage = lazy((app) => getStorage(app));

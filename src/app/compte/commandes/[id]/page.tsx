@@ -1,11 +1,19 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { orderItems, orders, sellerProfiles } from "@/db/schema";
+import {
+  courierProfiles,
+  deliveries,
+  orderItems,
+  orders,
+  sellerProfiles,
+  users,
+} from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
+import { deliveryStatusLabels, vehicleTypeLabels } from "@/lib/deliveries";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
 import { OrderActions } from "./order-actions";
@@ -31,6 +39,25 @@ export default async function CommandeDetailPage({
     .select()
     .from(orderItems)
     .where(eq(orderItems.orderId, id));
+
+  // Course de livraison en cours ou effectuée (les refus ne concernent que
+  // le vendeur).
+  const [deliveryRow] = await db
+    .select({
+      delivery: deliveries,
+      courierName: users.fullName,
+      vehicleType: courierProfiles.vehicleType,
+    })
+    .from(deliveries)
+    .innerJoin(courierProfiles, eq(courierProfiles.id, deliveries.courierId))
+    .innerJoin(users, eq(users.id, courierProfiles.userId))
+    .where(
+      and(
+        eq(deliveries.orderId, id),
+        inArray(deliveries.status, ["accepted", "picked_up", "delivered"]),
+      ),
+    )
+    .limit(1);
 
   const status = orderStatusLabels[row.order.status] ?? {
     label: row.order.status,
@@ -114,6 +141,63 @@ export default async function CommandeDetailPage({
         </Card>
 
         <OrderActions orderId={row.order.id} status={row.order.status} />
+
+        {deliveryRow ? (
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-lg font-bold">
+                Suivi de livraison
+              </h2>
+              <Badge
+                variant={
+                  deliveryStatusLabels[deliveryRow.delivery.status]?.variant
+                }
+              >
+                {deliveryStatusLabels[deliveryRow.delivery.status]?.label ??
+                  deliveryRow.delivery.status}
+              </Badge>
+            </div>
+            <p className="mt-2 text-sm">
+              Livreur : {deliveryRow.courierName ?? "—"} (
+              {vehicleTypeLabels[deliveryRow.vehicleType] ??
+                deliveryRow.vehicleType}
+              )
+            </p>
+            <ul className="mt-2 text-sm text-ink-muted">
+              {deliveryRow.delivery.acceptedAt ? (
+                <li>
+                  Course acceptée le{" "}
+                  {deliveryRow.delivery.acceptedAt.toLocaleString("fr-FR")}
+                </li>
+              ) : null}
+              {deliveryRow.delivery.pickedUpAt ? (
+                <li>
+                  Colis récupéré chez le vendeur le{" "}
+                  {deliveryRow.delivery.pickedUpAt.toLocaleString("fr-FR")}
+                </li>
+              ) : null}
+              {deliveryRow.delivery.deliveredAt ? (
+                <li>
+                  Colis remis
+                  {deliveryRow.delivery.recipientName
+                    ? ` à ${deliveryRow.delivery.recipientName}`
+                    : ""}{" "}
+                  le {deliveryRow.delivery.deliveredAt.toLocaleString("fr-FR")}
+                </li>
+              ) : null}
+            </ul>
+            {deliveryRow.delivery.proofPhotoPath ? (
+              <a
+                href={`/api/proofs?path=${encodeURIComponent(deliveryRow.delivery.proofPhotoPath)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-block rounded-md border border-emerald px-3 py-1.5 text-sm text-emerald hover:bg-emerald/10"
+              >
+                Photo du colis remis
+              </a>
+            ) : null}
+          </Card>
+        ) : null}
 
         <Card>
           <h2 className="font-display text-lg font-bold">

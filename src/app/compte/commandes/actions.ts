@@ -1,9 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { orderItems, orders, products, sellerProfiles } from "@/db/schema";
+import {
+  courierProfiles,
+  deliveries,
+  orderItems,
+  orders,
+  products,
+  sellerProfiles,
+} from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { commissionFcfa } from "@/lib/pricing";
@@ -13,6 +20,7 @@ function revalidateOrderPaths(orderId: string) {
   revalidatePath("/compte/commandes");
   revalidatePath(`/compte/commandes/${orderId}`);
   revalidatePath("/vendeur/commandes");
+  revalidatePath("/livreur/courses");
   revalidatePath("/compte/wallet");
 }
 
@@ -97,6 +105,17 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
       });
     }
 
+    // Une course encore non récupérée est annulée avec la commande.
+    await tx
+      .update(deliveries)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(
+        and(
+          eq(deliveries.orderId, order.id),
+          inArray(deliveries.status, ["proposed", "accepted"]),
+        ),
+      );
+
     // Re-stock des articles dont le produit existe encore
     const items = await tx
       .select()
@@ -121,8 +140,10 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
 }
 
 /**
- * Confirmation de réception par l'acheteur : déblocage de l'Escrow et
- * versement au vendeur, net de commission (MVP n°118, 121).
+ * Confirmation de réception par l'acheteur : déblocage de l'Escrow,
+ * versement au vendeur net de commission (MVP n°118, 121) et versement
+ * des frais de livraison au livreur de la course (itération 6). Sans
+ * livreur (auto-livraison), les frais restent à la plateforme.
  */
 export async function confirmDelivery(
   orderId: string,
@@ -142,6 +163,19 @@ export async function confirmDelivery(
     .where(eq(sellerProfiles.id, order.sellerId))
     .limit(1);
   if (!seller) return { error: "Vendeur introuvable." };
+
+  // Course active : le livreur a récupéré (voire remis) le colis.
+  const [deliveryRow] = await db
+    .select({ delivery: deliveries, courierUserId: courierProfiles.userId })
+    .from(deliveries)
+    .innerJoin(courierProfiles, eq(courierProfiles.id, deliveries.courierId))
+    .where(
+      and(
+        eq(deliveries.orderId, order.id),
+        inArray(deliveries.status, ["picked_up", "delivered"]),
+      ),
+    )
+    .limit(1);
 
   const commission = commissionFcfa(order.subtotalFcfa);
   const sellerNet = order.subtotalFcfa - commission;
@@ -166,6 +200,32 @@ export async function confirmDelivery(
       orderId: order.id,
       description: `Vente ${order.number} — ${formatFcfa(order.subtotalFcfa)} moins ${formatFcfa(commission)} de commission (5 %)`,
     });
+
+    if (deliveryRow) {
+      // La confirmation de l'acheteur clôt la course si le livreur n'avait
+      // pas encore enregistré la remise.
+      if (deliveryRow.delivery.status === "picked_up") {
+        await tx
+          .update(deliveries)
+          .set({
+            status: "delivered",
+            deliveredAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(deliveries.id, deliveryRow.delivery.id));
+      }
+
+      const courierWallet = await getOrCreateWallet(
+        deliveryRow.courierUserId,
+        tx,
+      );
+      await applyWalletMovement(tx, courierWallet.id, {
+        type: "delivery_income",
+        amountFcfa: deliveryRow.delivery.feeFcfa,
+        orderId: order.id,
+        description: `Course ${order.number} — frais de livraison`,
+      });
+    }
   });
 
   revalidateOrderPaths(orderId);

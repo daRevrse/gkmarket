@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { DeleteAccount } from "@/components/auth/delete-account";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Badge } from "@/components/ui/badge";
-import { Button, LinkButton } from "@/components/ui/button";
+import { LinkButton } from "@/components/ui/button";
 import { Card, CardSection } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -81,19 +81,37 @@ export default async function ComptePage() {
             <CardSection className="flex items-center justify-between p-4">
               <span className="font-medium">Livreur</span>
               {user.courierProfile ? (
-                <Badge
-                  variant={
+                <Link
+                  href={
                     user.courierProfile.status === "approved"
-                      ? "verified"
-                      : "neutral"
+                      ? "/livreur/courses"
+                      : "/compte/devenir-livreur"
                   }
+                  className="flex items-center gap-2"
                 >
-                  {profileStatusLabel[user.courierProfile.status]}
-                </Badge>
+                  <Badge
+                    variant={
+                      user.courierProfile.status === "approved"
+                        ? "verified"
+                        : "neutral"
+                    }
+                  >
+                    {profileStatusLabel[user.courierProfile.status]}
+                  </Badge>
+                  <span className="text-sm text-emerald">
+                    {user.courierProfile.status === "approved"
+                      ? "Mes courses →"
+                      : "Détails →"}
+                  </span>
+                </Link>
               ) : (
-                <Button size="sm" variant="secondary" disabled>
-                  Bientôt disponible
-                </Button>
+                <LinkButton
+                  href="/compte/devenir-livreur"
+                  size="sm"
+                  variant="secondary"
+                >
+                  Devenir livreur
+                </LinkButton>
               )}
             </CardSection>
           </div>

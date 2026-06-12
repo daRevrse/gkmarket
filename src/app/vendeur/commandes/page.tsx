@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { orderItems, orders, users } from "@/db/schema";
-import { inArray } from "drizzle-orm";
+import { courierProfiles, deliveries, orderItems, orders, users } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
+import { deliveryStatusLabels } from "@/lib/deliveries";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
 import { SellerOrderActions } from "./seller-order-actions";
@@ -23,18 +23,40 @@ export default async function VendeurCommandesPage() {
     .where(eq(orders.sellerId, user!.sellerProfile!.id))
     .orderBy(desc(orders.createdAt));
 
+  const orderIds = rows.map((row) => row.order.id);
   const items =
-    rows.length > 0
+    orderIds.length > 0
       ? await db
           .select()
           .from(orderItems)
-          .where(
-            inArray(
-              orderItems.orderId,
-              rows.map((row) => row.order.id),
-            ),
-          )
+          .where(inArray(orderItems.orderId, orderIds))
       : [];
+
+  // Dernière course par commande (les refus restent visibles pour proposer
+  // la course à un autre livreur).
+  const courierUsers = users;
+  const deliveryRows =
+    orderIds.length > 0
+      ? await db
+          .select({
+            delivery: deliveries,
+            courierName: courierUsers.fullName,
+          })
+          .from(deliveries)
+          .innerJoin(courierProfiles, eq(courierProfiles.id, deliveries.courierId))
+          .innerJoin(courierUsers, eq(courierUsers.id, courierProfiles.userId))
+          .where(inArray(deliveries.orderId, orderIds))
+          .orderBy(desc(deliveries.createdAt))
+      : [];
+  const latestDelivery = new Map<
+    string,
+    (typeof deliveryRows)[number]
+  >();
+  for (const row of deliveryRows) {
+    if (!latestDelivery.has(row.delivery.orderId)) {
+      latestDelivery.set(row.delivery.orderId, row);
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
@@ -49,8 +71,8 @@ export default async function VendeurCommandesPage() {
           Commandes reçues
         </h1>
         <p className="mt-1 text-ink-muted">
-          Le traitement des commandes (préparation, expédition) s&apos;activera
-          avec le paiement Escrow.
+          Préparez vos commandes payées, puis demandez un livreur (ou expédiez
+          vous-même). Les fonds Escrow sont versés à la réception.
         </p>
       </div>
 
@@ -67,6 +89,12 @@ export default async function VendeurCommandesPage() {
             const orderLines = items.filter(
               (item) => item.orderId === order.id,
             );
+            const deliveryRow = latestDelivery.get(order.id) ?? null;
+            const deliveryStatus = deliveryRow
+              ? deliveryStatusLabels[deliveryRow.delivery.status] ?? {
+                  label: deliveryRow.delivery.status,
+                }
+              : null;
             return (
               <Card key={order.id}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -100,9 +128,26 @@ export default async function VendeurCommandesPage() {
                     </li>
                   ))}
                 </ul>
+
+                {deliveryRow && deliveryStatus ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3 text-sm">
+                    <Badge variant={deliveryStatus.variant}>
+                      {deliveryStatus.label}
+                    </Badge>
+                    <span className="text-ink-muted">
+                      Livreur : {deliveryRow.courierName ?? "—"}
+                      {deliveryRow.delivery.status === "refused" &&
+                      deliveryRow.delivery.refusalReason
+                        ? ` — motif : ${deliveryRow.delivery.refusalReason}`
+                        : ""}
+                    </span>
+                  </div>
+                ) : null}
+
                 <SellerOrderActions
                   orderId={order.id}
                   status={order.status}
+                  deliveryStatus={deliveryRow?.delivery.status ?? null}
                 />
               </Card>
             );

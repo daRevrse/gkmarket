@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -93,15 +94,32 @@ export const sellerProfiles = pgTable("seller_profiles", {
     .defaultNow(),
 });
 
-// Casquette livreur (cf. docs/CHANGEMENTS.md §1) — détails (zone, véhicule, gains)
-// au module Livraison.
+export const vehicleTypeEnum = pgEnum("vehicle_type", [
+  "moto",
+  "tricycle",
+  "voiture",
+  "camionnette",
+]);
+
+// Casquette livreur (cf. docs/CHANGEMENTS.md §1) : candidature avec KYC
+// (pièce d'identité dans Firebase Storage, comme les vendeurs), validée par
+// un admin. La zone desservie sert à la proposition intelligente de livreurs.
 export const courierProfiles = pgTable("courier_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
+  vehicleType: vehicleTypeEnum("vehicle_type").notNull().default("moto"),
+  city: text("city").notNull().default("Lomé"),
+  district: text("district"),
+  // Quartiers / zones desservis, en texte libre (« Bè, Tokoin, Agoè… »)
+  serviceArea: text("service_area"),
+  contactPhone: text("contact_phone"),
+  idDocumentPath: text("id_document_path").notNull(),
   status: profileStatusEnum("status").notNull().default("pending"),
+  rejectionReason: text("rejection_reason"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -267,11 +285,12 @@ export const wallets = pgTable("wallets", {
 });
 
 export const walletTransactionTypeEnum = pgEnum("wallet_transaction_type", [
-  "recharge",      // dépôt Mobile Money / carte (simulé en local)
-  "withdrawal",    // retrait vers Mobile Money (simulé en local)
-  "order_payment", // paiement d'une commande (fonds bloqués en Escrow)
-  "order_refund",  // remboursement après annulation
-  "sale_income",   // versement vendeur après livraison (net de commission)
+  "recharge",        // dépôt Mobile Money / carte (simulé en local)
+  "withdrawal",      // retrait vers Mobile Money (simulé en local)
+  "order_payment",   // paiement d'une commande (fonds bloqués en Escrow)
+  "order_refund",    // remboursement après annulation
+  "sale_income",     // versement vendeur après livraison (net de commission)
+  "delivery_income", // versement livreur après livraison (frais de livraison)
 ]);
 
 // Montants signés : crédit positif, débit négatif.
@@ -290,6 +309,57 @@ export const walletTransactions = pgTable("wallet_transactions", {
     .notNull()
     .defaultNow(),
 });
+
+export const deliveryStatusEnum = pgEnum("delivery_status", [
+  "proposed",  // proposée par le vendeur à un livreur précis
+  "accepted",  // acceptée par le livreur
+  "refused",   // refusée — le vendeur peut proposer à un autre livreur
+  "picked_up", // colis récupéré chez le vendeur (commande → expédiée)
+  "delivered", // colis remis au destinataire (preuve enregistrée)
+  "cancelled", // course annulée (commande annulée…)
+]);
+
+// Courses de livraison (itération 6, cf. docs/CHANGEMENTS.md §1) : le vendeur
+// propose la course à un livreur choisi parmi une liste classée ; le livreur
+// accepte ou refuse. Une commande ne peut avoir qu'une course active à la
+// fois (index unique partiel), mais garde l'historique des refus.
+export const deliveries = pgTable(
+  "deliveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellerProfiles.id),
+    courierId: uuid("courier_id")
+      .notNull()
+      .references(() => courierProfiles.id),
+    status: deliveryStatusEnum("status").notNull().default("proposed"),
+    // Gain du livreur : les frais de livraison payés par l'acheteur,
+    // versés au wallet du livreur au déblocage de l'Escrow.
+    feeFcfa: integer("fee_fcfa").notNull(),
+    refusalReason: text("refusal_reason"),
+    // Preuve de remise (MVP n°175, 177-178)
+    recipientName: text("recipient_name"),
+    proofPhotoPath: text("proof_photo_path"),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    pickedUpAt: timestamp("picked_up_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("deliveries_active_order_idx")
+      .on(table.orderId)
+      .where(sql`${table.status} NOT IN ('refused', 'cancelled')`),
+  ],
+);
 
 // Adresses de livraison (MVP n°12 — ajout/modification/suppression)
 export const addresses = pgTable("addresses", {

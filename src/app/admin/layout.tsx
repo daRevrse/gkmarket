@@ -25,6 +25,12 @@ export default async function AdminLayout({
               >
                 Vendeurs
               </Link>
+              <Link
+                href="/admin/livreurs"
+                className="text-ink-muted transition-colors hover:text-ink"
+              >
+                Livreurs
+              </Link>
             </nav>
           </div>
           <Link

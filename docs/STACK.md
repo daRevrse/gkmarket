@@ -131,6 +131,35 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
 - À venir : déblocage automatique après délai (n°119, module Litiges),
   remboursement sur litige (n°120), factures PDF (n°122-124).
 
+## Livraison (conception — itération 6)
+
+- **Casquette livreur** (cf. CHANGEMENTS.md §1) : candidature sur
+  `/compte/devenir-livreur` (véhicule, zone desservie, pièce d'identité KYC),
+  validée par un admin sur `/admin/livreurs`. Mêmes mécanismes que les vendeurs.
+- **Proposition intelligente** : sur une commande payée, le vendeur ouvre
+  « Demander un livreur » — les livreurs approuvés sont **classés** (même
+  ville que la livraison +2, quartier dans la zone desservie +1, départage
+  par charge de courses actives). Le vendeur choisit ; le mieux classé est
+  marqué « Recommandé ».
+- **Cycle de course** : `proposed` → `accepted` (les coordonnées complètes du
+  destinataire ne sont dévoilées qu'après acceptation) → `picked_up` (la
+  commande passe automatiquement en « Expédiée ») → `delivered` avec
+  **preuve de remise** : nom du réceptionnaire, photo (Storage `proofs/`,
+  lecture via `/api/proofs` réservée aux parties prenantes), horodatage.
+- **Refus de course** : possible avant récupération, motif visible par le
+  vendeur, qui re-propose à un autre livreur (le refusant est exclu) ou
+  expédie lui-même. Une seule course active par commande (index unique
+  partiel sur `deliveries`).
+- **Rémunération** : à la confirmation de réception par l'acheteur, le
+  livreur reçoit les **frais de livraison** de la commande sur son wallet
+  (`delivery_income`), dans la même transaction Escrow que le versement
+  vendeur. Sans livreur (auto-livraison), les frais restent à la plateforme.
+- Annulation de commande : la course non récupérée est annulée avec elle.
+- À venir : vrai calcul des frais (poids/distance/zone, n°170-174),
+  signature électronique (n°176), notifications, litiges livraison.
+- Compte livreur de test local : `livreur@gkmarket.tg` / `livreurtest123`
+  (« Koffi Livreur », moto, approuvé).
+
 ## Administration
 
 - L'admin est un booléen `is_admin` sur `users` ; promotion manuelle en SQL :

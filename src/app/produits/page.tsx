@@ -64,8 +64,17 @@ export default async function CataloguePage({
     ? allCategories.filter((c) => c.parentId === selectedParent.id)
     : [];
 
-  // Filtres
-  const filters: SQL[] = [eq(products.status, "published")];
+  // Filtres — seules les boutiques approuvées (non suspendues) sont visibles
+  const filters: SQL[] = [
+    eq(products.status, "published"),
+    inArray(
+      products.sellerId,
+      db
+        .select({ id: sellerProfiles.id })
+        .from(sellerProfiles)
+        .where(eq(sellerProfiles.status, "approved")),
+    ),
+  ];
   if (params.q?.trim()) {
     const pattern = `%${params.q.trim()}%`;
     filters.push(

@@ -24,7 +24,13 @@ export default async function ProduitPage({
     .innerJoin(categories, eq(categories.id, products.categoryId))
     .where(eq(products.id, id))
     .limit(1);
-  if (!row || row.products.status !== "published") notFound();
+  // Boutique suspendue par la modération : produits invisibles.
+  if (
+    !row ||
+    row.products.status !== "published" ||
+    row.seller_profiles.status !== "approved"
+  )
+    notFound();
 
   const product = row.products;
   const seller = row.seller_profiles;

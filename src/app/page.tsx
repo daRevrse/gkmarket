@@ -35,7 +35,13 @@ export default async function Home() {
         eq(productImages.position, 0),
       ),
     )
-    .leftJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
+    .innerJoin(
+      sellerProfiles,
+      and(
+        eq(sellerProfiles.id, products.sellerId),
+        eq(sellerProfiles.status, "approved"),
+      ),
+    )
     .where(eq(products.status, "published"))
     .orderBy(desc(products.createdAt))
     .limit(8);

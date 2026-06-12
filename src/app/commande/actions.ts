@@ -11,6 +11,7 @@ import {
   orders,
   productImages,
   products,
+  sellerProfiles,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
@@ -47,9 +48,11 @@ export async function createOrder(
       item: cartItems,
       product: products,
       imageUrl: productImages.url,
+      sellerStatus: sellerProfiles.status,
     })
     .from(cartItems)
     .innerJoin(products, eq(products.id, cartItems.productId))
+    .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
     .leftJoin(
       productImages,
       and(
@@ -62,7 +65,7 @@ export async function createOrder(
   if (lines.length === 0) return { error: "Votre panier est vide." };
 
   for (const line of lines) {
-    if (line.product.status !== "published") {
+    if (line.product.status !== "published" || line.sellerStatus !== "approved") {
       return { error: `« ${line.product.title} » n'est plus disponible — retirez-le du panier.` };
     }
     if (line.item.quantity > line.product.stock) {

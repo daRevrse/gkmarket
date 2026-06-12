@@ -18,25 +18,24 @@ export default async function AdminLayout({
             <Link href="/admin" className="font-display text-lg font-extrabold">
               GK Market <span className="text-gold">Admin</span>
             </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link
-                href="/admin/vendeurs"
-                className="text-ink-muted transition-colors hover:text-ink"
-              >
-                Vendeurs
-              </Link>
-              <Link
-                href="/admin/livreurs"
-                className="text-ink-muted transition-colors hover:text-ink"
-              >
-                Livreurs
-              </Link>
-              <Link
-                href="/admin/litiges"
-                className="text-ink-muted transition-colors hover:text-ink"
-              >
-                Litiges
-              </Link>
+            <nav className="flex flex-wrap items-center gap-4 text-sm">
+              {[
+                { href: "/admin/utilisateurs", label: "Utilisateurs" },
+                { href: "/admin/vendeurs", label: "Vendeurs" },
+                { href: "/admin/livreurs", label: "Livreurs" },
+                { href: "/admin/produits", label: "Produits" },
+                { href: "/admin/commandes", label: "Commandes" },
+                { href: "/admin/litiges", label: "Litiges" },
+                { href: "/admin/financier", label: "Financier" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-ink-muted transition-colors hover:text-ink"
+                >
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
           <Link

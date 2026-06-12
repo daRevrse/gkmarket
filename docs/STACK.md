@@ -193,6 +193,29 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
 - Interface sous `/admin` (garde serveur dans le layout). File de validation
   des vendeurs : approuver / refuser avec motif (visible par le demandeur,
   re-soumission possible après refus).
+
+### Module admin complet (itération 8)
+
+- **Dashboard** (`/admin`) : KPIs (utilisateurs actifs, GMV, AOV, commissions,
+  Escrow bloqué, passif wallets, taux de litiges), commandes par statut et
+  tâches en attente (validations, litiges) avec liens directs.
+- **Utilisateurs** : recherche (nom/email/téléphone), filtre statut,
+  suspension / réactivation / bannissement (pénalités n°209-211). Un compte
+  non actif est rejeté par `getCurrentUser` — session inopérante aussitôt.
+  Garde-fous : ni soi-même, ni un autre admin.
+- **Boutiques** : suspension/réactivation depuis `/admin/vendeurs` — les
+  produits disparaissent de tout le parcours public (catalogue, fiche,
+  panier, checkout exigent une boutique `approved`).
+- **Produits** (`/admin/produits`) : modération — retrait du catalogue
+  (archivage) et republication ; le vendeur peut corriger et republier.
+- **Commandes** (`/admin/commandes`) : liste filtrable, annulation manuelle
+  avec remboursement wallet intégral + re-stock + annulation des courses
+  (une commande en litige se traite via l'arbitrage).
+- **Financier** (`/admin/financier`) : Escrow, commissions, remboursements,
+  recharges/retraits cumulés, passif wallets et 30 derniers mouvements.
+- À venir : graphiques (n°227-228), paramètres dynamiques (n°267-274),
+  rapports/exports (n°278-283), gestion des catégories (n°264-266), pages
+  CGU/CGV (n°262).
 - Compte admin de test local : `admin@gkmarket.tg` / `admintest123`.
 - Compte vendeur de test local : `+228 99 88 77 66` / `123456789`
   (boutique « Encart Électronique », approuvée).

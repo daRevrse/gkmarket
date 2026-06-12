@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sellerProfiles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
@@ -50,5 +50,40 @@ export async function rejectSeller(
     .where(eq(sellerProfiles.id, profileId));
 
   revalidatePath("/admin/vendeurs");
+  return {};
+}
+
+/**
+ * Suspension de boutique (MVP n°210, 242) : les produits disparaissent du
+ * catalogue (les requêtes publiques exigent une boutique approuvée) et
+ * l'espace vendeur devient inaccessible. Réversible.
+ */
+export async function setSellerSuspension(
+  profileId: string,
+  suspended: boolean,
+): Promise<{ error?: string }> {
+  if (!(await requireAdmin())) return { error: "Accès refusé." };
+
+  const updated = await db
+    .update(sellerProfiles)
+    .set({
+      status: suspended ? "suspended" : "approved",
+      reviewedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(sellerProfiles.id, profileId),
+        eq(sellerProfiles.status, suspended ? "approved" : "suspended"),
+      ),
+    )
+    .returning({ id: sellerProfiles.id });
+  if (updated.length === 0) {
+    return { error: "Transition impossible (statut déjà modifié ?)." };
+  }
+
+  revalidatePath("/admin/vendeurs");
+  revalidatePath("/produits");
+  revalidatePath("/");
   return {};
 }

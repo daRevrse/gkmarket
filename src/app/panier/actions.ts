@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cartItems, products } from "@/db/schema";
+import { cartItems, products, sellerProfiles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
 type ActionResult = { error?: string; authRequired?: boolean };
@@ -19,12 +19,16 @@ export async function addToCart(
   const user = await getCurrentUser();
   if (!user) return { authRequired: true };
 
-  const [product] = await db
-    .select()
+  const [row] = await db
+    .select({ product: products, sellerStatus: sellerProfiles.status })
     .from(products)
+    .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
     .where(and(eq(products.id, productId), eq(products.status, "published")))
     .limit(1);
-  if (!product) return { error: "Produit indisponible." };
+  if (!row || row.sellerStatus !== "approved") {
+    return { error: "Produit indisponible." };
+  }
+  const product = row.product;
   if (product.stock === 0) return { error: "Produit en rupture de stock." };
   if (!Number.isInteger(quantity) || quantity < 1) {
     return { error: "Quantité invalide." };

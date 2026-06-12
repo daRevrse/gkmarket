@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveSeller, rejectSeller } from "./actions";
+import { approveSeller, rejectSeller, setSellerSuspension } from "./actions";
 import { FormError } from "@/components/auth/auth-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,6 +113,32 @@ export function ReviewCard({ application }: { application: SellerApplication }) 
             ) : null}
           </div>
 
+          {application.status === "approved" ? (
+            <div className="mt-2 flex flex-col items-end gap-2">
+              <FormError message={error} />
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={loading}
+                onClick={() => run(() => setSellerSuspension(application.id, true))}
+              >
+                Suspendre la boutique
+              </Button>
+            </div>
+          ) : null}
+          {application.status === "suspended" ? (
+            <div className="mt-2 flex flex-col items-end gap-2">
+              <FormError message={error} />
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={loading}
+                onClick={() => run(() => setSellerSuspension(application.id, false))}
+              >
+                Réactiver la boutique
+              </Button>
+            </div>
+          ) : null}
           {application.status === "pending" ? (
             <div className="mt-2 flex flex-col items-end gap-3">
               <FormError message={error} />

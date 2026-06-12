@@ -57,6 +57,13 @@
       "when": 1781253079938,
       "tag": "0007_tricky_micromacro",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781272982522,
+      "tag": "0008_heavy_sprite",
+      "breakpoints": true
     }
   ]
 }

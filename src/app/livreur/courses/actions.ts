@@ -3,8 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { deliveries, orders } from "@/db/schema";
+import { deliveries, orders, sellerProfiles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
+
+/** Commande et parties prenantes d'une course (pour les notifications). */
+async function deliveryContext(orderId: string) {
+  const [row] = await db
+    .select({
+      orderId: orders.id,
+      number: orders.number,
+      buyerId: orders.buyerId,
+      sellerUserId: sellerProfiles.userId,
+    })
+    .from(orders)
+    .innerJoin(sellerProfiles, eq(sellerProfiles.id, orders.sellerId))
+    .where(eq(orders.id, orderId))
+    .limit(1);
+  return row ?? null;
+}
 
 function revalidateDeliveryPaths() {
   revalidatePath("/livreur/courses");
@@ -45,6 +62,16 @@ export async function acceptDelivery(
     return { error: "Cette course n'est plus en attente d'acceptation." };
   }
 
+  const context = await deliveryContext(own.delivery.orderId);
+  if (context) {
+    await notify(context.sellerUserId, {
+      type: "delivery_accepted",
+      title: `Course ${context.number} acceptée`,
+      body: "Le livreur passera récupérer le colis.",
+      link: "/vendeur/commandes",
+    });
+  }
+
   revalidateDeliveryPaths();
   return {};
 }
@@ -77,6 +104,17 @@ export async function refuseDelivery(
     .returning({ id: deliveries.id });
   if (updated.length === 0) {
     return { error: "Cette course ne peut plus être refusée." };
+  }
+
+  const context = await deliveryContext(own.delivery.orderId);
+  if (context) {
+    await notify(context.sellerUserId, {
+      type: "delivery_refused",
+      title: `Course ${context.number} refusée`,
+      body: `${reason?.trim() ? `Motif : ${reason.trim()}. ` : ""}Proposez la course à un autre livreur ou expédiez vous-même.`,
+      link: "/vendeur/commandes",
+      email: true,
+    });
   }
 
   revalidateDeliveryPaths();
@@ -127,6 +165,18 @@ export async function markPickedUp(
   }
   if (!ok) return { error: "Cette course n'est pas en attente de récupération." };
 
+  // L'acheteur sait que sa commande est en route (MVP n°305).
+  const context = await deliveryContext(own.delivery.orderId);
+  if (context) {
+    await notify(context.buyerId, {
+      type: "order_shipped",
+      title: `Commande ${context.number} en cours de livraison`,
+      body: "Le livreur a récupéré votre colis chez le vendeur.",
+      link: `/compte/commandes/${context.orderId}`,
+      email: true,
+    });
+  }
+
   revalidateDeliveryPaths();
   return {};
 }
@@ -167,6 +217,17 @@ export async function markDelivered(
     .returning({ id: deliveries.id });
   if (updated.length === 0) {
     return { error: "Cette course n'est pas en cours de livraison." };
+  }
+
+  const context = await deliveryContext(own.delivery.orderId);
+  if (context) {
+    await notify(context.buyerId, {
+      type: "order_delivered_proof",
+      title: `Colis ${context.number} remis`,
+      body: `Remis à ${input.recipientName.trim()}. Confirmez la réception pour libérer les fonds Escrow.`,
+      link: `/compte/commandes/${context.orderId}`,
+      email: true,
+    });
   }
 
   revalidateDeliveryPaths();

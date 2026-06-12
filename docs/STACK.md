@@ -186,6 +186,29 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
 - À venir : pénalités vendeur (n°209-211, avec la gestion utilisateurs
   admin), notifications (module Communication), garantie post-livraison.
 
+## Communication (conception — itération 9)
+
+- **Notifications in-app** : table `notifications` (une ligne par
+  destinataire et par événement), créées par `src/lib/notify.ts` **après**
+  la transaction métier — jamais bloquantes. Cloche avec compteur non-lus
+  dans l'en-tête public, liste sur `/compte/notifications` (clic = lu +
+  navigation vers la ressource).
+- **Emails transactionnels** (MVP n°221) : `src/lib/email.ts` — **Brevo**
+  en production (`BREVO_API_KEY`), **simulé en local** comme les SMS et le
+  Mobile Money. Chaque envoi est journalisé dans `email_outbox`
+  (simulated/sent/failed) : audit en prod, visualisation en dev. Les comptes
+  inscrits par téléphone (sans email) reçoivent uniquement l'in-app.
+- **Déclencheurs** sur tout le cycle de vie : commande créée/payée/expédiée/
+  livrée/annulée, course proposée/acceptée/refusée/récupérée/remise,
+  litige ouvert/message/résolu (parties + admins), validations vendeur et
+  livreur, interventions admin. Les événements critiques sont doublés d'un
+  email.
+- **Vérification email** (n°6, politique douce) : lien Firebase envoyé à
+  l'inscription, bandeau de rappel sur `/compte` avec renvoi — sans blocage
+  fonctionnel.
+- À venir : notifications push FCM (Phase 3), chat temps réel hors litige
+  (module Communication Phase 2), digests et préférences de notification.
+
 ## Administration
 
 - L'admin est un booléen `is_admin` sur `users` ; promotion manuelle en SQL :

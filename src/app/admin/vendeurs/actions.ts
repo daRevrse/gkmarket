@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sellerProfiles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -16,7 +17,7 @@ export async function approveSeller(
 ): Promise<{ error?: string }> {
   if (!(await requireAdmin())) return { error: "Accès refusé." };
 
-  await db
+  const [profile] = await db
     .update(sellerProfiles)
     .set({
       status: "approved",
@@ -24,7 +25,19 @@ export async function approveSeller(
       reviewedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(sellerProfiles.id, profileId));
+    .where(eq(sellerProfiles.id, profileId))
+    .returning({ userId: sellerProfiles.userId, shopName: sellerProfiles.shopName });
+
+  // MVP n°310 — validation du compte vendeur.
+  if (profile) {
+    await notify(profile.userId, {
+      type: "seller_approved",
+      title: `Boutique « ${profile.shopName} » approuvée 🎉`,
+      body: "Vous pouvez publier vos produits et recevoir des commandes.",
+      link: "/vendeur/produits",
+      email: true,
+    });
+  }
 
   revalidatePath("/admin/vendeurs");
   return {};
@@ -39,7 +52,7 @@ export async function rejectSeller(
     return { error: "Indiquez le motif du refus (visible par le vendeur)." };
   }
 
-  await db
+  const [profile] = await db
     .update(sellerProfiles)
     .set({
       status: "rejected",
@@ -47,7 +60,18 @@ export async function rejectSeller(
       reviewedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(sellerProfiles.id, profileId));
+    .where(eq(sellerProfiles.id, profileId))
+    .returning({ userId: sellerProfiles.userId });
+
+  if (profile) {
+    await notify(profile.userId, {
+      type: "seller_rejected",
+      title: "Demande vendeur refusée",
+      body: `Motif : ${reason.trim()}. Vous pouvez corriger et soumettre à nouveau.`,
+      link: "/compte/devenir-vendeur",
+      email: true,
+    });
+  }
 
   revalidatePath("/admin/vendeurs");
   return {};

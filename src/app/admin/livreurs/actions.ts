@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { courierProfiles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -16,7 +17,7 @@ export async function approveCourier(
 ): Promise<{ error?: string }> {
   if (!(await requireAdmin())) return { error: "Accès refusé." };
 
-  await db
+  const [profile] = await db
     .update(courierProfiles)
     .set({
       status: "approved",
@@ -24,7 +25,18 @@ export async function approveCourier(
       reviewedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(courierProfiles.id, profileId));
+    .where(eq(courierProfiles.id, profileId))
+    .returning({ userId: courierProfiles.userId });
+
+  if (profile) {
+    await notify(profile.userId, {
+      type: "courier_approved",
+      title: "Profil livreur approuvé 🎉",
+      body: "Les vendeurs peuvent désormais vous proposer des courses.",
+      link: "/livreur/courses",
+      email: true,
+    });
+  }
 
   revalidatePath("/admin/livreurs");
   return {};
@@ -39,7 +51,7 @@ export async function rejectCourier(
     return { error: "Indiquez le motif du refus (visible par le livreur)." };
   }
 
-  await db
+  const [profile] = await db
     .update(courierProfiles)
     .set({
       status: "rejected",
@@ -47,7 +59,18 @@ export async function rejectCourier(
       reviewedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(courierProfiles.id, profileId));
+    .where(eq(courierProfiles.id, profileId))
+    .returning({ userId: courierProfiles.userId });
+
+  if (profile) {
+    await notify(profile.userId, {
+      type: "courier_rejected",
+      title: "Demande livreur refusée",
+      body: `Motif : ${reason.trim()}. Vous pouvez corriger et soumettre à nouveau.`,
+      link: "/compte/devenir-livreur",
+      email: true,
+    });
+  }
 
   revalidatePath("/admin/livreurs");
   return {};

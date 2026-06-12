@@ -14,7 +14,9 @@ import {
   sellerProfiles,
 } from "@/db/schema";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { disputeReasonLabels, disputeResolutionLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
+import { adminUserIds, notify, notifyMany } from "@/lib/notify";
 import { commissionFcfa } from "@/lib/pricing";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
@@ -121,6 +123,29 @@ export async function openDispute(
     };
   }
 
+  // Vendeur et admins sont prévenus immédiatement (MVP n°191-192, 308).
+  const [seller] = await db
+    .select({ userId: sellerProfiles.userId })
+    .from(sellerProfiles)
+    .where(eq(sellerProfiles.id, order.sellerId))
+    .limit(1);
+  const reasonLabel = disputeReasonLabels[reason] ?? reason;
+  if (seller) {
+    await notify(seller.userId, {
+      type: "dispute_opened",
+      title: `Litige ouvert sur ${order.number}`,
+      body: `Motif : ${reasonLabel}. Les fonds Escrow sont bloqués — répondez à l'acheteur dans le fil du litige.`,
+      link: disputeId ? `/litiges/${disputeId}` : "/vendeur/commandes",
+      email: true,
+    });
+  }
+  await notifyMany(await adminUserIds(), {
+    type: "dispute_opened",
+    title: `Litige à arbitrer — ${order.number}`,
+    body: `Motif : ${reasonLabel}. ${formatFcfa(order.totalFcfa)} bloqués en Escrow.`,
+    link: disputeId ? `/litiges/${disputeId}` : "/admin/litiges",
+  });
+
   revalidateDisputePaths(order.id, disputeId);
   return { disputeId };
 }
@@ -131,9 +156,11 @@ async function getDisputeForUser(disputeId: string, user: CurrentUser) {
     .select({
       dispute: disputes,
       sellerUserId: sellerProfiles.userId,
+      orderNumber: orders.number,
     })
     .from(disputes)
     .innerJoin(sellerProfiles, eq(sellerProfiles.id, disputes.sellerId))
+    .innerJoin(orders, eq(orders.id, disputes.orderId))
     .where(eq(disputes.id, disputeId))
     .limit(1);
   if (!row) return null;
@@ -162,6 +189,20 @@ export async function postDisputeMessage(
     disputeId,
     authorId: user.id,
     body: body.trim(),
+  });
+
+  // Les autres parties voient le nouveau message (MVP n°220, 307).
+  const recipients = new Set<string>([
+    row.dispute.buyerId,
+    row.sellerUserId,
+    ...(user.isAdmin ? [] : await adminUserIds()),
+  ]);
+  recipients.delete(user.id);
+  await notifyMany([...recipients], {
+    type: "dispute_message",
+    title: `Nouveau message — litige ${row.orderNumber}`,
+    body: body.trim().slice(0, 120),
+    link: `/litiges/${disputeId}`,
   });
 
   revalidatePath(`/litiges/${disputeId}`);
@@ -303,6 +344,27 @@ export async function resolveDispute(
       });
     }
   });
+
+  // Notification de la décision aux deux parties (MVP n°207, 309).
+  const resolutionLabel =
+    disputeResolutionLabels[input.resolution] ?? input.resolution;
+  const decision = {
+    type: "dispute_resolved",
+    title: `Litige ${order.number} tranché`,
+    body: `Décision : ${resolutionLabel}${refund > 0 ? ` (${formatFcfa(refund)})` : ""}. ${input.note.trim()}`,
+    link: `/litiges/${disputeId}`,
+    email: true,
+  };
+  await notify(dispute.buyerId, decision);
+  await notify(seller.userId, decision);
+  if (payCourier && deliveryRow) {
+    await notify(deliveryRow.courierUserId, {
+      type: "delivery_paid",
+      title: `Course ${order.number} — gain versé`,
+      body: `${formatFcfa(deliveryRow.delivery.feeFcfa)} versés sur votre wallet (litige tranché).`,
+      link: "/compte/wallet",
+    });
+  }
 
   revalidateDisputePaths(order.id, disputeId);
   return {};

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cartItems } from "@/db/schema";
+import { cartItems, notifications } from "@/db/schema";
 import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -10,12 +10,24 @@ export async function SiteHeader({ query }: { query?: string }) {
   const user = await getCurrentUser();
 
   let cartCount = 0;
+  let unreadCount = 0;
   if (user) {
-    const [row] = await db
-      .select({ count: sql<number>`coalesce(sum(${cartItems.quantity}), 0)::int` })
-      .from(cartItems)
-      .where(eq(cartItems.userId, user.id));
-    cartCount = row?.count ?? 0;
+    const [[cartRow], [unreadRow]] = await Promise.all([
+      db
+        .select({
+          count: sql<number>`coalesce(sum(${cartItems.quantity}), 0)::int`,
+        })
+        .from(cartItems)
+        .where(eq(cartItems.userId, user.id)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(notifications)
+        .where(
+          and(eq(notifications.userId, user.id), isNull(notifications.readAt)),
+        ),
+    ]);
+    cartCount = cartRow?.count ?? 0;
+    unreadCount = unreadRow?.count ?? 0;
   }
 
   return (
@@ -51,6 +63,20 @@ export async function SiteHeader({ query }: { query?: string }) {
               </span>
             ) : null}
           </Link>
+          {user ? (
+            <Link
+              href="/compte/notifications"
+              aria-label="Notifications"
+              className="relative text-sm text-ink-muted transition-colors hover:text-ink"
+            >
+              🔔
+              {unreadCount > 0 ? (
+                <span className="absolute -top-2 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald px-1 text-[10px] font-bold text-navy-deep">
+                  {unreadCount}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
           {user ? (
             <LinkButton href="/compte" variant="secondary" size="sm">
               Mon compte

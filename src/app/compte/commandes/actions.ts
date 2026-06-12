@@ -13,8 +13,18 @@ import {
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { commissionFcfa } from "@/lib/pricing";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
+
+async function sellerUserId(sellerProfileId: string): Promise<string | null> {
+  const [seller] = await db
+    .select({ userId: sellerProfiles.userId })
+    .from(sellerProfiles)
+    .where(eq(sellerProfiles.id, sellerProfileId))
+    .limit(1);
+  return seller?.userId ?? null;
+}
 
 function revalidateOrderPaths(orderId: string) {
   revalidatePath("/compte/commandes");
@@ -66,6 +76,18 @@ export async function payOrder(orderId: string): Promise<{ error?: string }> {
       .where(and(eq(orders.id, order.id), eq(orders.status, "pending_payment")));
   });
   if (!ok) return { error: "Solde insuffisant. Rechargez votre wallet." };
+
+  // Le vendeur sait que les fonds sont sécurisés (MVP n°304).
+  const sellerUid = await sellerUserId(order.sellerId);
+  if (sellerUid) {
+    await notify(sellerUid, {
+      type: "order_paid",
+      title: `Paiement reçu en Escrow — ${order.number}`,
+      body: `${formatFcfa(order.totalFcfa)} sécurisés. Préparez la commande.`,
+      link: "/vendeur/commandes",
+      email: true,
+    });
+  }
 
   revalidateOrderPaths(orderId);
   return {};
@@ -133,6 +155,19 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
       }
     }
   });
+
+  const sellerUid = await sellerUserId(order.sellerId);
+  if (sellerUid) {
+    await notify(sellerUid, {
+      type: "order_cancelled",
+      title: `Commande ${order.number} annulée par l'acheteur`,
+      body:
+        order.status === "paid"
+          ? "L'acheteur a été remboursé, le stock est restitué."
+          : "Le stock est restitué.",
+      link: "/vendeur/commandes",
+    });
+  }
 
   revalidateOrderPaths(orderId);
   revalidatePath("/produits");
@@ -227,6 +262,23 @@ export async function confirmDelivery(
       });
     }
   });
+
+  // Versements confirmés (MVP n°306) : vendeur et livreur sont prévenus.
+  await notify(seller.userId, {
+    type: "order_delivered",
+    title: `Commande ${order.number} livrée — fonds versés`,
+    body: `${formatFcfa(sellerNet)} versés sur votre wallet (commission de 5 % déduite).`,
+    link: "/compte/wallet",
+    email: true,
+  });
+  if (deliveryRow) {
+    await notify(deliveryRow.courierUserId, {
+      type: "delivery_paid",
+      title: `Course ${order.number} — gain versé`,
+      body: `${formatFcfa(deliveryRow.delivery.feeFcfa)} versés sur votre wallet.`,
+      link: "/compte/wallet",
+    });
+  }
 
   revalidateOrderPaths(orderId);
   return {};

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteAccount } from "@/components/auth/delete-account";
+import { EmailVerificationBanner } from "@/components/auth/email-verification-banner";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export default async function ComptePage() {
 
   return (
     <main className="mx-auto w-full max-w-(--container-page) flex-1 px-4 py-12 md:px-10">
+      <EmailVerificationBanner />
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-extrabold">
@@ -127,6 +129,12 @@ export default async function ComptePage() {
             <Link href="/compte/commandes" className="group">
               <CardSection className="flex items-center justify-between p-4 transition-colors group-hover:bg-white/[0.06]">
                 <span>Mes commandes</span>
+                <span className="text-emerald">Voir →</span>
+              </CardSection>
+            </Link>
+            <Link href="/compte/notifications" className="group">
+              <CardSection className="flex items-center justify-between p-4 transition-colors group-hover:bg-white/[0.06]">
+                <span>Mes notifications</span>
                 <span className="text-emerald">Voir →</span>
               </CardSection>
             </Link>

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -443,6 +444,44 @@ export const disputeEvidence = pgTable("dispute_evidence", {
     .references(() => disputes.id, { onDelete: "cascade" }),
   path: text("path").notNull(),
   position: integer("position").notNull().default(0),
+});
+
+// Notifications in-app (itération 9, MVP n°302-310) : une ligne par
+// destinataire et par événement. `link` pointe vers la ressource concernée.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    body: text("body"),
+    link: text("link"),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("notifications_user_idx").on(table.userId, table.createdAt),
+  ],
+);
+
+// Emails transactionnels (MVP n°221) : journal d'envoi. En local, les emails
+// sont « simulés » (status = simulated) — en production, Brevo les envoie
+// réellement (sent/failed). Sert d'audit et de visualisation de test.
+export const emailOutbox = pgTable("email_outbox", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  toEmail: text("to_email").notNull(),
+  subject: text("subject").notNull(),
+  bodyText: text("body_text").notNull(),
+  status: text("status").notNull().default("simulated"),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // Adresses de livraison (MVP n°12 — ajout/modification/suppression)

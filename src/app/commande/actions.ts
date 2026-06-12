@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   addresses,
@@ -15,6 +15,7 @@ import {
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { DELIVERY_FEE_PER_SELLER_FCFA, unitPriceFcfa } from "@/lib/pricing";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
@@ -82,6 +83,8 @@ export async function createOrder(
 
   const groupId = randomUUID();
   const wallet = payWithWallet ? await getOrCreateWallet(user.id) : null;
+  const createdOrders: { number: string; sellerId: string; total: number }[] =
+    [];
 
   try {
     await db.transaction(async (tx) => {
@@ -132,6 +135,7 @@ export async function createOrder(
           });
           if (!ok) throw new Error("wallet");
         }
+        createdOrders.push({ number, sellerId, total });
 
         await tx.insert(orderItems).values(
           sellerLines.map((line) => {
@@ -187,6 +191,42 @@ export async function createOrder(
     console.error("Création de commande échouée:", err);
     return { error: "La commande a échoué. Réessayez." };
   }
+
+  // Notifications après commit (MVP n°143, 151, 303-304) — jamais bloquantes.
+  const sellerRows = await db
+    .select({ id: sellerProfiles.id, userId: sellerProfiles.userId })
+    .from(sellerProfiles)
+    .where(
+      inArray(sellerProfiles.id, [
+        ...new Set(createdOrders.map((order) => order.sellerId)),
+      ]),
+    );
+  const sellerUser = new Map(sellerRows.map((row) => [row.id, row.userId]));
+  for (const order of createdOrders) {
+    const sellerUserId = sellerUser.get(order.sellerId);
+    if (sellerUserId) {
+      await notify(sellerUserId, {
+        type: "order_new",
+        title: `Nouvelle commande ${order.number}`,
+        body: wallet
+          ? `${formatFcfa(order.total)} reçus en Escrow — préparez la commande.`
+          : `Commande de ${formatFcfa(order.total)} en attente de paiement.`,
+        link: "/vendeur/commandes",
+        email: true,
+      });
+    }
+  }
+  await notify(user.id, {
+    type: "order_confirmed",
+    title:
+      createdOrders.length > 1
+        ? `Vos ${createdOrders.length} commandes sont enregistrées`
+        : `Votre commande ${createdOrders[0]?.number ?? ""} est enregistrée`,
+    body: wallet
+      ? "Paiement effectué — les fonds sont bloqués en Escrow jusqu'à la réception."
+      : "Payez depuis le détail de la commande pour lancer la préparation.",
+    link: "/compte/commandes",
+  });
 
   revalidatePath("/panier");
   revalidatePath("/compte/commandes");

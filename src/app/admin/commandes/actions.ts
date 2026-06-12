@@ -3,8 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { deliveries, orderItems, orders, products } from "@/db/schema";
+import {
+  deliveries,
+  orderItems,
+  orders,
+  products,
+  sellerProfiles,
+} from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
 /**
@@ -79,6 +86,31 @@ export async function adminCancelOrder(
       }
     }
   });
+
+  // Les deux parties sont prévenues de l'intervention.
+  await notify(order.buyerId, {
+    type: "order_cancelled",
+    title: `Commande ${order.number} annulée par GK Market`,
+    body: order.paidAt
+      ? `Vous avez été intégralement remboursé (${order.totalFcfa.toLocaleString("fr-FR")} FCFA sur votre wallet).`
+      : "La commande a été annulée.",
+    link: "/compte/commandes",
+    email: true,
+  });
+  const [seller] = await db
+    .select({ userId: sellerProfiles.userId })
+    .from(sellerProfiles)
+    .where(eq(sellerProfiles.id, order.sellerId))
+    .limit(1);
+  if (seller) {
+    await notify(seller.userId, {
+      type: "order_cancelled",
+      title: `Commande ${order.number} annulée par GK Market`,
+      body: "Le stock a été restitué. Contactez le support pour toute question.",
+      link: "/vendeur/commandes",
+      email: true,
+    });
+  }
 
   revalidatePath("/admin/commandes");
   revalidatePath("/compte/commandes");

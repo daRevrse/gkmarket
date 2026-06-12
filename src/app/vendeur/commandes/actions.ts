@@ -5,6 +5,8 @@ import { and, eq, notInArray } from "drizzle-orm";
 import { db } from "@/db";
 import { courierProfiles, deliveries, orders } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { formatFcfa } from "@/lib/format";
+import { notify } from "@/lib/notify";
 
 // Transitions vendeur : une commande payée se prépare, puis s'expédie.
 // La livraison est confirmée par l'acheteur (déblocage Escrow).
@@ -42,9 +44,24 @@ export async function advanceOrder(
         eq(orders.status, from),
       ),
     )
-    .returning({ id: orders.id });
+    .returning({
+      id: orders.id,
+      number: orders.number,
+      buyerId: orders.buyerId,
+    });
   if (updated.length === 0) {
     return { error: "Transition impossible (statut déjà modifié ?)." };
+  }
+
+  // L'acheteur suit l'avancement (MVP n°305).
+  if (to === "shipped") {
+    await notify(updated[0].buyerId, {
+      type: "order_shipped",
+      title: `Commande ${updated[0].number} expédiée`,
+      body: "Le vendeur a expédié votre commande. Confirmez la réception à l'arrivée pour libérer les fonds.",
+      link: `/compte/commandes/${updated[0].id}`,
+      email: true,
+    });
   }
 
   revalidatePath("/vendeur/commandes");
@@ -117,6 +134,14 @@ export async function proposeDelivery(
     // Index unique partiel : une seule course active par commande.
     return { error: "Une course est déjà en cours pour cette commande." };
   }
+
+  await notify(courier.userId, {
+    type: "delivery_proposed",
+    title: `Nouvelle course proposée — ${order.number}`,
+    body: `Gain : ${formatFcfa(order.deliveryFeeFcfa)}. Livraison à ${order.shippingCity}${order.shippingDistrict ? ` (${order.shippingDistrict})` : ""}. Acceptez ou refusez depuis vos courses.`,
+    link: "/livreur/courses",
+    email: true,
+  });
 
   revalidatePath("/vendeur/commandes");
   revalidatePath("/livreur/courses");

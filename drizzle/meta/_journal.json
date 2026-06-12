@@ -64,6 +64,13 @@
       "when": 1781272982522,
       "tag": "0008_heavy_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781290141593,
+      "tag": "0009_great_carlie_cooper",
+      "breakpoints": true
     }
   ]
 }

@@ -147,7 +147,7 @@ export async function markPickedUp(
       // La commande doit toujours être en cours (pas annulée ni en litige).
       const orderUpdated = await tx
         .update(orders)
-        .set({ status: "shipped", updatedAt: new Date() })
+        .set({ status: "shipped", shippedAt: new Date(), updatedAt: new Date() })
         .where(
           and(
             eq(orders.id, updated[0].orderId),

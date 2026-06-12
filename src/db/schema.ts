@@ -243,6 +243,8 @@ export const orders = pgTable("orders", {
   // Escrow : commission plateforme prélevée au versement vendeur
   commissionFcfa: integer("commission_fcfa"),
   paidAt: timestamp("paid_at", { withTimezone: true }),
+  // Point de départ du délai de déblocage automatique (MVP n°119)
+  shippedAt: timestamp("shipped_at", { withTimezone: true }),
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

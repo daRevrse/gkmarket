@@ -145,6 +145,16 @@ export default async function CommandeDetailPage({
               <span>Total</span>
               <span className="text-gold">{formatFcfa(row.order.totalFcfa)}</span>
             </p>
+            {row.order.paidAt ? (
+              <a
+                href={`/api/factures/${row.order.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-block rounded-md border border-emerald px-3 py-1.5 text-sm text-emerald hover:bg-emerald/10"
+              >
+                Télécharger la facture (PDF)
+              </a>
+            ) : null}
           </div>
         </Card>
 

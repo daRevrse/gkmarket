@@ -209,6 +209,27 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
 - À venir : notifications push FCM (Phase 3), chat temps réel hors litige
   (module Communication Phase 2), digests et préférences de notification.
 
+## Factures & déblocage automatique (conception — itération 10)
+
+- **Factures PDF** (MVP n°122, 124, 154) : générées à la volée par
+  `src/lib/invoice.ts` (pdf-lib, aucun stockage), téléchargeables via
+  `/api/factures/[orderId]` — réservé à l'acheteur, au vendeur et aux
+  admins, dès que la commande est payée. Mention « TVA non applicable »
+  (régime fiscal à préciser avant le lancement). Le reçu de paiement par
+  email pointe vers la facture (n°123).
+- **Déblocage Escrow automatique** (MVP n°119) : une commande expédiée
+  (`orders.shipped_at`) sans confirmation ni litige sous
+  **7 jours** (`ESCROW_AUTO_RELEASE_DAYS`) est libérée comme si l'acheteur
+  avait confirmé — logique partagée dans `src/lib/escrow.ts`
+  (versement vendeur net de commission, frais au livreur, clôture de la
+  course, notifications).
+- **Déclenchement** : en production, **Vercel Cron** appelle
+  `/api/cron/escrow` chaque jour à 6 h UTC (`vercel.json`) avec
+  `Authorization: Bearer ${CRON_SECRET}` (variable à créer au déploiement —
+  sans elle la route est ouverte, acceptable uniquement en local). Filet de
+  sécurité : exécution aussi à l'ouverture du dashboard admin, et bouton
+  manuel sur `/admin/financier`.
+
 ## Administration
 
 - L'admin est un booléen `is_admin` sur `users` ; promotion manuelle en SQL :

@@ -11,6 +11,7 @@ import {
   wallets,
 } from "@/db/schema";
 import { Card, CardSection } from "@/components/ui/card";
+import { autoReleaseOverdueEscrows } from "@/lib/escrow";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
 
@@ -20,6 +21,11 @@ const PAID_STATUSES = ["paid", "processing", "shipped", "delivered", "disputed"]
 const ESCROW_STATUSES = ["paid", "processing", "shipped", "disputed"] as const;
 
 export default async function AdminDashboardPage() {
+  // Filet de sécurité local : en production, Vercel Cron appelle
+  // /api/cron/escrow quotidiennement ; ici on libère aussi à l'ouverture
+  // du dashboard (idempotent, verrouillé par le statut des commandes).
+  await autoReleaseOverdueEscrows();
+
   const [
     [activeUsers],
     [paidOrders],

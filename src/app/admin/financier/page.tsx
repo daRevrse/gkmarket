@@ -2,7 +2,9 @@ import { desc, eq, inArray, isNotNull, sql, sum } from "drizzle-orm";
 import { db } from "@/db";
 import { orders, users, wallets, walletTransactions } from "@/db/schema";
 import { Card } from "@/components/ui/card";
+import { ESCROW_AUTO_RELEASE_DAYS } from "@/lib/escrow";
 import { formatFcfa } from "@/lib/format";
+import { EscrowReleaseButton } from "./escrow-release-button";
 
 const txTypeLabels: Record<string, string> = {
   recharge: "Recharge",
@@ -89,8 +91,13 @@ export default async function AdminFinancierPage() {
         <h1 className="font-display text-3xl font-extrabold">Financier</h1>
         <p className="mt-1 text-ink-muted">
           Trésorerie de la plateforme : Escrow, commissions et grand livre
-          des wallets.
+          des wallets. Les commandes expédiées sans confirmation ni litige
+          sont libérées après {ESCROW_AUTO_RELEASE_DAYS} jours (cron
+          quotidien en production).
         </p>
+        <div className="mt-3">
+          <EscrowReleaseButton />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">

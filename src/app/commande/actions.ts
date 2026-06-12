@@ -223,9 +223,11 @@ export async function createOrder(
         ? `Vos ${createdOrders.length} commandes sont enregistrées`
         : `Votre commande ${createdOrders[0]?.number ?? ""} est enregistrée`,
     body: wallet
-      ? "Paiement effectué — les fonds sont bloqués en Escrow jusqu'à la réception."
+      ? "Paiement effectué — les fonds sont bloqués en Escrow jusqu'à la réception. Votre facture PDF est disponible depuis le détail de chaque commande."
       : "Payez depuis le détail de la commande pour lancer la préparation.",
     link: "/compte/commandes",
+    // Reçu par email quand le paiement est immédiat (MVP n°123)
+    email: Boolean(wallet),
   });
 
   revalidatePath("/panier");

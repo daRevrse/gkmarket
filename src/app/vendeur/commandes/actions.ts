@@ -36,7 +36,11 @@ export async function advanceOrder(
   const from = transitions[to];
   const updated = await db
     .update(orders)
-    .set({ status: to, updatedAt: new Date() })
+    .set({
+      status: to,
+      shippedAt: to === "shipped" ? new Date() : undefined,
+      updatedAt: new Date(),
+    })
     .where(
       and(
         eq(orders.id, orderId),

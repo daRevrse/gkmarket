@@ -147,6 +147,16 @@ export default async function VendeurCommandesPage() {
                     </li>
                   ))}
                 </ul>
+                {order.paidAt ? (
+                  <a
+                    href={`/api/factures/${order.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-sm text-emerald hover:underline"
+                  >
+                    Facture PDF →
+                  </a>
+                ) : null}
 
                 {deliveryRow && deliveryStatus ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3 text-sm">

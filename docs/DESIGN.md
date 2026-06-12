@@ -112,7 +112,7 @@ spacing:
 
 The brand identity centers on the "Tech Unicorn" aesthetic—evoking a sense of significant capital, high reliability, and rapid pan-African expansion. The UI must feel expensive, stable, and forward-looking. 
 
-The design style is a **Premium Dark Glassmorphism**. It utilizes deep midnight navy foundations to provide a stable, high-contrast backdrop for vibrant emerald and gold accents. The interface relies on translucent layers, precise light-source modeling (gold glows), and high-fidelity typography to distinguish GK Market as a leader in both B2B logistics and B2C retail.
+The design style is a **Premium Dark Glassmorphism**. It utilizes deep midnight navy foundations to provide a stable, high-contrast backdrop for vibrant emerald and gold accents. The interface relies on translucent layers, precise light-source modeling (gold glows), and high-fidelity typography to distinguish Deal Lomé as a leader in both B2B logistics and B2C retail.
 
 ## Colors
 

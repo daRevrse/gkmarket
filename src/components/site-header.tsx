@@ -34,7 +34,7 @@ export async function SiteHeader({ query }: { query?: string }) {
     <header className="border-b border-white/[0.06]">
       <div className="mx-auto flex w-full max-w-(--container-page) flex-wrap items-center gap-4 px-4 py-4 md:px-10">
         <Link href="/" className="font-display text-xl font-extrabold">
-          GK <span className="text-gold">Market</span>
+          Deal <span className="text-gold">Lomé</span>
         </Link>
         <form action="/produits" className="min-w-48 flex-1">
           <input

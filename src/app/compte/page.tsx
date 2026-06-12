@@ -36,7 +36,7 @@ export default async function ComptePage() {
         <Card>
           <h2 className="font-display text-xl font-bold">Mes casquettes</h2>
           <p className="mt-1 mb-4 text-sm text-ink-muted">
-            Tout compte GK Market peut acheter. Activez d&apos;autres rôles
+            Tout compte Deal Lomé peut acheter. Activez d&apos;autres rôles
             selon vos besoins.
           </p>
           <div className="flex flex-col gap-3">

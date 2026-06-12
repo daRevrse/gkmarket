@@ -16,7 +16,7 @@ export default async function AdminLayout({
         <div className="mx-auto flex w-full max-w-(--container-page) items-center justify-between gap-4 px-4 py-4 md:px-10">
           <div className="flex items-center gap-6">
             <Link href="/admin" className="font-display text-lg font-extrabold">
-              GK Market <span className="text-gold">Admin</span>
+              Deal Lomé <span className="text-gold">Admin</span>
             </Link>
             <nav className="flex flex-wrap items-center gap-4 text-sm">
               {[

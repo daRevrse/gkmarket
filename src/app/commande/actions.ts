@@ -27,7 +27,7 @@ function generateOrderNumber(): string {
     String(now.getDate()).padStart(2, "0"),
   ].join("");
   const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `GK-${date}-${suffix}`;
+  return `DL-${date}-${suffix}`;
 }
 
 export async function createOrder(

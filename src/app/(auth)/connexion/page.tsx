@@ -51,7 +51,7 @@ export default function ConnexionPage() {
   return (
     <AuthCard
       title="Se connecter"
-      subtitle="Heureux de vous revoir sur GK Market."
+      subtitle="Heureux de vous revoir sur Deal Lomé."
     >
       <div className="mb-4">
         <GoogleButton label="Continuer avec Google" />

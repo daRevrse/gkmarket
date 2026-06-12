@@ -3,8 +3,8 @@ import "server-only";
 import { db } from "@/db";
 import { emailOutbox } from "@/db/schema";
 
-const FROM_NAME = "GK Market";
-const FROM_EMAIL = process.env.EMAIL_FROM ?? "no-reply@gkmarket.tg";
+const FROM_NAME = "Deal Lomé";
+const FROM_EMAIL = process.env.EMAIL_FROM ?? "no-reply@deallome.com";
 
 /**
  * Email transactionnel (MVP n°221) via Brevo (plan gratuit 300/jour).

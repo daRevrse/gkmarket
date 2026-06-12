@@ -64,7 +64,7 @@ export default async function AdminCommandesPage({
           type="text"
           name="q"
           defaultValue={params.q}
-          placeholder="N° de commande (GK-…)"
+          placeholder="N° de commande (DL-…)"
           className="w-64 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-emerald focus:outline-none"
         />
         <select

@@ -140,7 +140,7 @@ export function CheckoutForm({
               className="mt-1 accent-emerald"
             />
             <span className="text-sm">
-              <span className="font-medium">Wallet GK Market</span> — solde :{" "}
+              <span className="font-medium">Wallet Deal Lomé</span> — solde :{" "}
               {walletBalance.toLocaleString("fr-FR")} FCFA
               <span className="block text-ink-muted">
                 Paiement immédiat, fonds bloqués en Escrow jusqu&apos;à la
@@ -205,7 +205,7 @@ export function CheckoutForm({
           required
         />
         <span className="text-ink-muted">
-          J&apos;accepte les conditions générales de vente de GK Market.
+          J&apos;accepte les conditions générales de vente de Deal Lomé.
         </span>
       </label>
 

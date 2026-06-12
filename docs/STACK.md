@@ -13,8 +13,8 @@ pour le MVP et les points encore ouverts.
 | Base de données métier | **PostgreSQL sur VPS Contabo** (Docker) | Source de vérité unique : produits, commandes, wallet, escrow, litiges, commissions. Transactions ACID pour le ledger financier, SQL pour recherche et reporting. |
 | VPS | **Contabo** (région Europe) | Héberge PostgreSQL + logique Escrow/API. Sauvegardes Contabo limitées → stratégie backup dédiée obligatoire (voir plus bas). |
 | Paiement | FedaPay API | Flooz, TMoney, cartes. Frais 1-2,5 %/transaction. Sandbox en staging, clés réelles en prod. |
-| Emails transactionnels | Brevo (plan gratuit, 300 emails/jour) | Suffisant pour le MVP. |
-| Domaine | OVH (.com / .tg) | ~10 €/an. |
+| Emails transactionnels | Brevo (plan gratuit, 300 emails/jour) | Domaine `deallome.com` à authentifier dans Brevo (SPF/DKIM/DMARC via DNS Vercel) ; expéditeur `no-reply@deallome.com` sans boîte mail. Réception : redirection gratuite (ImprovMX/Cloudflare) pour le MVP. |
+| Domaine | **deallome.com chez Vercel** (décision 2026-06-12, cf. CHANGEMENTS.md §4) | Plateforme renommée « Deal Lomé ». |
 | Versionnement / CI | Git + GitHub (+ GitHub Actions) | Branches de fonctionnalité + PR ; CI : lint, tests, migrations. |
 
 ## Points en attente de décision

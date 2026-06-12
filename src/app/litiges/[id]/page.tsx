@@ -80,7 +80,7 @@ export default async function LitigePage({
       : { href: "/vendeur/commandes", label: "← Commandes reçues" };
 
   function authorTag(author: typeof users.$inferSelect) {
-    if (author.isAdmin) return "GK Market";
+    if (author.isAdmin) return "Deal Lomé";
     if (author.id === dispute.buyerId) return "Acheteur";
     if (author.id === row.sellerUserId) return "Vendeur";
     return "";
@@ -137,7 +137,7 @@ export default async function LitigePage({
           ) : null}
           <p className="mt-4 text-xs text-ink-muted">
             Fonds Escrow bloqués : {formatFcfa(order.totalFcfa)}. Résolution en
-            3 phases — dialogue entre les parties, médiation GK Market,
+            3 phases — dialogue entre les parties, médiation Deal Lomé,
             décision administrative.
           </p>
         </Card>
@@ -210,7 +210,7 @@ export default async function LitigePage({
         {user.isAdmin && dispute.status === "open" ? (
           <Card className="border-gold/30">
             <h2 className="font-display text-lg font-bold">
-              Arbitrage GK Market
+              Arbitrage Deal Lomé
             </h2>
             <p className="mt-1 mb-4 text-sm text-ink-muted">
               La décision exécute immédiatement les mouvements de fonds et

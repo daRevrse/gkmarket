@@ -26,7 +26,7 @@ export default async function DevenirLivreurPage() {
           Devenir livreur
         </h1>
         <p className="mt-1 text-ink-muted">
-          Effectuez les livraisons des vendeurs GK Market et gagnez les frais
+          Effectuez les livraisons des vendeurs Deal Lomé et gagnez les frais
           de livraison de chaque course, versés sur votre wallet.
         </p>
       </div>
@@ -71,7 +71,7 @@ export default async function DevenirLivreurPage() {
             <Badge variant="neutral">Suspendu</Badge>
           </div>
           <p className="mt-3 text-sm text-ink-muted">
-            Votre profil livreur est suspendu. Contactez le support GK Market.
+            Votre profil livreur est suspendu. Contactez le support Deal Lomé.
           </p>
         </Card>
       ) : (

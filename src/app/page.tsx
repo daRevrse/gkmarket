@@ -117,7 +117,7 @@ export default async function Home() {
         </section>
 
         <footer className="mt-16 flex items-center justify-between border-t border-white/[0.04] pt-8 text-sm text-ink-muted">
-          <span className="font-label">GK Market</span>
+          <span className="font-label">Deal Lomé</span>
           <span>GK NÉGOCES × FlowKraft Agency</span>
         </footer>
       </main>

@@ -63,7 +63,7 @@ export default async function OuvrirLitigePage({
       <p className="mt-4 text-xs text-ink-muted">
         Comment ça marche : 1. vous décrivez le problème avec vos preuves —
         2. le vendeur est invité à répondre — 3. si aucun accord n&apos;est
-        trouvé, l&apos;équipe GK Market tranche (remboursement total, partiel
+        trouvé, l&apos;équipe Deal Lomé tranche (remboursement total, partiel
         ou rejet du litige).
       </p>
     </main>

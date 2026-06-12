@@ -17,7 +17,7 @@ export function AuthCard({
           href="/"
           className="mb-8 block text-center font-display text-2xl font-extrabold"
         >
-          GK <span className="text-gold">Market</span>
+          Deal <span className="text-gold">Lomé</span>
         </Link>
         <Card glow>
           <h1 className="font-display text-2xl font-bold">{title}</h1>

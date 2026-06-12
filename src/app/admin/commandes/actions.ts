@@ -56,7 +56,7 @@ export async function adminCancelOrder(
         type: "order_refund",
         amountFcfa: order.totalFcfa,
         orderId: order.id,
-        description: `Remboursement commande ${order.number} annulée par GK Market`,
+        description: `Remboursement commande ${order.number} annulée par Deal Lomé`,
       });
     }
 
@@ -90,7 +90,7 @@ export async function adminCancelOrder(
   // Les deux parties sont prévenues de l'intervention.
   await notify(order.buyerId, {
     type: "order_cancelled",
-    title: `Commande ${order.number} annulée par GK Market`,
+    title: `Commande ${order.number} annulée par Deal Lomé`,
     body: order.paidAt
       ? `Vous avez été intégralement remboursé (${order.totalFcfa.toLocaleString("fr-FR")} FCFA sur votre wallet).`
       : "La commande a été annulée.",
@@ -105,7 +105,7 @@ export async function adminCancelOrder(
   if (seller) {
     await notify(seller.userId, {
       type: "order_cancelled",
-      title: `Commande ${order.number} annulée par GK Market`,
+      title: `Commande ${order.number} annulée par Deal Lomé`,
       body: "Le stock a été restitué. Contactez le support pour toute question.",
       link: "/vendeur/commandes",
       email: true,

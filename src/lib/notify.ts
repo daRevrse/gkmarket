@@ -42,13 +42,13 @@ export async function notify(
       if (user?.email && user.status === "active") {
         await sendEmail({
           toEmail: user.email,
-          subject: `GK Market — ${input.title}`,
+          subject: `Deal Lomé — ${input.title}`,
           bodyText: [
             input.title,
             "",
             input.body ?? "",
-            input.link ? `\nDétails : https://gkmarket.tg${input.link}` : "",
-            "\n— L'équipe GK Market",
+            input.link ? `\nDétails : https://deallome.com${input.link}` : "",
+            "\n— L'équipe Deal Lomé",
           ].join("\n"),
         });
       }

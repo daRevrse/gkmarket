@@ -21,7 +21,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "GK Market — La marketplace B2B & B2C du Togo",
+  title: "Deal Lomé — La marketplace B2B & B2C du Togo",
   description:
     "Achetez et vendez en toute confiance au Togo : paiement sécurisé par Escrow, vendeurs vérifiés, livraison locale à Lomé.",
 };

@@ -48,6 +48,30 @@ Le suivi d'avancement se fait dans **`docs/Explosion du projet - MAJ.xlsx`**, à
 - l'onglet *Récapitulatif* compte les réalisations automatiquement (formules `COUNTIF`).
 
 **Précisions (2026-06-10) :**
+
+---
+
+## 4. Nom de la plateforme : « Deal Lomé », domaine deallome.com (2026-06-12)
+
+**Décision :** la plateforme s'appelle **Deal Lomé** (et non plus « GK Market »).
+Le domaine **deallome.com** sera acheté **chez Vercel** (DNS géré dans le
+dashboard Vercel).
+
+**Impact :**
+- Marque renommée dans toute l'interface, les emails transactionnels et les
+  métadonnées SEO. Les nouveaux numéros de commande sont préfixés `DL-`
+  (les anciens `GK-` des données de test restent valides).
+- **Emails** : Vercel n'héberge pas de boîtes mail —
+  - *envoi* (Brevo) : authentifier `deallome.com` (SPF/DKIM/DMARC dans le
+    DNS Vercel) ; `no-reply@deallome.com` envoie sans boîte mail réelle ;
+  - *réception* (`support@`, `contact@`) : redirection gratuite
+    (ImprovMX / Cloudflare Email Routing) vers une boîte existante pour le
+    MVP ; Zoho Mail (gratuit ≤ 5 comptes) si de vraies boîtes deviennent
+    nécessaires.
+- Les identifiants techniques internes (dépôt `gkmarket`, base PostgreSQL,
+  projet émulateur Firebase `demo-gkmarket`, comptes de test
+  `*@gkmarket.tg`) restent inchangés en local — ils seront renommés à la
+  mise en production si souhaité.
 - **Attribution des courses :** une **proposition intelligente de livreurs** est faite au vendeur (matching automatique — critères à définir : proximité, disponibilité, note, historique). Le vendeur choisit parmi les livreurs proposés.
 - **Paiement du livreur :** le livreur est **payé par le vendeur**, via le **Wallet** et le **système Escrow** (mêmes mécanismes que le reste de la plateforme). Le livreur dispose donc d'un Wallet livreur.
 - **Refus de course :** le livreur **peut refuser une course**. Le flux doit prévoir la re-proposition à un autre livreur.

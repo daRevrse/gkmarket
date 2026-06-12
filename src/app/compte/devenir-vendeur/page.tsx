@@ -24,7 +24,7 @@ export default async function DevenirVendeurPage() {
           Devenir vendeur
         </h1>
         <p className="mt-1 text-ink-muted">
-          Vendez vos produits sur GK Market après vérification de votre
+          Vendez vos produits sur Deal Lomé après vérification de votre
           identité.
         </p>
       </div>
@@ -64,7 +64,7 @@ export default async function DevenirVendeurPage() {
             <Badge variant="neutral">Suspendu</Badge>
           </div>
           <p className="mt-3 text-sm text-ink-muted">
-            Votre boutique est suspendue. Contactez le support GK Market.
+            Votre boutique est suspendue. Contactez le support Deal Lomé.
           </p>
         </Card>
       ) : (

@@ -91,31 +91,40 @@ export async function markPickedUp(
   if (!own) return { error: "Course introuvable." };
 
   let ok = false;
-  await db.transaction(async (tx) => {
-    const updated = await tx
-      .update(deliveries)
-      .set({
-        status: "picked_up",
-        pickedUpAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(
-        and(eq(deliveries.id, deliveryId), eq(deliveries.status, "accepted")),
-      )
-      .returning({ orderId: deliveries.orderId });
-    if (updated.length === 0) return;
+  try {
+    await db.transaction(async (tx) => {
+      const updated = await tx
+        .update(deliveries)
+        .set({
+          status: "picked_up",
+          pickedUpAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(eq(deliveries.id, deliveryId), eq(deliveries.status, "accepted")),
+        )
+        .returning({ orderId: deliveries.orderId });
+      if (updated.length === 0) return;
 
-    await tx
-      .update(orders)
-      .set({ status: "shipped", updatedAt: new Date() })
-      .where(
-        and(
-          eq(orders.id, updated[0].orderId),
-          inArray(orders.status, ["paid", "processing"]),
-        ),
-      );
-    ok = true;
-  });
+      // La commande doit toujours être en cours (pas annulée ni en litige).
+      const orderUpdated = await tx
+        .update(orders)
+        .set({ status: "shipped", updatedAt: new Date() })
+        .where(
+          and(
+            eq(orders.id, updated[0].orderId),
+            inArray(orders.status, ["paid", "processing"]),
+          ),
+        )
+        .returning({ id: orders.id });
+      if (orderUpdated.length === 0) throw new Error("conflict");
+      ok = true;
+    });
+  } catch {
+    return {
+      error: "La commande n'est plus en cours (annulée ou en litige ?).",
+    };
+  }
   if (!ok) return { error: "Cette course n'est pas en attente de récupération." };
 
   revalidateDeliveryPaths();

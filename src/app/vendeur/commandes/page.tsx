@@ -1,11 +1,19 @@
 import Link from "next/link";
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { courierProfiles, deliveries, orderItems, orders, users } from "@/db/schema";
+import {
+  courierProfiles,
+  deliveries,
+  disputes,
+  orderItems,
+  orders,
+  users,
+} from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { deliveryStatusLabels } from "@/lib/deliveries";
+import { disputeReasonLabels, disputeStatusLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
 import { SellerOrderActions } from "./seller-order-actions";
@@ -57,6 +65,17 @@ export default async function VendeurCommandesPage() {
       latestDelivery.set(row.delivery.orderId, row);
     }
   }
+
+  const disputeRows =
+    orderIds.length > 0
+      ? await db
+          .select()
+          .from(disputes)
+          .where(inArray(disputes.orderId, orderIds))
+      : [];
+  const disputeByOrder = new Map(
+    disputeRows.map((dispute) => [dispute.orderId, dispute]),
+  );
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
@@ -143,6 +162,32 @@ export default async function VendeurCommandesPage() {
                     </span>
                   </div>
                 ) : null}
+
+                {(() => {
+                  const dispute = disputeByOrder.get(order.id);
+                  if (!dispute) return null;
+                  const disputeStatus = disputeStatusLabels[dispute.status];
+                  return (
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-3 text-sm">
+                      <span className="flex items-center gap-2">
+                        <Badge variant={disputeStatus?.variant}>
+                          {disputeStatus?.label ?? dispute.status}
+                        </Badge>
+                        <span className="text-ink-muted">
+                          {disputeReasonLabels[dispute.reason] ?? dispute.reason}
+                        </span>
+                      </span>
+                      <Link
+                        href={`/litiges/${dispute.id}`}
+                        className="text-emerald hover:underline"
+                      >
+                        {dispute.status === "open"
+                          ? "Répondre au litige →"
+                          : "Voir le litige →"}
+                      </Link>
+                    </div>
+                  );
+                })()}
 
                 <SellerOrderActions
                   orderId={order.id}

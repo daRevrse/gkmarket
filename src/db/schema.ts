@@ -214,6 +214,8 @@ export const orderStatusEnum = pgEnum("order_status", [
   "shipped",
   "delivered",
   "cancelled",
+  "disputed", // litige ouvert : fonds Escrow bloqués jusqu'à l'arbitrage
+  "refunded", // litige tranché en faveur de l'acheteur (remboursement total)
 ]);
 
 // Commandes (itération 4) : un checkout multi-vendeurs crée une commande par
@@ -360,6 +362,88 @@ export const deliveries = pgTable(
       .where(sql`${table.status} NOT IN ('refused', 'cancelled')`),
   ],
 );
+
+// Motifs prédéfinis d'ouverture de litige (MVP n°187 — les incidents
+// n°180-184 du cahier des charges deviennent des motifs).
+export const disputeReasonEnum = pgEnum("dispute_reason", [
+  "damaged",          // colis endommagé
+  "lost",             // colis perdu
+  "not_received",     // jamais reçu / jamais expédié
+  "not_as_described", // produit non conforme
+  "late",             // retard de livraison
+  "other",
+]);
+
+export const disputeStatusEnum = pgEnum("dispute_status", [
+  "open",
+  "resolved",
+]);
+
+export const disputeResolutionEnum = pgEnum("dispute_resolution", [
+  "refund_total",   // remboursement intégral de l'acheteur
+  "refund_partial", // dédommagement partiel, solde versé au vendeur
+  "release_seller", // litige rejeté : versement normal vendeur (+ livreur)
+]);
+
+// Litiges (itération 7, MVP n°186-208) : un litige par commande, ouvert par
+// l'acheteur tant que les fonds sont en Escrow. L'ouverture bascule la
+// commande en `disputed`, ce qui bloque la confirmation de réception,
+// l'annulation et tout versement jusqu'à la décision d'un admin.
+export const disputes = pgTable("disputes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id")
+    .notNull()
+    .unique()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  buyerId: uuid("buyer_id")
+    .notNull()
+    .references(() => users.id),
+  sellerId: uuid("seller_id")
+    .notNull()
+    .references(() => sellerProfiles.id),
+  reason: disputeReasonEnum("reason").notNull(),
+  description: text("description").notNull(),
+  status: disputeStatusEnum("status").notNull().default("open"),
+  resolution: disputeResolutionEnum("resolution"),
+  // Montant remboursé à l'acheteur (total ou partiel selon la résolution)
+  refundFcfa: integer("refund_fcfa"),
+  // Note de décision de l'admin, visible par les deux parties (MVP n°200, 207)
+  decisionNote: text("decision_note"),
+  resolvedById: uuid("resolved_by_id").references(() => users.id),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Fil d'échanges du litige : acheteur, vendeur et admins (MVP n°196, 204).
+export const disputeMessages = pgTable("dispute_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  disputeId: uuid("dispute_id")
+    .notNull()
+    .references(() => disputes.id, { onDelete: "cascade" }),
+  authorId: uuid("author_id")
+    .notNull()
+    .references(() => users.id),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Preuves photo du litige (MVP n°189) — Storage privé `disputes/{uid}/`,
+// consultation via /api/disputes/evidence (parties prenantes uniquement).
+export const disputeEvidence = pgTable("dispute_evidence", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  disputeId: uuid("dispute_id")
+    .notNull()
+    .references(() => disputes.id, { onDelete: "cascade" }),
+  path: text("path").notNull(),
+  position: integer("position").notNull().default(0),
+});
 
 // Adresses de livraison (MVP n°12 — ajout/modification/suppression)
 export const addresses = pgTable("addresses", {

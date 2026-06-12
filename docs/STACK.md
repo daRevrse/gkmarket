@@ -160,6 +160,32 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
 - Compte livreur de test local : `livreur@gkmarket.tg` / `livreurtest123`
   (« Koffi Livreur », moto, approuvé).
 
+## Litiges (conception — itération 7)
+
+- **Ouverture par l'acheteur** tant que les fonds sont en Escrow (commande
+  payée, en préparation ou expédiée) : motifs prédéfinis (les incidents
+  n°180-184 du cahier des charges), description obligatoire, jusqu'à
+  4 photos de preuve (Storage privé `disputes/`, consultation via
+  `/api/disputes/evidence` réservée aux parties).
+- **Blocage Escrow automatique** : la commande passe en `disputed` — plus de
+  confirmation de réception, d'annulation, de versement ni de récupération
+  de colis ; les courses non récupérées sont annulées. Un seul litige par
+  commande.
+- **Fil d'échanges** sur `/litiges/[id]`, page commune à l'acheteur, au
+  vendeur et aux admins (résolution en 3 phases : dialogue, médiation,
+  décision — les délais automatisés n°193, 204-205 viendront avec les
+  notifications).
+- **Arbitrage admin** (`/admin/litiges`) : décision motivée (note visible
+  par les parties) qui exécute les fonds dans une seule transaction :
+  - *remboursement intégral* → acheteur recrédité, commande « Remboursée »,
+    ni vendeur ni livreur payés, pas de re-stock automatique ;
+  - *remboursement partiel* → X FCFA à l'acheteur, le solde du sous-total
+    au vendeur net de commission (5 % sur sa part) ;
+  - *litige rejeté* → versement normal (vendeur net + frais de course au
+    livreur s'il a récupéré le colis).
+- À venir : pénalités vendeur (n°209-211, avec la gestion utilisateurs
+  admin), notifications (module Communication), garantie post-livraison.
+
 ## Administration
 
 - L'admin est un booléen `is_admin` sur `users` ; promotion manuelle en SQL :

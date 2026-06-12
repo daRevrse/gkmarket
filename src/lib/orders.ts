@@ -8,4 +8,6 @@ export const orderStatusLabels: Record<
   shipped: { label: "Expédiée" },
   delivered: { label: "Livrée", variant: "verified" },
   cancelled: { label: "Annulée", variant: "neutral" },
+  disputed: { label: "En litige — fonds bloqués", variant: "wholesale" },
+  refunded: { label: "Remboursée", variant: "neutral" },
 };

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import {
   courierProfiles,
   deliveries,
+  disputes,
   orderItems,
   orders,
   sellerProfiles,
@@ -14,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { deliveryStatusLabels, vehicleTypeLabels } from "@/lib/deliveries";
+import { disputeReasonLabels, disputeStatusLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
 import { OrderActions } from "./order-actions";
@@ -57,6 +59,12 @@ export default async function CommandeDetailPage({
         inArray(deliveries.status, ["accepted", "picked_up", "delivered"]),
       ),
     )
+    .limit(1);
+
+  const [dispute] = await db
+    .select()
+    .from(disputes)
+    .where(eq(disputes.orderId, id))
     .limit(1);
 
   const status = orderStatusLabels[row.order.status] ?? {
@@ -141,6 +149,45 @@ export default async function CommandeDetailPage({
         </Card>
 
         <OrderActions orderId={row.order.id} status={row.order.status} />
+
+        {dispute ? (
+          <Card className="border-gold/30">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="font-display text-lg font-bold">Litige</h2>
+                  <Badge
+                    variant={disputeStatusLabels[dispute.status]?.variant}
+                  >
+                    {disputeStatusLabels[dispute.status]?.label ??
+                      dispute.status}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {disputeReasonLabels[dispute.reason] ?? dispute.reason} ·
+                  ouvert le {dispute.createdAt.toLocaleDateString("fr-FR")}
+                </p>
+              </div>
+              <Link
+                href={`/litiges/${dispute.id}`}
+                className="text-sm text-emerald hover:underline"
+              >
+                Suivre le litige →
+              </Link>
+            </div>
+          </Card>
+        ) : ["paid", "processing", "shipped"].includes(row.order.status) ? (
+          <p className="text-sm text-ink-muted">
+            Un problème avec cette commande ?{" "}
+            <Link
+              href={`/compte/commandes/${row.order.id}/litige`}
+              className="text-emerald hover:underline"
+            >
+              Ouvrir un litige
+            </Link>{" "}
+            — les fonds Escrow seront bloqués jusqu&apos;à la résolution.
+          </p>
+        ) : null}
 
         {deliveryRow ? (
           <Card>

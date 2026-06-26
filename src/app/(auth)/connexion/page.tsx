@@ -60,41 +60,42 @@ export default function ConnexionPage() {
       {method === "phone" ? (
         <PhoneLoginForm />
       ) : (
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormError message={error} />
-        <FormField label="Email" htmlFor="email">
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="votre@email.com"
-            autoComplete="email"
-            required
-          />
-        </FormField>
-        <FormField label="Mot de passe" htmlFor="password">
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </FormField>
-        <div className="text-right">
-          <Link
-            href="/mot-de-passe-oublie"
-            className="text-sm text-ink-muted hover:text-emerald"
-          >
-            Mot de passe oublié ?
-          </Link>
-        </div>
-        <Button type="submit" disabled={loading}>
-          {loading ? "Connexion…" : "Se connecter"}
-        </Button>
-      </form>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormError message={error} />
+          <FormField label="Email" htmlFor="email">
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="votre@email.com"
+              autoComplete="email"
+              required
+            />
+          </FormField>
+          <FormField label="Mot de passe" htmlFor="password">
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </FormField>
+
+          <div className="text-right">
+            <Link
+              href="/mot-de-passe-oublie"
+              className="text-sm text-ink-muted hover:text-emerald"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </div>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Connexion…" : "Se connecter"}
+          </Button>
+        </form>
       )}
       <p className="mt-6 text-center text-sm text-ink-muted">
         Pas encore de compte ?{" "}

@@ -1,24 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Hanken_Grotesk, Geist } from "next/font/google";
 import "./globals.css";
-
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-  weight: ["400", "700", "800"],
-});
-
-const hanken = Hanken_Grotesk({
-  variable: "--font-hanken",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const geist = Geist({
-  variable: "--font-geist",
-  subsets: ["latin"],
-  weight: ["500", "600"],
-});
 
 export const metadata: Metadata = {
   title: "Deal Lomé — La marketplace B2B & B2C du Togo",
@@ -32,11 +13,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="fr"
-      className={`${jakarta.variable} ${hanken.variable} ${geist.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="fr" className="h-full antialiased">
+      <head>
+        {/*
+         * Polices chargées au runtime via <link> plutôt que next/font/google,
+         * afin que le build ne dépende pas de la disponibilité de Google Fonts.
+         * Les familles (Plus Jakarta Sans / Hanken Grotesk / Geist) sont
+         * référencées par leur nom dans globals.css (@theme).
+         */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=Hanken+Grotesk:wght@400;500;600&family=Geist:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

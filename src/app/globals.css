@@ -19,10 +19,10 @@
   --color-danger: #ffb4ab;
   --color-danger-deep: #93000a;
 
-  /* Typographie */
-  --font-display: var(--font-jakarta), sans-serif;
-  --font-body: var(--font-hanken), sans-serif;
-  --font-label: var(--font-geist), sans-serif;
+  /* Typographie — familles chargées via <link> dans layout.tsx */
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Hanken Grotesk", sans-serif;
+  --font-label: "Geist", sans-serif;
 
   /* Rayons — cartes 24px, sections internes 16px, boutons/inputs 12px */
   --radius-sm: 0.25rem;
@@ -60,6 +60,12 @@
     transparent 70%
   );
   pointer-events: none;
+}
+
+/* Grille de points discrète (texture de fond, sections héro/B2B) */
+@utility dot-grid {
+  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 body {

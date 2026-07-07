@@ -113,7 +113,7 @@ export default async function Home() {
 
       {/* 1. Rampe de catégories — les portes d'entrée du magasin */}
       <nav className="border-b border-white/5 bg-navy-deep/40">
-        <div className="mx-auto flex max-w-(--container-page) items-center gap-2 overflow-x-auto px-4 py-3 md:px-10">
+        <div className="no-scrollbar mx-auto flex max-w-(--container-page) items-center gap-2 overflow-x-auto px-4 py-3 md:px-10">
           {parents.map((category) => {
             const CatIcon = CATEGORY_ICON[category.slug] ?? ShoppingBagIcon;
             return (

@@ -81,7 +81,7 @@ export function AccountNavMobile({ groups }: { groups: AccountNavGroup[] }) {
   const items = groups.flatMap((g) => g.items);
 
   return (
-    <nav className="flex items-center gap-2 overflow-x-auto pb-1">
+    <nav className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
       {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (

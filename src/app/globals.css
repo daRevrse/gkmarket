@@ -63,6 +63,15 @@
   pointer-events: none;
 }
 
+/* Défilement horizontal sans barre visible (rampes de catégories, pills) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Grille de points discrète (texture de fond, sections héro/B2B) */
 @utility dot-grid {
   background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px);

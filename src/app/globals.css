@@ -19,8 +19,9 @@
   --color-danger: #ffb4ab;
   --color-danger-deep: #93000a;
 
-  /* Typographie — familles chargées via <link> dans layout.tsx */
-  --font-display: "Plus Jakarta Sans", sans-serif;
+  /* Typographie — familles chargées via <link> dans layout.tsx.
+     Display : Bricolage Grotesque, chaleureuse et affirmée (titres, prix). */
+  --font-display: "Bricolage Grotesque", sans-serif;
   --font-body: "Hanken Grotesk", sans-serif;
   --font-label: "Geist", sans-serif;
 

@@ -13,6 +13,7 @@
     "emulators": "firebase emulators:start --only auth,storage --project demo-gkmarket --import=./.firebase-emulator --export-on-exit=./.firebase-emulator"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "firebase": "^12.14.0",

@@ -31,10 +31,6 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
           <span className="absolute top-2 left-2">
             <Badge variant="neutral">Rupture</Badge>
           </span>
-        ) : product.wholesalePriceFcfa ? (
-          <span className="absolute top-2 left-2">
-            <Badge variant="wholesale">Prix de gros</Badge>
-          </span>
         ) : null}
       </div>
       <div className="p-3">

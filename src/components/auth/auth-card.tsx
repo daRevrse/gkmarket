@@ -38,68 +38,60 @@ export function AuthCard({
           Deal <span className="text-gold">Lomé</span>
         </Link>
 
-        <div className="max-w-md space-y-10">
+        <div className="max-w-md space-y-8">
           <h2
             className="fade-up font-display text-4xl font-extrabold leading-tight xl:text-5xl"
             style={{ animationDelay: "80ms" }}
           >
-            Le commerce du Togo,
+            Le marché de Lomé,
             <br />
-            en toute <span className="text-gold">confiance</span>.
+            <span className="text-gold">chez vous</span>.
           </h2>
 
-          <ul className="space-y-4">
+          {/* Mosaïque produits — photos du catalogue (Unsplash, licence libre) */}
+          <div className="grid grid-cols-2 gap-3">
             {[
               {
-                icon: "shield",
-                title: "Paiement Escrow",
-                desc: "Vos fonds sont protégés jusqu'à réception de la commande.",
+                id: "1528459801416-a9e53bbf4e17",
+                alt: "Tissus wax colorés",
+                cls: "row-span-2 aspect-[3/4]",
+                delay: 160,
               },
               {
-                icon: "check",
-                title: "Vendeurs vérifiés",
-                desc: "Chaque boutique est contrôlée avant d'être publiée.",
+                id: "1511707171634-5f897ff02aa9",
+                alt: "Smartphone",
+                cls: "aspect-[4/3]",
+                delay: 240,
               },
               {
-                icon: "truck",
-                title: "Livraison locale",
-                desc: "À domicile ou en point relais, partout à Lomé.",
+                id: "1596040033229-a9821ebd058d",
+                alt: "Épices du marché",
+                cls: "aspect-[4/3]",
+                delay: 320,
               },
-            ].map((f, i) => (
-              <li
-                key={f.title}
-                className="fade-up glass flex items-start gap-4 rounded-lg p-4"
-                style={{ animationDelay: `${160 + i * 80}ms` }}
+            ].map((img) => (
+              <div
+                key={img.id}
+                className={`fade-up overflow-hidden rounded-xl border border-white/10 ${img.cls}`}
+                style={{ animationDelay: `${img.delay}ms` }}
               >
-                <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md bg-gold/10 text-gold">
-                  <Icon name={f.icon} className="size-4.5" />
-                </span>
-                <div>
-                  <p className="font-bold">{f.title}</p>
-                  <p className="text-sm text-ink-muted">{f.desc}</p>
-                </div>
-              </li>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://images.unsplash.com/photo-${img.id}?auto=format&fit=crop&w=600&q=70`}
+                  alt={img.alt}
+                  className="h-full w-full object-cover"
+                />
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
 
-        <figure
-          className="fade-up max-w-md"
-          style={{ animationDelay: "480ms" }}
+        <p
+          className="fade-up font-label text-xs text-ink-muted"
+          style={{ animationDelay: "420ms" }}
         >
-          <blockquote className="text-sm italic text-ink-muted">
-            “En tant que vendeuse, j'ai triplé mon chiffre d'affaires en moins
-            de 6 mois. La plateforme est intuitive.”
-          </blockquote>
-          <figcaption className="mt-3 flex items-center gap-3">
-            <span className="flex size-8 items-center justify-center rounded-full bg-white/5 font-label text-xs font-bold">
-              AT
-            </span>
-            <span className="font-label text-xs text-ink-muted">
-              Aminata T. — Boutique de mode, Lomé
-            </span>
-          </figcaption>
-        </figure>
+          Paiement Mobile Money · Vendeurs vérifiés · Livraison à Lomé
+        </p>
       </aside>
 
       {/* Panneau droit — formulaire */}

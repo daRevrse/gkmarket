@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,7 +33,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

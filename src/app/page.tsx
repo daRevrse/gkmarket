@@ -2,29 +2,28 @@ import Link from "next/link";
 import {
   BanknotesIcon,
   BuildingStorefrontIcon,
-  CakeIcon,
   CheckBadgeIcon,
   ChevronRightIcon,
-  CreditCardIcon,
   DevicePhoneMobileIcon,
-  HomeIcon,
+  HomeModernIcon,
   PuzzlePieceIcon,
   ShieldCheckIcon,
   ShoppingBagIcon,
+  ShoppingCartIcon,
   SparklesIcon,
-  SwatchIcon,
   TrophyIcon,
   TruckIcon,
-  WalletIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, productImages, products, sellerProfiles } from "@/db/schema";
+import { HeroSlider, type HeroBanner } from "@/components/hero-slider";
 import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { SiteHeader } from "@/components/site-header";
 import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
+import { formatFcfa } from "@/lib/format";
 
 /** Icône Heroicons par catégorie racine (slug). */
 const CATEGORY_ICON: Record<
@@ -32,10 +31,10 @@ const CATEGORY_ICON: Record<
   React.ComponentType<React.SVGProps<SVGSVGElement>>
 > = {
   electronique: DevicePhoneMobileIcon,
-  "mode-vetements": SwatchIcon,
-  "maison-cuisine": HomeIcon,
+  "mode-vetements": ShoppingBagIcon,
+  "maison-cuisine": HomeModernIcon,
   "beaute-sante": SparklesIcon,
-  alimentation: CakeIcon,
+  alimentation: ShoppingCartIcon,
   "bebes-enfants": PuzzlePieceIcon,
   "sport-loisirs": TrophyIcon,
   "auto-moto": WrenchScrewdriverIcon,
@@ -107,6 +106,36 @@ export default async function Home() {
     )
   ).filter((s) => s.items.length >= 4);
 
+  // Bannières du carrousel : un produit phare par rayon (avec photo),
+  // complété par les nouveautés. Repli statique si le catalogue est vide.
+  const bannerPool = [
+    ...shelves.map((s) => s.items[0]),
+    ...latest,
+  ].filter(
+    (p, i, arr) => p.imageUrl && arr.findIndex((x) => x.id === p.id) === i,
+  );
+  const banners: HeroBanner[] =
+    bannerPool.length > 0
+      ? bannerPool.slice(0, 4).map((p) => ({
+          href: `/produits/${p.id}`,
+          image: p.imageUrl!,
+          kicker: p.shopName ?? "Deal Lomé",
+          title: p.title,
+          subtitle: `${formatFcfa(p.priceFcfa)} · Livraison à Lomé`,
+          cta: "Voir le produit",
+        }))
+      : [
+          {
+            href: "/produits",
+            image:
+              "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=70",
+            kicker: "Ouverture à Lomé",
+            title: "Tout le marché de Lomé, livré chez vous.",
+            subtitle: "Payez par TMoney ou Moov Money, en toute sécurité.",
+            cta: "Voir les produits",
+          },
+        ];
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -131,75 +160,10 @@ export default async function Home() {
       </nav>
 
       <main className="mx-auto w-full max-w-(--container-page) flex-1 px-4 pb-16 md:px-10">
-        {/* 2. Zone bannières — promo consommateur + tuiles utiles */}
-        <section className="grid gap-4 pt-6 lg:grid-cols-[1fr_300px]">
-          <div className="glass dot-grid relative flex flex-col justify-center overflow-hidden rounded-xl p-8 md:p-12">
-            <p className="font-label text-xs font-semibold tracking-widest text-emerald uppercase">
-              Paiement protégé jusqu&apos;à la livraison
-            </p>
-            <h1 className="mt-3 max-w-lg font-display text-3xl font-extrabold leading-tight md:text-5xl">
-              Tout le marché de Lomé, livré chez vous.
-            </h1>
-            <p className="mt-4 max-w-md text-ink-muted">
-              Payez par TMoney ou Moov Money. Votre argent n&apos;est versé au
-              vendeur qu&apos;une fois votre commande entre vos mains.
-            </p>
-            <div className="mt-6">
-              <LinkButton href="/produits" size="lg">
-                Voir les produits
-                <ChevronRightIcon className="size-4" />
-              </LinkButton>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <Link
-              href={sellerHref}
-              className="glass group flex flex-1 items-center gap-4 rounded-xl p-5 transition-colors hover:border-gold/40"
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
-                <BuildingStorefrontIcon className="size-5" />
-              </span>
-              <span>
-                <span className="block font-bold">Vendez sur Deal Lomé</span>
-                <span className="block text-sm text-ink-muted">
-                  Boutique gratuite, 5 % à la vente.
-                </span>
-              </span>
-              <ChevronRightIcon className="ml-auto size-4 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              href="/compte/wallet"
-              className="glass group flex flex-1 items-center gap-4 rounded-xl p-5 transition-colors hover:border-emerald/40"
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-emerald/10 text-emerald">
-                <WalletIcon className="size-5" />
-              </span>
-              <span>
-                <span className="block font-bold">Mon wallet</span>
-                <span className="block text-sm text-ink-muted">
-                  Rechargez par Mobile Money.
-                </span>
-              </span>
-              <ChevronRightIcon className="ml-auto size-4 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              href="/compte/commandes"
-              className="glass group flex flex-1 items-center gap-4 rounded-xl p-5 transition-colors hover:border-gold/40"
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/5 text-ink-muted">
-                <TruckIcon className="size-5" />
-              </span>
-              <span>
-                <span className="block font-bold">Suivre ma commande</span>
-                <span className="block text-sm text-ink-muted">
-                  De la préparation à la remise.
-                </span>
-              </span>
-              <ChevronRightIcon className="ml-auto size-4 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </section>
+        {/* 2. Carrousel de bannières produits */}
+        <div className="pt-6">
+          <HeroSlider banners={banners} />
+        </div>
 
         {/* 3. Rayon « Nouveautés » */}
         <section className="pt-12">
@@ -297,23 +261,23 @@ export default async function Home() {
           {[
             {
               Icon: ShieldCheckIcon,
-              title: "Argent protégé",
-              desc: "Versé au vendeur après réception confirmée.",
+              title: "Achats protégés",
+              desc: "Commandez l'esprit tranquille.",
             },
             {
               Icon: CheckBadgeIcon,
               title: "Vendeurs vérifiés",
-              desc: "Chaque boutique est validée à la main.",
+              desc: "Des boutiques de confiance.",
             },
             {
               Icon: BanknotesIcon,
               title: "Mobile Money",
-              desc: "TMoney & Moov Money, sans carte bancaire.",
+              desc: "TMoney & Moov Money.",
             },
             {
               Icon: TruckIcon,
               title: "Livraison à Lomé",
-              desc: "À domicile ou en point relais, avec preuve.",
+              desc: "À domicile ou en point relais.",
             },
           ].map(({ Icon: TrustIcon, title, desc }) => (
             <div key={title} className="flex items-start gap-3">
@@ -348,106 +312,8 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* 8. Questions fréquentes */}
-        <section className="mx-auto max-w-3xl pt-14">
-          <h2 className="mb-6 text-center font-display text-2xl font-bold">
-            Questions fréquentes
-          </h2>
-          <div className="flex flex-col gap-3">
-            {[
-              [
-                "Comment mon argent est-il protégé ?",
-                "Quand vous payez, la somme est bloquée sur la plateforme (système Escrow) : le vendeur n'est payé que lorsque vous confirmez avoir reçu votre commande. En cas de problème, vous ouvrez un litige et un médiateur tranche — remboursement intégral ou partiel sur votre wallet.",
-              ],
-              [
-                "Quels moyens de paiement acceptez-vous ?",
-                "Vous rechargez votre wallet Deal Lomé par Mobile Money (TMoney, Moov Money) puis payez vos commandes en un clic. Aucune carte bancaire n'est nécessaire.",
-              ],
-              [
-                "Comment devenir vendeur ?",
-                "Créez un compte gratuit, remplissez la demande « Devenir vendeur » (identité et informations de boutique), et notre équipe valide votre dossier. Ouvrir sa boutique ne coûte rien : nous prenons 5 % de commission uniquement quand vous vendez.",
-              ],
-              [
-                "Livrez-vous en dehors de Lomé ?",
-                "Nous démarrons par Lomé et sa périphérie, avec livraison à domicile ou en point relais. Les autres villes du Togo suivront progressivement.",
-              ],
-              [
-                "Que se passe-t-il si je ne reçois pas ma commande ?",
-                "Tant que vous n'avez pas confirmé la réception, votre argent reste bloqué. Ouvrez un litige depuis la page de votre commande : après examen, vous êtes remboursé sur votre wallet si la livraison n'a pas eu lieu.",
-              ],
-            ].map(([q, a]) => (
-              <details key={q} className="glass group rounded-lg">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 font-bold [&::-webkit-details-marker]:hidden">
-                  {q}
-                  <ChevronRightIcon className="size-4 shrink-0 text-gold transition-transform group-open:rotate-90" />
-                </summary>
-                <p className="px-6 pb-5 text-sm leading-relaxed text-ink-muted">
-                  {a}
-                </p>
-              </details>
-            ))}
-          </div>
-        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 bg-[#060f1a] px-4 pt-16 pb-10 md:px-10">
-        <div className="mx-auto mb-12 grid max-w-(--container-page) grid-cols-2 gap-8 md:grid-cols-4">
-          <div className="col-span-2 space-y-5 md:col-span-1">
-            <Link
-              href="/"
-              className="flex items-center gap-2 font-display text-xl font-extrabold"
-            >
-              <ShoppingBagIcon className="size-6 text-gold" />
-              Deal <span className="text-gold">Lomé</span>
-            </Link>
-            <p className="text-ink-muted">
-              La marketplace des commerçants du Togo. Achetez et vendez en toute
-              confiance.
-            </p>
-          </div>
-          {[
-            ["Société", ["À propos", "Carrières", "Presse", "Contact"]],
-            [
-              "Acheteurs",
-              ["Suivi de commande", "Livraison & tarifs", "Retours", "Aide"],
-            ],
-            [
-              "Vendeurs",
-              [
-                "Vendre sur Deal Lomé",
-                "Portail marchand",
-                "Académie vendeurs",
-                "Publicité",
-              ],
-            ],
-          ].map(([title, links]) => (
-            <div key={title as string}>
-              <h4 className="mb-5 font-bold">{title}</h4>
-              <ul className="space-y-3 font-label text-sm text-ink-muted">
-                {(links as string[]).map((l) => (
-                  <li key={l}>
-                    <span className="cursor-default transition-colors hover:text-gold">
-                      {l}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="mx-auto flex max-w-(--container-page) flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 md:flex-row">
-          <p className="font-label text-xs text-ink-muted">
-            © 2026 Deal Lomé, GK NÉGOCES × FlowKraft Agency. Excellence &
-            innovation au Togo.
-          </p>
-          <div className="flex items-center gap-4 text-ink-muted">
-            <CreditCardIcon className="size-6" />
-            <DevicePhoneMobileIcon className="size-6" />
-            <WalletIcon className="size-6" />
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

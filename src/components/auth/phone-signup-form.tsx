@@ -67,6 +67,10 @@ export function PhoneSignupForm() {
       setStep("otp");
     } catch (err) {
       setError(authErrorMessage(err));
+      // Doc Firebase : après un échec d'envoi, le reCAPTCHA doit être
+      // réinitialisé — un jeton consommé ferait échouer la tentative suivante.
+      verifierRef.current?.clear();
+      verifierRef.current = null;
     } finally {
       setLoading(false);
     }

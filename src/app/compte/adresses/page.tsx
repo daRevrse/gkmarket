@@ -27,7 +27,7 @@ export default async function AdressesPage({
     .orderBy(desc(addresses.isDefault), desc(addresses.createdAt));
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full max-w-3xl flex-1">
       <div className="mb-8">
         <Link
           href={backHref}

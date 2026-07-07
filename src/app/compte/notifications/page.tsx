@@ -34,7 +34,7 @@ export default async function NotificationsPage() {
   const unreadCount = items.filter((item) => !item.read).length;
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full max-w-3xl flex-1">
       <div className="mb-8">
         <Link
           href="/compte"

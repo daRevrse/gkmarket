@@ -13,6 +13,7 @@ import {
 } from "firebase/auth";
 import { FormError, FormField } from "@/components/auth/auth-card";
 import { DevOtpHint } from "@/components/auth/dev-otp-hint";
+import { ResendCode } from "@/components/auth/resend-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/firebase/client";
@@ -64,6 +65,37 @@ export function PhoneResetForm() {
       verifierRef.current = null;
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Renvoie un nouveau code au même numéro (verifier neuf, l'ancien jeton
+  // étant consommé). Lève en cas d'échec pour que ResendCode réarme son délai.
+  async function resendCode() {
+    setError(null);
+    const normalized = normalizeTogoPhone(phone);
+    if (!normalized) throw new Error("state");
+    try {
+      // L'ancien verifier vivait dans l'étape précédente (démontée) :
+      // son nettoyage peut échouer sans conséquence.
+      try {
+        verifierRef.current?.clear();
+      } catch {}
+      verifierRef.current = new RecaptchaVerifier(
+        auth,
+        "recaptcha-container-reset",
+        { size: "invisible" },
+      );
+      confirmationRef.current = await signInWithPhoneNumber(
+        auth,
+        normalized,
+        verifierRef.current,
+      );
+      setCode("");
+    } catch (err) {
+      setError(authErrorMessage(err));
+      verifierRef.current?.clear();
+      verifierRef.current = null;
+      throw err;
     }
   }
 
@@ -201,6 +233,8 @@ export function PhoneResetForm() {
         <Button type="submit" disabled={loading}>
           {loading ? "Vérification…" : "Vérifier le code"}
         </Button>
+        <ResendCode onResend={resendCode} />
+        <div id="recaptcha-container-reset" />
       </form>
     );
   }

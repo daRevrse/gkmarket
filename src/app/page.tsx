@@ -61,11 +61,11 @@ export default async function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Bandeau promo */}
-      <div className="flex items-center justify-center gap-2 bg-gold py-2 text-center font-label text-xs font-bold text-navy-deep">
-        <Icon name="zap" className="size-3.5" />
-        Flash Promo, jusqu&apos;à −50 % sur les produits agricoles locaux ce
-        week-end.
+      {/* Bandeau de lancement */}
+      <div className="flex items-center justify-center gap-2 bg-gold px-4 py-2 text-center font-label text-xs font-bold text-navy-deep">
+        <Icon name="sparkles" className="size-3.5" />
+        Lancement à Lomé : les premières boutiques ouvrent — la vôtre est
+        gratuite.
       </div>
 
       <SiteHeader />
@@ -82,14 +82,14 @@ export default async function Home() {
               </h1>
 
               <p className="max-w-xl text-lg text-ink-muted">
-                Le commerce du Togo, enfin digitalisé. Accédez à des milliers de
-                produits locaux et internationaux en un clic, livrés partout à
-                Lomé et dans les régions.
+                La marketplace des commerçants du Togo. Commandez chez des
+                vendeurs vérifiés, payez par Mobile Money, et faites-vous livrer
+                à Lomé — votre argent reste protégé jusqu&apos;à la réception.
               </p>
 
               <div className="flex flex-wrap gap-4 pt-2">
                 <LinkButton href="/produits" size="lg">
-                  Commencer à acheter
+                  Explorer le catalogue
                 </LinkButton>
                 <LinkButton href={sellerHref} size="lg" variant="secondary">
                   Devenir vendeur
@@ -268,24 +268,24 @@ export default async function Home() {
               {[
                 {
                   icon: "factory",
-                  name: "Coopérative Kara-Nord",
-                  role: "Fournisseur certifié, produits agricoles",
-                  tags: ["Stock 50 T", "Expédition sous 48 h"],
+                  name: "Coopératives agricoles",
+                  role: "Vendez vos récoltes en volume, au prix de gros",
+                  tags: ["Paliers de prix B2B", "Commandes groupées"],
                   accent: "border-l-emerald",
                   shift: "translate-x-4",
                 },
                 {
                   icon: "package",
-                  name: "Lomé Tech Distribution",
-                  role: "Grossiste, électronique & IT",
-                  tags: ["Unités 500+", "Prix B2B actif"],
+                  name: "Grossistes & importateurs",
+                  role: "Écoulez vos stocks auprès des revendeurs de Lomé",
+                  tags: ["Facturation entreprise", "Prix dégressifs"],
                   accent: "border-l-gold",
                   shift: "",
                 },
                 {
                   icon: "truck",
-                  name: "Togo Logistique Express",
-                  role: "Partenaire transport national",
+                  name: "Livreurs partenaires",
+                  role: "Rejoignez le réseau et encaissez les frais de course",
                   tags: [],
                   accent: "border-l-emerald",
                   shift: "translate-x-8 opacity-60",
@@ -343,10 +343,10 @@ export default async function Home() {
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-4">
                     <span className="block font-display text-3xl font-black text-gold">
-                      24 h
+                      5 %
                     </span>
                     <span className="text-sm font-bold text-ink-muted">
-                      Paiement vendeur
+                      De commission, uniquement à la vente
                     </span>
                   </div>
                 </div>
@@ -363,17 +363,19 @@ export default async function Home() {
                         <Icon name="bag" className="size-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-ink">Ma boutique GK</p>
+                        <p className="font-bold text-ink">Votre boutique</p>
                         <p className="text-xs text-gold">Vendeur vérifié</p>
                       </div>
                     </div>
-                    <Icon name="more-vertical" className="size-5 text-ink-muted" />
+                    <span className="font-label text-[10px] tracking-wider text-ink-muted uppercase">
+                      Aperçu illustratif
+                    </span>
                   </div>
                   <div className="space-y-4">
                     <div className="rounded-xl bg-white/5 p-4">
-                      <p className="mb-1 text-xs text-ink-muted">Ventes totales</p>
+                      <p className="mb-1 text-xs text-ink-muted">Ventes du mois</p>
                       <p className="font-display text-2xl font-black text-ink">
-                        4 280 000 FCFA
+                        1 240 500 FCFA
                       </p>
                       <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald">
                         <Icon name="trending-up" className="size-4" />
@@ -436,82 +438,88 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* 7. Chiffres clés */}
+        {/* 7. Nos engagements */}
         <section className="border-y border-white/5 bg-navy-deep/40 px-4 py-20 md:px-10">
-          <div className="mx-auto grid max-w-(--container-page) grid-cols-2 gap-8 lg:grid-cols-4">
+          <div className="mx-auto grid max-w-(--container-page) grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["2 400+", "Vendeurs"],
-              ["18 500+", "Produits"],
-              ["45 000+", "Clients"],
-              ["98 %", "Satisfaction"],
-            ].map(([value, label]) => (
-              <div key={label} className="text-center">
-                <p className="mb-2 font-display text-4xl font-black text-gold md:text-5xl">
-                  {value}
-                </p>
-                <p className="font-label text-xs font-bold tracking-widest text-ink-muted uppercase">
-                  {label}
-                </p>
+              {
+                icon: "shield",
+                title: "Argent protégé",
+                desc: "Votre paiement est bloqué en Escrow et versé au vendeur seulement quand vous confirmez la réception.",
+              },
+              {
+                icon: "check",
+                title: "Vendeurs vérifiés",
+                desc: "Chaque boutique est contrôlée à la main (identité, activité) avant d'apparaître sur le site.",
+              },
+              {
+                icon: "wallet",
+                title: "Mobile Money",
+                desc: "Rechargez votre wallet par TMoney ou Moov Money — pas besoin de carte bancaire.",
+              },
+              {
+                icon: "truck",
+                title: "Livraison suivie",
+                desc: "Suivez votre commande étape par étape, avec preuve de remise à la livraison.",
+              },
+            ].map((g) => (
+              <div key={g.title} className="flex flex-col items-center text-center">
+                <span className="mb-4 flex size-12 items-center justify-center rounded-xl border border-gold/20 bg-white/5 text-gold">
+                  <Icon name={g.icon} className="size-5" />
+                </span>
+                <h3 className="mb-2 font-display text-lg font-bold">{g.title}</h3>
+                <p className="max-w-xs text-sm text-ink-muted">{g.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* 8. Témoignages */}
+        {/* 8. Questions fréquentes */}
         <section className="px-4 py-24 md:px-10">
-          <div className="mx-auto max-w-(--container-page)">
-            <div className="mb-16 text-center">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-12 text-center">
               <h2 className="mb-3 font-display text-3xl font-bold">
-                Ils nous font confiance
+                Questions fréquentes
               </h2>
               <p className="text-ink-muted">
-                Ce que nos utilisateurs disent de nous.
+                Tout ce qu&apos;il faut savoir avant de commander ou de vendre.
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            <div className="flex flex-col gap-3">
               {[
-                {
-                  quote:
-                    "GK Market a révolutionné ma façon d'acheter mes intrants agricoles. Je gagne un temps précieux.",
-                  name: "Koffi A.",
-                  role: "Producteur à Atakpamé",
-                  initials: "KA",
-                  accent: "text-gold",
-                },
-                {
-                  quote:
-                    "En tant que vendeur, j'ai triplé mon chiffre d'affaires en moins de 6 mois. La plateforme est intuitive.",
-                  name: "Aminata T.",
-                  role: "Boutique de mode, Lomé",
-                  initials: "AT",
-                  accent: "text-emerald",
-                },
-                {
-                  quote:
-                    "Service client réactif et livraisons toujours à temps. Enfin une marketplace fiable au Togo.",
-                  name: "Mawuli S.",
-                  role: "Entrepreneur digital",
-                  initials: "MS",
-                  accent: "text-gold",
-                },
-              ].map((t) => (
-                <div key={t.name} className="glass rounded-[32px] p-8">
-                  <div className={`mb-6 flex gap-1 ${t.accent}`}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Icon key={i} name="star" filled className="size-4" />
-                    ))}
-                  </div>
-                  <p className="mb-8 text-lg italic">“{t.quote}”</p>
-                  <div className="flex items-center gap-4">
-                    <span className="flex size-12 items-center justify-center rounded-full bg-white/5 font-label text-sm font-bold">
-                      {t.initials}
-                    </span>
-                    <div>
-                      <h4 className="font-bold">{t.name}</h4>
-                      <p className="text-xs text-ink-muted">{t.role}</p>
-                    </div>
-                  </div>
-                </div>
+                [
+                  "Comment mon argent est-il protégé ?",
+                  "Quand vous payez, la somme est bloquée sur la plateforme (système Escrow) : le vendeur n'est payé que lorsque vous confirmez avoir reçu votre commande. En cas de problème, vous ouvrez un litige et un médiateur tranche — remboursement intégral ou partiel sur votre wallet.",
+                ],
+                [
+                  "Quels moyens de paiement acceptez-vous ?",
+                  "Vous rechargez votre wallet Deal Lomé par Mobile Money (TMoney, Moov Money) puis payez vos commandes en un clic. Aucune carte bancaire n'est nécessaire.",
+                ],
+                [
+                  "Comment devenir vendeur ?",
+                  "Créez un compte gratuit, remplissez la demande « Devenir vendeur » (identité et informations de boutique), et notre équipe valide votre dossier. Ouvrir sa boutique ne coûte rien : nous prenons 5 % de commission uniquement quand vous vendez.",
+                ],
+                [
+                  "Livrez-vous en dehors de Lomé ?",
+                  "Nous démarrons par Lomé et sa périphérie, avec livraison à domicile ou en point relais. Les autres villes du Togo suivront progressivement.",
+                ],
+                [
+                  "Que se passe-t-il si je ne reçois pas ma commande ?",
+                  "Tant que vous n'avez pas confirmé la réception, votre argent reste bloqué. Ouvrez un litige depuis la page de votre commande : après examen, vous êtes remboursé sur votre wallet si la livraison n'a pas eu lieu.",
+                ],
+              ].map(([q, a]) => (
+                <details key={q} className="glass group rounded-lg">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 font-bold [&::-webkit-details-marker]:hidden">
+                    {q}
+                    <Icon
+                      name="chevron-right"
+                      className="size-4 shrink-0 text-gold transition-transform group-open:rotate-90"
+                    />
+                  </summary>
+                  <p className="px-6 pb-5 text-sm leading-relaxed text-ink-muted">
+                    {a}
+                  </p>
+                </details>
               ))}
             </div>
           </div>

@@ -38,6 +38,7 @@ services:
       FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}
       CRON_SECRET: ${CRON_SECRET}
       EMAIL_FROM: ${EMAIL_FROM:-no-reply@deallome.com}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
       DEMO_MODE: "1"
     depends_on:
       db:

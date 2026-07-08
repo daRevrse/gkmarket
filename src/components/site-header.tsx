@@ -102,9 +102,10 @@ export async function SiteHeader({ query }: { query?: string }) {
               href="/connexion"
               aria-label="Se connecter"
               title="Se connecter"
-              className="ml-1 rounded-full bg-gold p-2 text-navy-deep transition-colors hover:bg-gold-light"
+              className="ml-1 inline-flex items-center gap-2 rounded-full bg-gold px-3 py-2 font-label text-sm font-semibold text-navy-deep transition-colors hover:bg-gold-light sm:px-3.5"
             >
               <ArrowRightEndOnRectangleIcon className="size-5" />
+              <span className="hidden sm:inline">Se connecter</span>
             </Link>
           )}
         </nav>

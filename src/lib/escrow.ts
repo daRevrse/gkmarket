@@ -129,13 +129,14 @@ export async function releaseEscrowForOrder(
       title: `Course ${order.number} — gain versé`,
       body: `${formatFcfa(deliveryRow.delivery.feeFcfa)} versés sur votre wallet.`,
       link: "/compte/wallet",
+      email: true,
     });
   }
   if (mode === "auto") {
     await notify(order.buyerId, {
       type: "order_delivered",
       title: `Commande ${order.number} clôturée automatiquement`,
-      body: `Sans confirmation ni litige sous ${ESCROW_AUTO_RELEASE_DAYS} jours après l'expédition, les fonds Escrow ont été versés au vendeur.`,
+      body: `Sans confirmation ni litige sous ${ESCROW_AUTO_RELEASE_DAYS} jours après l'expédition, les fonds sécurisés ont été versés au vendeur.`,
       link: `/compte/commandes/${order.id}`,
       email: true,
     });

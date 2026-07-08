@@ -205,7 +205,7 @@ export async function generateInvoicePdf(input: {
   );
   y -= 12;
   page.drawText(
-    "Paiement sécurisé par Escrow Deal Lomé : fonds versés au vendeur après confirmation de réception.",
+    "Paiement sécurisé Deal Lomé : fonds versés au vendeur après confirmation de réception.",
     { x: left, y, size: 9, font, color: MUTED },
   );
 

@@ -86,7 +86,7 @@ export default async function ComptePage() {
     {
       icon: "basket",
       title: "Acheteur",
-      desc: "Achetez auprès de vendeurs vérifiés, payez en Escrow.",
+      desc: "Achetez auprès de vendeurs vérifiés, payez en toute sécurité.",
       state: <Badge variant="verified">Actif</Badge>,
       cta: (
         <LinkButton href="/produits" size="sm" variant="ghost">

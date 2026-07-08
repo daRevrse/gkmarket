@@ -40,7 +40,7 @@ export default async function AdminLitigesPage() {
         <h1 className="font-display text-3xl font-extrabold">Litiges</h1>
         <p className="mt-1 text-ink-muted">
           {openCount > 0
-            ? `${openCount} litige${openCount > 1 ? "s" : ""} en cours — ${formatFcfa(blockedFcfa)} bloqués en Escrow.`
+            ? `${openCount} litige${openCount > 1 ? "s" : ""} en cours — ${formatFcfa(blockedFcfa)} bloqués.`
             : "Aucun litige en cours."}
         </p>
       </div>

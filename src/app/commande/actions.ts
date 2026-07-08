@@ -131,7 +131,7 @@ export async function createOrder(
             type: "order_payment",
             amountFcfa: -total,
             orderId: order.id,
-            description: `Paiement commande ${number} (fonds en Escrow)`,
+            description: `Paiement commande ${number} (paiement sécurisé)`,
           });
           if (!ok) throw new Error("wallet");
         }
@@ -209,7 +209,7 @@ export async function createOrder(
         type: "order_new",
         title: `Nouvelle commande ${order.number}`,
         body: wallet
-          ? `${formatFcfa(order.total)} reçus en Escrow — préparez la commande.`
+          ? `${formatFcfa(order.total)} reçus et sécurisés — préparez la commande.`
           : `Commande de ${formatFcfa(order.total)} en attente de paiement.`,
         link: "/vendeur/commandes",
         email: true,
@@ -223,7 +223,7 @@ export async function createOrder(
         ? `Vos ${createdOrders.length} commandes sont enregistrées`
         : `Votre commande ${createdOrders[0]?.number ?? ""} est enregistrée`,
     body: wallet
-      ? "Paiement effectué — les fonds sont bloqués en Escrow jusqu'à la réception. Votre facture PDF est disponible depuis le détail de chaque commande."
+      ? "Paiement effectué — les fonds sont sécurisés jusqu'à la réception. Votre facture PDF est disponible depuis le détail de chaque commande."
       : "Payez depuis le détail de la commande pour lancer la préparation.",
     link: "/compte/commandes",
     // Reçu par email quand le paiement est immédiat (MVP n°123)

@@ -60,7 +60,7 @@ export default async function AdminFinancierPage() {
 
   const kpis = [
     {
-      label: `Fonds en Escrow (${escrow.nb} commande${escrow.nb > 1 ? "s" : ""})`,
+      label: `Fonds sécurisés (${escrow.nb} commande${escrow.nb > 1 ? "s" : ""})`,
       value: formatFcfa(Number(escrow.value ?? 0)),
     },
     {
@@ -90,7 +90,7 @@ export default async function AdminFinancierPage() {
       <div className="mb-8">
         <h1 className="font-display text-3xl font-extrabold">Financier</h1>
         <p className="mt-1 text-ink-muted">
-          Trésorerie de la plateforme : Escrow, commissions et grand livre
+          Trésorerie de la plateforme : fonds sécurisés, commissions et grand livre
           des wallets. Les commandes expédiées sans confirmation ni litige
           sont libérées après {ESCROW_AUTO_RELEASE_DAYS} jours (cron
           quotidien en production).

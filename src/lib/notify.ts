@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notifications, users } from "@/db/schema";
-import { sendEmail } from "@/lib/email";
+import { renderTransactionalEmail, sendEmail } from "@/lib/email";
 
 export type NotificationInput = {
   type: string;
@@ -40,16 +40,16 @@ export async function notify(
         .where(eq(users.id, userId))
         .limit(1);
       if (user?.email && user.status === "active") {
+        const { text, html } = renderTransactionalEmail({
+          title: input.title,
+          body: input.body,
+          link: input.link,
+        });
         await sendEmail({
           toEmail: user.email,
           subject: `Deal Lomé — ${input.title}`,
-          bodyText: [
-            input.title,
-            "",
-            input.body ?? "",
-            input.link ? `\nDétails : https://deallome.com${input.link}` : "",
-            "\n— L'équipe Deal Lomé",
-          ].join("\n"),
+          bodyText: text,
+          bodyHtml: html,
         });
       }
     }

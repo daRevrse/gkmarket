@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Deal Lomé — La marketplace B2B & B2C du Togo",
   description:
-    "Achetez et vendez en toute confiance au Togo : paiement sécurisé par Escrow, vendeurs vérifiés, livraison locale à Lomé.",
+    "Achetez et vendez en toute confiance au Togo : paiement sécurisé, vendeurs vérifiés, livraison locale à Lomé.",
 };
 
 export default function RootLayout({

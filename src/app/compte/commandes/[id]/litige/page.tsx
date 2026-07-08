@@ -50,7 +50,7 @@ export default async function OuvrirLitigePage({
         </h1>
         <p className="mt-1 text-ink-muted">
           Commande {row.order.number} chez {row.shopName}. À l&apos;ouverture
-          du litige, les fonds Escrow sont bloqués jusqu&apos;à la résolution
+          du litige, les fonds sont bloqués jusqu&apos;à la résolution
           — le vendeur ne sera pas payé tant que le problème n&apos;est pas
           tranché.
         </p>

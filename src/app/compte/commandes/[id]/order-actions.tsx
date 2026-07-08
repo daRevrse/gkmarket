@@ -89,7 +89,7 @@ export function OrderActions({
 
       {status === "shipped" ? (
         <p className="text-xs text-ink-muted">
-          En confirmant la réception, les fonds bloqués en Escrow sont versés
+          En confirmant la réception, les fonds sécurisés sont versés
           au vendeur.
         </p>
       ) : null}

@@ -69,6 +69,7 @@ export async function acceptDelivery(
       title: `Course ${context.number} acceptée`,
       body: "Le livreur passera récupérer le colis.",
       link: "/vendeur/commandes",
+      email: true,
     });
   }
 
@@ -224,7 +225,7 @@ export async function markDelivered(
     await notify(context.buyerId, {
       type: "order_delivered_proof",
       title: `Colis ${context.number} remis`,
-      body: `Remis à ${input.recipientName.trim()}. Confirmez la réception pour libérer les fonds Escrow.`,
+      body: `Remis à ${input.recipientName.trim()}. Confirmez la réception pour libérer le paiement.`,
       link: `/compte/commandes/${context.orderId}`,
       email: true,
     });

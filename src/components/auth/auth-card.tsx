@@ -112,7 +112,7 @@ export function AuthCard({
           <div className="mt-8">{children}</div>
 
           <p className="mt-10 text-center font-label text-xs text-ink-muted lg:hidden">
-            Paiement Escrow, vendeurs vérifiés, livraison à Lomé.
+            Paiement sécurisé, vendeurs vérifiés, livraison à Lomé.
           </p>
         </div>
       </section>

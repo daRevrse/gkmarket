@@ -143,7 +143,7 @@ export function CheckoutForm({
               <span className="font-medium">Wallet Deal Lomé</span> — solde :{" "}
               {walletBalance.toLocaleString("fr-FR")} FCFA
               <span className="block text-ink-muted">
-                Paiement immédiat, fonds bloqués en Escrow jusqu&apos;à la
+                Paiement immédiat, fonds sécurisés jusqu&apos;à la
                 livraison confirmée.
               </span>
               {!walletSufficient ? (

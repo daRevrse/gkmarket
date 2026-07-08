@@ -195,7 +195,7 @@ export default async function CommandeDetailPage({
             >
               Ouvrir un litige
             </Link>{" "}
-            — les fonds Escrow seront bloqués jusqu&apos;à la résolution.
+            — les fonds seront bloqués jusqu&apos;à la résolution.
           </p>
         ) : null}
 

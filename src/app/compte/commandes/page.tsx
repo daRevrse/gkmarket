@@ -46,7 +46,7 @@ export default async function CommandesPage({
       {nouveau ? (
         <p className="mb-6 rounded-md border border-emerald/40 bg-emerald/10 px-4 py-3 text-sm text-emerald-light">
           Votre commande a bien été enregistrée ! Suivez son avancement
-          ci-dessous — si elle est payée, les fonds restent bloqués en Escrow
+          ci-dessous — si elle est payée, les fonds restent sécurisés
           jusqu&apos;à votre confirmation de réception.
         </p>
       ) : null}

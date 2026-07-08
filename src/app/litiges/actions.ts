@@ -134,7 +134,7 @@ export async function openDispute(
     await notify(seller.userId, {
       type: "dispute_opened",
       title: `Litige ouvert sur ${order.number}`,
-      body: `Motif : ${reasonLabel}. Les fonds Escrow sont bloqués — répondez à l'acheteur dans le fil du litige.`,
+      body: `Motif : ${reasonLabel}. Le paiement est gelé le temps du litige — répondez à l'acheteur dans le fil du litige.`,
       link: disputeId ? `/litiges/${disputeId}` : "/vendeur/commandes",
       email: true,
     });
@@ -142,8 +142,9 @@ export async function openDispute(
   await notifyMany(await adminUserIds(), {
     type: "dispute_opened",
     title: `Litige à arbitrer — ${order.number}`,
-    body: `Motif : ${reasonLabel}. ${formatFcfa(order.totalFcfa)} bloqués en Escrow.`,
+    body: `Motif : ${reasonLabel}. ${formatFcfa(order.totalFcfa)} bloqués le temps de l'arbitrage.`,
     link: disputeId ? `/litiges/${disputeId}` : "/admin/litiges",
+    email: true,
   });
 
   revalidateDisputePaths(order.id, disputeId);
@@ -363,6 +364,7 @@ export async function resolveDispute(
       title: `Course ${order.number} — gain versé`,
       body: `${formatFcfa(deliveryRow.delivery.feeFcfa)} versés sur votre wallet (litige tranché).`,
       link: "/compte/wallet",
+      email: true,
     });
   }
 

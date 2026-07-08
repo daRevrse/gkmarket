@@ -136,7 +136,7 @@ export default async function LitigePage({
             </div>
           ) : null}
           <p className="mt-4 text-xs text-ink-muted">
-            Fonds Escrow bloqués : {formatFcfa(order.totalFcfa)}. Résolution en
+            Fonds bloqués : {formatFcfa(order.totalFcfa)}. Résolution en
             3 phases — dialogue entre les parties, médiation Deal Lomé,
             décision administrative.
           </p>

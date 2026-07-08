@@ -112,7 +112,7 @@ export default async function AdminDashboardPage() {
     { label: "GMV (volume d'affaires)", value: formatFcfa(gmv) },
     { label: "Panier moyen (AOV)", value: formatFcfa(aov) },
     { label: "Commissions perçues", value: formatFcfa(Number(commissions.value ?? 0)) },
-    { label: "Fonds en Escrow", value: formatFcfa(Number(escrow.value ?? 0)) },
+    { label: "Fonds sécurisés", value: formatFcfa(Number(escrow.value ?? 0)) },
     {
       label: "Soldes wallets (passif)",
       value: formatFcfa(Number(walletLiability.value ?? 0)),

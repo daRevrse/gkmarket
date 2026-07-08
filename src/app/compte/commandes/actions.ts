@@ -66,7 +66,7 @@ export async function payOrder(orderId: string): Promise<{ error?: string }> {
       type: "order_payment",
       amountFcfa: -order.totalFcfa,
       orderId: order.id,
-      description: `Paiement commande ${order.number} (fonds en Escrow)`,
+      description: `Paiement commande ${order.number} (paiement sécurisé)`,
     });
     if (!ok) return;
     await tx
@@ -81,7 +81,7 @@ export async function payOrder(orderId: string): Promise<{ error?: string }> {
   if (sellerUid) {
     await notify(sellerUid, {
       type: "order_paid",
-      title: `Paiement reçu en Escrow — ${order.number}`,
+      title: `Paiement reçu et sécurisé — ${order.number}`,
       body: `${formatFcfa(order.totalFcfa)} sécurisés. Préparez la commande.`,
       link: "/vendeur/commandes",
       email: true,
@@ -91,7 +91,7 @@ export async function payOrder(orderId: string): Promise<{ error?: string }> {
   await notify(user.id, {
     type: "order_paid_receipt",
     title: `Paiement de ${order.number} confirmé`,
-    body: `${formatFcfa(order.totalFcfa)} débités de votre wallet et bloqués en Escrow. Votre facture PDF est disponible depuis le détail de la commande.`,
+    body: `${formatFcfa(order.totalFcfa)} débités de votre wallet et sécurisés jusqu'à la réception. Votre facture PDF est disponible depuis le détail de la commande.`,
     link: `/compte/commandes/${order.id}`,
     email: true,
   });
@@ -173,6 +173,7 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
           ? "L'acheteur a été remboursé, le stock est restitué."
           : "Le stock est restitué.",
       link: "/vendeur/commandes",
+      email: true,
     });
   }
 

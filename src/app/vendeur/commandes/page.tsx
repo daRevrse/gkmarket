@@ -91,7 +91,7 @@ export default async function VendeurCommandesPage() {
         </h1>
         <p className="mt-1 text-ink-muted">
           Préparez vos commandes payées, puis demandez un livreur (ou expédiez
-          vous-même). Les fonds Escrow sont versés à la réception.
+          vous-même). Les fonds sont versés à la réception.
         </p>
       </div>
 

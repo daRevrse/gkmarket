@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   BanknotesIcon,
+  BoltIcon,
   BuildingStorefrontIcon,
   CheckBadgeIcon,
   ChevronRightIcon,
@@ -15,14 +16,15 @@ import {
   TruckIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, productImages, products, sellerProfiles } from "@/db/schema";
+import { categories, products } from "@/db/schema";
 import { HeroSlider, type HeroBanner } from "@/components/hero-slider";
 import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { SiteHeader } from "@/components/site-header";
 import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
+import { publishedProducts } from "@/lib/catalog";
 import { formatFcfa } from "@/lib/format";
 
 /** Icône Heroicons par catégorie racine (slug). */
@@ -40,33 +42,6 @@ const CATEGORY_ICON: Record<
   "auto-moto": WrenchScrewdriverIcon,
 };
 
-const productSelection = {
-  id: products.id,
-  title: products.title,
-  priceFcfa: products.priceFcfa,
-  wholesalePriceFcfa: products.wholesalePriceFcfa,
-  stock: products.stock,
-  imageUrl: productImages.url,
-  shopName: sellerProfiles.shopName,
-};
-
-function publishedProducts() {
-  return db
-    .select(productSelection)
-    .from(products)
-    .leftJoin(
-      productImages,
-      and(eq(productImages.productId, products.id), eq(productImages.position, 0)),
-    )
-    .innerJoin(
-      sellerProfiles,
-      and(
-        eq(sellerProfiles.id, products.sellerId),
-        eq(sellerProfiles.status, "approved"),
-      ),
-    );
-}
-
 export default async function Home() {
   const user = await getCurrentUser();
   const sellerHref = user ? "/compte/devenir-vendeur" : "/inscription";
@@ -81,6 +56,18 @@ export default async function Home() {
     .where(eq(products.status, "published"))
     .orderBy(desc(products.createdAt))
     .limit(12);
+
+  // Offres en cours : promo définie et non expirée, les plus urgentes d'abord.
+  const promos = await publishedProducts()
+    .where(
+      and(
+        eq(products.status, "published"),
+        isNotNull(products.promoPriceFcfa),
+        gt(products.promoEndsAt, new Date()),
+      ),
+    )
+    .orderBy(asc(products.promoEndsAt))
+    .limit(6);
 
   // Rayons par catégorie racine (racine + sous-catégories), affichés
   // seulement s'ils ont assez de produits pour faire un vrai rayon.
@@ -165,7 +152,31 @@ export default async function Home() {
           <HeroSlider banners={banners} />
         </div>
 
-        {/* 3. Rayon « Nouveautés » */}
+        {/* 3. Offres & promos (compte à rebours) */}
+        {promos.length > 0 ? (
+          <section className="pt-12">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <h2 className="flex items-center gap-2 font-display text-2xl font-bold">
+                <BoltIcon className="size-6 text-gold" />
+                Offres & promos
+              </h2>
+              <Link
+                href="/produits"
+                className="inline-flex items-center gap-1 font-label text-sm text-emerald hover:underline"
+              >
+                Tout voir
+                <ChevronRightIcon className="size-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              {promos.map((product: CatalogProduct) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {/* 4. Rayon « Nouveautés » */}
         <section className="pt-12">
           <div className="mb-5 flex items-end justify-between gap-4">
             <h2 className="font-display text-2xl font-bold">Nouveautés</h2>

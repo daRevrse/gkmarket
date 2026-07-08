@@ -1,8 +1,14 @@
 import Link from "next/link";
+import {
+  ArrowRightEndOnRectangleIcon,
+  BellIcon,
+  ShoppingCartIcon,
+  Squares2X2Icon,
+  UserCircleIcon,
+} from "@heroicons/react/24/outline";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cartItems, notifications } from "@/db/schema";
-import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 
 /** En-tête public : logo, recherche globale, panier, accès compte. */
@@ -45,20 +51,24 @@ export async function SiteHeader({ query }: { query?: string }) {
             className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-emerald focus:outline-none"
           />
         </form>
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-1.5">
           <Link
             href="/produits"
-            className="text-sm text-ink-muted transition-colors hover:text-ink"
+            aria-label="Catalogue"
+            title="Catalogue"
+            className="rounded-md p-2 text-ink-muted transition-colors hover:bg-white/5 hover:text-ink"
           >
-            Catalogue
+            <Squares2X2Icon className="size-5.5" />
           </Link>
           <Link
             href="/panier"
-            className="relative text-sm text-ink-muted transition-colors hover:text-ink"
+            aria-label="Panier"
+            title="Panier"
+            className="relative rounded-md p-2 text-ink-muted transition-colors hover:bg-white/5 hover:text-ink"
           >
-            Panier
+            <ShoppingCartIcon className="size-5.5" />
             {cartCount > 0 ? (
-              <span className="absolute -top-2 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-navy-deep">
+              <span className="absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-navy-deep">
                 {cartCount}
               </span>
             ) : null}
@@ -67,24 +77,35 @@ export async function SiteHeader({ query }: { query?: string }) {
             <Link
               href="/compte/notifications"
               aria-label="Notifications"
-              className="relative text-sm text-ink-muted transition-colors hover:text-ink"
+              title="Notifications"
+              className="relative rounded-md p-2 text-ink-muted transition-colors hover:bg-white/5 hover:text-ink"
             >
-              🔔
+              <BellIcon className="size-5.5" />
               {unreadCount > 0 ? (
-                <span className="absolute -top-2 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald px-1 text-[10px] font-bold text-navy-deep">
+                <span className="absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald px-1 text-[10px] font-bold text-navy-deep">
                   {unreadCount}
                 </span>
               ) : null}
             </Link>
           ) : null}
           {user ? (
-            <LinkButton href="/compte" variant="secondary" size="sm">
-              Mon compte
-            </LinkButton>
+            <Link
+              href="/compte"
+              aria-label="Mon compte"
+              title="Mon compte"
+              className="rounded-md p-2 text-emerald transition-colors hover:bg-emerald/10"
+            >
+              <UserCircleIcon className="size-6" />
+            </Link>
           ) : (
-            <LinkButton href="/connexion" size="sm">
-              Se connecter
-            </LinkButton>
+            <Link
+              href="/connexion"
+              aria-label="Se connecter"
+              title="Se connecter"
+              className="ml-1 rounded-full bg-gold p-2 text-navy-deep transition-colors hover:bg-gold-light"
+            >
+              <ArrowRightEndOnRectangleIcon className="size-5" />
+            </Link>
           )}
         </nav>
       </div>

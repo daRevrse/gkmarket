@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, productImages, products, sellerProfiles } from "@/db/schema";
 import { AddToCart } from "@/components/add-to-cart";
+import { Countdown } from "@/components/countdown";
+import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
+import { publishedProducts } from "@/lib/catalog";
 import { formatFcfa } from "@/lib/format";
+import { isPromoActive } from "@/lib/pricing";
 import { Gallery } from "./gallery";
 
 export default async function ProduitPage({
@@ -53,6 +57,44 @@ export default async function ProduitPage({
     .orderBy(asc(productImages.position));
 
   const inStock = product.stock > 0;
+  const promo = isPromoActive(product);
+  const promoPct = promo
+    ? Math.round(
+        ((product.priceFcfa - product.promoPriceFcfa!) / product.priceFcfa) *
+          100,
+      )
+    : 0;
+
+  // Autres produits de la boutique + produits du même rayon (racine).
+  const rootId = parent?.id ?? category.id;
+  const siblingIds = (
+    await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.parentId, rootId))
+  ).map((c) => c.id);
+  const [sellerProducts, similarProducts] = await Promise.all([
+    publishedProducts()
+      .where(
+        and(
+          eq(products.status, "published"),
+          eq(products.sellerId, product.sellerId),
+          ne(products.id, product.id),
+        ),
+      )
+      .orderBy(desc(products.createdAt))
+      .limit(6),
+    publishedProducts()
+      .where(
+        and(
+          eq(products.status, "published"),
+          inArray(products.categoryId, [rootId, ...siblingIds]),
+          ne(products.id, product.id),
+        ),
+      )
+      .orderBy(desc(products.createdAt))
+      .limit(6),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -95,16 +137,32 @@ export default async function ProduitPage({
               </p>
             </div>
 
-            <div className="flex items-baseline gap-3">
+            <div className="flex flex-wrap items-baseline gap-3">
               <span className="font-display text-3xl font-extrabold text-gold">
-                {formatFcfa(product.priceFcfa)}
+                {formatFcfa(promo ? product.promoPriceFcfa! : product.priceFcfa)}
               </span>
+              {promo ? (
+                <>
+                  <span className="text-lg text-ink-muted line-through">
+                    {formatFcfa(product.priceFcfa)}
+                  </span>
+                  <span className="rounded-full bg-danger px-2.5 py-1 font-label text-xs font-bold text-navy-deep">
+                    −{promoPct} %
+                  </span>
+                </>
+              ) : null}
               {inStock ? (
                 <Badge variant="verified">En stock ({product.stock})</Badge>
               ) : (
                 <Badge variant="neutral">Rupture de stock</Badge>
               )}
             </div>
+            {promo ? (
+              <p className="flex items-center gap-2 text-sm text-ink-muted">
+                Offre valable encore
+                <Countdown endsAt={product.promoEndsAt!.toISOString()} />
+              </p>
+            ) : null}
 
             {product.wholesalePriceFcfa ? (
               <Card className="border-gold/30 p-4">
@@ -147,6 +205,8 @@ export default async function ProduitPage({
                   priceFcfa: product.priceFcfa,
                   wholesalePriceFcfa: product.wholesalePriceFcfa,
                   wholesaleMinQty: product.wholesaleMinQty,
+                  promoPriceFcfa: product.promoPriceFcfa,
+                  promoEndsAt: product.promoEndsAt?.toISOString() ?? null,
                 }}
                 minOrderQty={product.minOrderQty}
                 stock={product.stock}
@@ -174,6 +234,44 @@ export default async function ProduitPage({
             ) : null}
           </div>
         </div>
+
+        {/* Autres produits de la boutique */}
+        {sellerProducts.length > 0 ? (
+          <section className="pt-14">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <h2 className="font-display text-2xl font-bold">
+                Du même vendeur — {seller.shopName}
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              {sellerProducts.map((p: CatalogProduct) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Produits du même rayon */}
+        {similarProducts.length > 0 ? (
+          <section className="pt-12">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <h2 className="font-display text-2xl font-bold">
+                Produits similaires
+              </h2>
+              <Link
+                href={`/produits?categorie=${(parent ?? category).slug}`}
+                className="font-label text-sm text-emerald hover:underline"
+              >
+                Tout le rayon
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              {similarProducts.map((p: CatalogProduct) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </div>
   );

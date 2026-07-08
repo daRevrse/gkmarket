@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Countdown } from "@/components/countdown";
 import { Badge } from "@/components/ui/badge";
 import { formatFcfa } from "@/lib/format";
+import { isPromoActive } from "@/lib/pricing";
 
 export type CatalogProduct = {
   id: string;
@@ -10,9 +12,24 @@ export type CatalogProduct = {
   stock: number;
   imageUrl: string | null;
   shopName: string | null;
+  promoPriceFcfa?: number | null;
+  promoEndsAt?: Date | string | null;
 };
 
 export function ProductCard({ product }: { product: CatalogProduct }) {
+  const promo = isPromoActive({ ...product, wholesaleMinQty: null });
+  const promoPct = promo
+    ? Math.round(
+        ((product.priceFcfa - product.promoPriceFcfa!) / product.priceFcfa) *
+          100,
+      )
+    : 0;
+  const endsAtIso = promo
+    ? typeof product.promoEndsAt === "string"
+      ? product.promoEndsAt
+      : product.promoEndsAt!.toISOString()
+    : null;
+
   return (
     <Link
       href={`/produits/${product.id}`}
@@ -31,13 +48,29 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
           <span className="absolute top-2 left-2">
             <Badge variant="neutral">Rupture</Badge>
           </span>
+        ) : promo ? (
+          <span className="absolute top-2 left-2 rounded-full bg-danger px-2.5 py-1 font-label text-[11px] font-bold text-navy-deep">
+            −{promoPct} %
+          </span>
         ) : null}
       </div>
       <div className="p-3">
         <h3 className="truncate text-sm font-medium">{product.title}</h3>
-        <p className="mt-1 font-display font-bold text-gold">
-          {formatFcfa(product.priceFcfa)}
-        </p>
+        {promo ? (
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+            <p className="font-display font-bold text-gold">
+              {formatFcfa(product.promoPriceFcfa!)}
+            </p>
+            <p className="text-xs text-ink-muted line-through">
+              {formatFcfa(product.priceFcfa)}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 font-display font-bold text-gold">
+            {formatFcfa(product.priceFcfa)}
+          </p>
+        )}
+        {endsAtIso ? <Countdown endsAt={endsAtIso} className="mt-0.5" /> : null}
         {product.shopName ? (
           <p className="mt-0.5 truncate text-xs text-ink-muted">
             {product.shopName}

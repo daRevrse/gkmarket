@@ -1,10 +1,10 @@
 import Link from "next/link";
 import {
-  ArrowRightEndOnRectangleIcon,
   BellIcon,
   ShoppingCartIcon,
   Squares2X2Icon,
   UserCircleIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -104,7 +104,7 @@ export async function SiteHeader({ query }: { query?: string }) {
               title="Se connecter"
               className="ml-1 inline-flex items-center gap-2 rounded-full bg-gold px-3 py-2 font-label text-sm font-semibold text-navy-deep transition-colors hover:bg-gold-light sm:px-3.5"
             >
-              <ArrowRightEndOnRectangleIcon className="size-5" />
+              <UserIcon className="size-5" />
               <span className="hidden sm:inline">Se connecter</span>
             </Link>
           )}

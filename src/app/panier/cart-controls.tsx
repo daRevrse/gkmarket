@@ -35,7 +35,7 @@ export function QuantityStepper({
         onClick={() => change(quantity - 1)}
         className="px-3 py-1.5 text-ink-muted hover:text-ink disabled:opacity-40"
       >
-        −
+        -
       </button>
       <span className="min-w-9 text-center text-sm font-bold">{quantity}</span>
       <button

@@ -81,7 +81,7 @@ export async function payOrder(orderId: string): Promise<{ error?: string }> {
   if (sellerUid) {
     await notify(sellerUid, {
       type: "order_paid",
-      title: `Paiement reçu et sécurisé — ${order.number}`,
+      title: `Paiement reçu et sécurisé - ${order.number}`,
       body: `${formatFcfa(order.totalFcfa)} sécurisés. Préparez la commande.`,
       link: "/vendeur/commandes",
       email: true,

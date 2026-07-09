@@ -172,7 +172,7 @@ export function CourierForm({
       </FormField>
 
       <p className="text-xs text-ink-muted">
-        Formats acceptés : JPG, PNG, WebP, PDF — 5 Mo max. Vos documents sont
+        Formats acceptés : JPG, PNG, WebP, PDF - 5 Mo max. Vos documents sont
         privés et consultés uniquement par notre équipe de validation.
       </p>
 

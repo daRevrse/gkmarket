@@ -67,7 +67,7 @@ export async function createOrder(
 
   for (const line of lines) {
     if (line.product.status !== "published" || line.sellerStatus !== "approved") {
-      return { error: `« ${line.product.title} » n'est plus disponible — retirez-le du panier.` };
+      return { error: `« ${line.product.title} » n'est plus disponible - retirez-le du panier.` };
     }
     if (line.item.quantity > line.product.stock) {
       return {
@@ -180,7 +180,7 @@ export async function createOrder(
     const message = err instanceof Error ? err.message : "";
     if (message.startsWith("stock:")) {
       return {
-        error: `Stock insuffisant pour « ${message.slice(6)} » — un autre acheteur est passé avant vous.`,
+        error: `Stock insuffisant pour « ${message.slice(6)} » - un autre acheteur est passé avant vous.`,
       };
     }
     if (message === "wallet") {
@@ -192,7 +192,7 @@ export async function createOrder(
     return { error: "La commande a échoué. Réessayez." };
   }
 
-  // Notifications après commit (MVP n°143, 151, 303-304) — jamais bloquantes.
+  // Notifications après commit (MVP n°143, 151, 303-304) - jamais bloquantes.
   const sellerRows = await db
     .select({ id: sellerProfiles.id, userId: sellerProfiles.userId })
     .from(sellerProfiles)
@@ -209,7 +209,7 @@ export async function createOrder(
         type: "order_new",
         title: `Nouvelle commande ${order.number}`,
         body: wallet
-          ? `${formatFcfa(order.total)} reçus et sécurisés — préparez la commande.`
+          ? `${formatFcfa(order.total)} reçus et sécurisés - préparez la commande.`
           : `Commande de ${formatFcfa(order.total)} en attente de paiement.`,
         link: "/vendeur/commandes",
         email: true,
@@ -223,7 +223,7 @@ export async function createOrder(
         ? `Vos ${createdOrders.length} commandes sont enregistrées`
         : `Votre commande ${createdOrders[0]?.number ?? ""} est enregistrée`,
     body: wallet
-      ? "Paiement effectué — les fonds sont sécurisés jusqu'à la réception. Votre facture PDF est disponible depuis le détail de chaque commande."
+      ? "Paiement effectué - les fonds sont sécurisés jusqu'à la réception. Votre facture PDF est disponible depuis le détail de chaque commande."
       : "Payez depuis le détail de la commande pour lancer la préparation.",
     link: "/compte/commandes",
     // Reçu par email quand le paiement est immédiat (MVP n°123)

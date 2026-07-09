@@ -3,7 +3,7 @@ import { autoReleaseOverdueEscrows } from "@/lib/escrow";
 
 /**
  * Déblocage automatique de l'Escrow (MVP n°119), à appeler périodiquement.
- * En production : Vercel Cron (vercel.json) — la requête porte
+ * En production : Vercel Cron (vercel.json) - la requête porte
  * `Authorization: Bearer ${CRON_SECRET}`. Sans CRON_SECRET configuré
  * (développement local), la route reste ouverte.
  */

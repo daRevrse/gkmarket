@@ -147,7 +147,7 @@ export default async function ProduitPage({
                     {formatFcfa(product.priceFcfa)}
                   </span>
                   <span className="rounded-full bg-danger px-2.5 py-1 font-label text-xs font-bold text-navy-deep">
-                    −{promoPct} %
+                    -{promoPct} %
                   </span>
                 </>
               ) : null}
@@ -240,7 +240,7 @@ export default async function ProduitPage({
           <section className="pt-14">
             <div className="mb-5 flex items-end justify-between gap-4">
               <h2 className="font-display text-2xl font-bold">
-                Du même vendeur — {seller.shopName}
+                Du même vendeur - {seller.shopName}
               </h2>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">

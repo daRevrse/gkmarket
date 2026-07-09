@@ -84,7 +84,7 @@ export default async function VendeurCommandesPage() {
           href="/vendeur/produits"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mes produits
+          ‹ Mes produits
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Commandes reçues
@@ -142,7 +142,7 @@ export default async function VendeurCommandesPage() {
                 <ul className="mt-3 border-t border-white/[0.06] pt-3 text-sm text-ink-muted">
                   {orderLines.map((item) => (
                     <li key={item.id}>
-                      {item.quantity} × {item.title} —{" "}
+                      {item.quantity} × {item.title} -{" "}
                       {formatFcfa(item.totalFcfa)}
                     </li>
                   ))}
@@ -154,7 +154,7 @@ export default async function VendeurCommandesPage() {
                     rel="noreferrer"
                     className="mt-2 inline-block text-sm text-emerald hover:underline"
                   >
-                    Facture PDF →
+                    Facture PDF ›
                   </a>
                 ) : null}
 
@@ -164,10 +164,10 @@ export default async function VendeurCommandesPage() {
                       {deliveryStatus.label}
                     </Badge>
                     <span className="text-ink-muted">
-                      Livreur : {deliveryRow.courierName ?? "—"}
+                      Livreur : {deliveryRow.courierName ?? "-"}
                       {deliveryRow.delivery.status === "refused" &&
                       deliveryRow.delivery.refusalReason
-                        ? ` — motif : ${deliveryRow.delivery.refusalReason}`
+                        ? ` - motif : ${deliveryRow.delivery.refusalReason}`
                         : ""}
                     </span>
                   </div>
@@ -192,8 +192,8 @@ export default async function VendeurCommandesPage() {
                         className="text-emerald hover:underline"
                       >
                         {dispute.status === "open"
-                          ? "Répondre au litige →"
-                          : "Voir le litige →"}
+                          ? "Répondre au litige ›"
+                          : "Voir le litige ›"}
                       </Link>
                     </div>
                   );

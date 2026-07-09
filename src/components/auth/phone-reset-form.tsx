@@ -60,7 +60,7 @@ export function PhoneResetForm() {
     } catch (err) {
       setError(authErrorMessage(err));
       // Doc Firebase : après un échec d'envoi, le reCAPTCHA doit être
-      // réinitialisé — un jeton consommé ferait échouer la tentative suivante.
+      // réinitialisé - un jeton consommé ferait échouer la tentative suivante.
       verifierRef.current?.clear();
       verifierRef.current = null;
     } finally {
@@ -180,7 +180,7 @@ export function PhoneResetForm() {
       <form onSubmit={handleSetPassword} className="flex flex-col gap-4">
         <FormError message={error} />
         <p className="text-sm text-ink-muted">
-          Numéro vérifié ✓ — choisissez votre nouveau mot de passe.
+          Numéro vérifié ✓ - choisissez votre nouveau mot de passe.
         </p>
         <FormField label="Nouveau mot de passe" htmlFor="newPassword">
           <Input

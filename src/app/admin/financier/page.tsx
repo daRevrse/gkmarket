@@ -124,7 +124,7 @@ export default async function AdminFinancierPage() {
               <div className="min-w-0">
                 <p className="font-medium">
                   {txTypeLabels[tx.type] ?? tx.type}
-                  <span className="text-ink-muted"> · {ownerName ?? "—"}</span>
+                  <span className="text-ink-muted"> · {ownerName ?? "-"}</span>
                 </p>
                 <p className="mt-0.5 truncate text-xs text-ink-muted">
                   {tx.description} · {tx.createdAt.toLocaleString("fr-FR")}

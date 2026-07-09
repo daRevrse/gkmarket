@@ -224,7 +224,7 @@ export function ProductForm({
             required
             className="w-full rounded-md border border-white/10 bg-navy-deep px-4 py-3 text-sm text-ink focus:border-emerald focus:outline-none"
           >
-            <option value="">— Choisir —</option>
+            <option value="">- Choisir -</option>
             {[...new Set(categories.map((c) => c.parentName))].map((parent) => (
               <optgroup key={parent} label={parent}>
                 {categories
@@ -325,7 +325,7 @@ export function ProductForm({
 
       <div className="flex flex-col gap-3">
         <span className="font-label text-sm font-semibold">
-          Photos ({slots.length}/{MAX_IMAGES}) — minimum {MIN_IMAGES}, la
+          Photos ({slots.length}/{MAX_IMAGES}) - minimum {MIN_IMAGES}, la
           première est la photo principale
         </span>
         <div className="flex flex-wrap gap-3">

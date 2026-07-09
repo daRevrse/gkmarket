@@ -29,7 +29,7 @@ function getAdminApp() {
 }
 
 // Initialisation paresseuse : `next build` importe les modules serveur sans
-// les exécuter (« Collecting page data ») — exiger les clés à ce moment-là
+// les exécuter (« Collecting page data ») - exiger les clés à ce moment-là
 // ferait échouer tout build sans environnement (CI, Vercel). L'app n'est
 // donc créée qu'au premier accès réel, à l'exécution.
 let app: App | undefined;

@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 
 /**
  * Modération produit (MVP n°245-248) : un produit non conforme est archivé
- * (retiré du catalogue). Le vendeur peut le corriger et le republier —
+ * (retiré du catalogue). Le vendeur peut le corriger et le republier -
  * une boutique récidiviste se suspend depuis /admin/vendeurs.
  */
 export async function moderateProduct(

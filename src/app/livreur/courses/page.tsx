@@ -50,12 +50,12 @@ export default async function LivreurCoursesPage() {
           href="/compte"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mon compte
+          ‹ Mon compte
         </Link>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-display text-3xl font-extrabold">Mes courses</h1>
           <Link href="/compte/wallet" className="text-sm text-emerald hover:underline">
-            Gains versés : {formatFcfa(totalEarned)} — voir mon wallet →
+            Gains versés : {formatFcfa(totalEarned)} - voir mon wallet ›
           </Link>
         </div>
         <p className="mt-1 text-ink-muted">
@@ -156,7 +156,7 @@ function CourseCard({
         <div>
           <p className="font-medium">Enlèvement</p>
           <p className="mt-1 text-ink-muted">
-            {row.shopName} —{" "}
+            {row.shopName} -{" "}
             {[row.shopCity, row.shopDistrict].filter(Boolean).join(" · ")}
             {row.shopPhone ? ` · ${row.shopPhone}` : ""}
           </p>
@@ -170,7 +170,7 @@ function CourseCard({
             {accepted ? (
               <>
                 <br />
-                {order.shippingName} — {order.shippingPhone}
+                {order.shippingName} - {order.shippingPhone}
                 {order.shippingDetails ? (
                   <>
                     <br />
@@ -193,7 +193,7 @@ function CourseCard({
           {delivery.deliveredAt
             ? ` le ${delivery.deliveredAt.toLocaleString("fr-FR")}`
             : ""}
-          {" — "}
+          {" - "}
           {order.status === "delivered"
             ? "gain versé sur votre wallet ✓"
             : "en attente de confirmation par l'acheteur."}

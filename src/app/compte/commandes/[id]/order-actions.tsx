@@ -41,7 +41,7 @@ export function OrderActions({
           href="/compte/wallet"
           className="text-sm text-emerald hover:underline"
         >
-          Recharger mon wallet →
+          Recharger mon wallet ›
         </Link>
       ) : null}
 

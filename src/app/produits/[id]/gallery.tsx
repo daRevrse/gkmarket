@@ -19,7 +19,7 @@ export function Gallery({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={images[current].url}
-            alt={`${title} — photo ${current + 1}`}
+            alt={`${title} - photo ${current + 1}`}
             className="h-full w-full object-cover"
           />
         ) : null}

@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { generateInvoicePdf } from "@/lib/invoice";
 
 /**
- * Téléchargement de la facture PDF (MVP n°122, 124, 154) — réservé à
+ * Téléchargement de la facture PDF (MVP n°122, 124, 154) - réservé à
  * l'acheteur, au vendeur de la commande et aux admins. Disponible dès que
  * la commande est payée.
  */

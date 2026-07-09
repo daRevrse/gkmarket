@@ -57,7 +57,7 @@ export function ProductCard({
           </span>
         ) : promo ? (
           <span className="absolute top-2 left-2 rounded-full bg-danger px-2.5 py-1 font-label text-[11px] font-bold text-navy-deep">
-            −{promoPct} %
+            -{promoPct} %
           </span>
         ) : null}
         {tag ? (

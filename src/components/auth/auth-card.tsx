@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/icon";
 /**
  * Gabarit « écran split » des pages d'authentification :
  * panneau gauche = marque (masqué sous lg), panneau droit = formulaire.
- * L'API (title, subtitle, children) reste celle de l'ancienne carte —
+ * L'API (title, subtitle, children) reste celle de l'ancienne carte -
  * les pages connexion / inscription / mot-de-passe-oublie sont inchangées.
  */
 export function AuthCard({
@@ -18,7 +18,7 @@ export function AuthCard({
 }) {
   return (
     <main className="flex min-h-screen flex-1">
-      {/* Panneau gauche — marque */}
+      {/* Panneau gauche - marque */}
       <aside className="dot-grid relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-white/5 bg-navy-deep p-12 lg:flex xl:p-16">
         {/* Cercles décoratifs plats */}
         <div
@@ -48,7 +48,7 @@ export function AuthCard({
             <span className="text-gold">chez vous</span>.
           </h2>
 
-          {/* Mosaïque produits — photos du catalogue (Unsplash, licence libre) */}
+          {/* Mosaïque produits - photos du catalogue (Unsplash, licence libre) */}
           <div className="grid grid-cols-2 gap-3">
             {[
               {
@@ -94,7 +94,7 @@ export function AuthCard({
         </p>
       </aside>
 
-      {/* Panneau droit — formulaire */}
+      {/* Panneau droit - formulaire */}
       <section className="flex flex-1 items-center justify-center px-4 py-12 sm:px-8">
         <div className="w-full max-w-md">
           <Link

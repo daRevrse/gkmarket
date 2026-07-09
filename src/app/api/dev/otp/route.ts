@@ -4,7 +4,7 @@ type VerificationCode = { code: string; phoneNumber: string };
 
 /**
  * Aide au développement : expose le dernier code OTP généré par l'émulateur
- * Firebase (qui n'envoie jamais de vrai SMS). Renvoie 404 hors émulateur —
+ * Firebase (qui n'envoie jamais de vrai SMS). Renvoie 404 hors émulateur -
  * cette route n'existe donc pas en production.
  */
 export async function GET(request: Request) {

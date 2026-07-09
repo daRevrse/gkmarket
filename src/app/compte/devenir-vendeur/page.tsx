@@ -18,7 +18,7 @@ export default async function DevenirVendeurPage() {
           href="/compte"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mon compte
+          ‹ Mon compte
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Devenir vendeur
@@ -39,7 +39,7 @@ export default async function DevenirVendeurPage() {
           </div>
           <p className="mt-3 text-sm text-ink-muted">
             Votre demande a bien été reçue. Notre équipe vérifie vos documents
-            — vous serez notifié dès qu&apos;elle est traitée.
+            - vous serez notifié dès qu&apos;elle est traitée.
           </p>
         </Card>
       ) : profile?.status === "approved" ? (

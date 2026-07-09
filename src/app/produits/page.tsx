@@ -65,7 +65,7 @@ export default async function CataloguePage({
     ? allCategories.filter((c) => c.parentId === selectedParent.id)
     : [];
 
-  // Filtres — seules les boutiques approuvées (non suspendues) sont visibles
+  // Filtres - seules les boutiques approuvées (non suspendues) sont visibles
   const filters: SQL[] = [
     eq(products.status, "published"),
     inArray(
@@ -280,7 +280,7 @@ export default async function CataloguePage({
                 href={buildQueryString(params, { page: String(page - 1) })}
                 className="rounded-md border border-white/10 px-3 py-1.5 text-sm text-ink-muted hover:border-gold/50 hover:text-ink"
               >
-                ← Précédent
+                ‹ Précédent
               </Link>
             ) : null}
             <span className="px-2 text-sm text-ink-muted">
@@ -291,7 +291,7 @@ export default async function CataloguePage({
                 href={buildQueryString(params, { page: String(page + 1) })}
                 className="rounded-md border border-white/10 px-3 py-1.5 text-sm text-ink-muted hover:border-gold/50 hover:text-ink"
               >
-                Suivant →
+                Suivant ›
               </Link>
             ) : null}
           </nav>

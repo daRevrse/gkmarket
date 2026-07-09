@@ -36,7 +36,7 @@ export default async function CommandesPage({
           href="/compte"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mon compte
+          ‹ Mon compte
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Mes commandes
@@ -46,7 +46,7 @@ export default async function CommandesPage({
       {nouveau ? (
         <p className="mb-6 rounded-md border border-emerald/40 bg-emerald/10 px-4 py-3 text-sm text-emerald-light">
           Votre commande a bien été enregistrée ! Suivez son avancement
-          ci-dessous — si elle est payée, les fonds restent sécurisés
+          ci-dessous - si elle est payée, les fonds restent sécurisés
           jusqu&apos;à votre confirmation de réception.
         </p>
       ) : null}

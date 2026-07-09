@@ -7,10 +7,10 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants = {
-  // Or massif, texte sombre en gras — CTA principaux
+  // Or massif, texte sombre en gras - CTA principaux
   primary:
     "bg-gold text-navy-deep font-bold hover:bg-gold-light active:bg-gold-dark",
-  // Ghost émeraude — actions secondaires
+  // Ghost émeraude - actions secondaires
   secondary:
     "border border-emerald text-emerald hover:bg-emerald/10 active:bg-emerald/20",
   ghost: "text-ink-muted hover:text-ink hover:bg-white/5",

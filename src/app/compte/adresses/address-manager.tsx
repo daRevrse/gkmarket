@@ -192,7 +192,7 @@ export function AddressManager({ initialAddresses }: { initialAddresses: Address
                   ) : null}
                 </div>
                 <p className="mt-2 text-sm">
-                  {address.recipientName} —{" "}
+                  {address.recipientName} -{" "}
                   <span className="text-ink-muted">
                     {address.recipientPhone}
                   </span>

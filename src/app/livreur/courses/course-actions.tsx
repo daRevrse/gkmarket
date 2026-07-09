@@ -98,7 +98,7 @@ export function CourseActions({
             />
           </FormField>
           <FormField
-            label="Photo du colis remis (recommandée — preuve en cas de litige)"
+            label="Photo du colis remis (recommandée - preuve en cas de litige)"
             htmlFor={`proof-${deliveryId}`}
           >
             <input

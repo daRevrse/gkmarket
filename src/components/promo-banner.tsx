@@ -17,7 +17,7 @@ export type HouseBanner = {
 /**
  * Bandeau promo « maison » inséré dans le flux (accueil, rayons). Pensé pour
  * héberger des mises en avant internes ou des emplacements sponsorisés, tout
- * en s'adaptant au mobile — plutôt que des colonnes de pub latérales qui
+ * en s'adaptant au mobile - plutôt que des colonnes de pub latérales qui
  * n'existent pas sur petit écran.
  */
 export function PromoBanner({ banner }: { banner: HouseBanner }) {

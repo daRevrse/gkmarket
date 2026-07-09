@@ -12,7 +12,7 @@ import { getCart, getGuestCart } from "./queries";
 
 export default async function PanierPage() {
   const user = await getCurrentUser();
-  // Panier public : connecté → base ; visiteur → cookie. L'authentification
+  // Panier public : connecté › base ; visiteur › cookie. L'authentification
   // n'est demandée qu'à la validation de la commande.
   const cart = user
     ? await getCart(user.id)

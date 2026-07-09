@@ -62,7 +62,7 @@ export default async function AdminUtilisateursPage({
         <h1 className="font-display text-3xl font-extrabold">Utilisateurs</h1>
         <p className="mt-1 text-ink-muted">
           {rows.length} compte{rows.length > 1 ? "s" : ""} affiché
-          {rows.length > 1 ? "s" : ""} (100 max — affinez la recherche).
+          {rows.length > 1 ? "s" : ""} (100 max - affinez la recherche).
         </p>
       </div>
 
@@ -118,7 +118,7 @@ export default async function AdminUtilisateursPage({
                     </div>
                     <p className="mt-1 text-sm text-ink-muted">
                       {[user.email, user.phone].filter(Boolean).join(" · ") ||
-                        "—"}
+                        "-"}
                       {shopName ? ` · Boutique : ${shopName}` : ""}
                       {" · inscrit le "}
                       {user.createdAt.toLocaleDateString("fr-FR")}

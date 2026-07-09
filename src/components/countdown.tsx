@@ -18,7 +18,7 @@ function remaining(endsAt: string): string | null {
     : `${pad(h)}:${pad(m)}:${pad(sec)}`;
 }
 
-/** Compte à rebours d'expiration d'une offre — disparaît une fois échue. */
+/** Compte à rebours d'expiration d'une offre - disparaît une fois échue. */
 export function Countdown({
   endsAt,
   className,
@@ -26,9 +26,9 @@ export function Countdown({
   endsAt: string;
   className?: string;
 }) {
-  // Rendu serveur stable (—) puis tic-tac côté client pour éviter tout
+  // Rendu serveur stable (-) puis tic-tac côté client pour éviter tout
   // écart d'hydratation.
-  const [label, setLabel] = useState<string | null>("—");
+  const [label, setLabel] = useState<string | null>("-");
 
   useEffect(() => {
     setLabel(remaining(endsAt));

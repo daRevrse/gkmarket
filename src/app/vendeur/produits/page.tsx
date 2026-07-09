@@ -38,13 +38,13 @@ export default async function VendeurProduitsPage() {
             href="/compte"
             className="text-sm text-ink-muted hover:text-emerald"
           >
-            ← Mon compte
+            ‹ Mon compte
           </Link>
           <h1 className="mt-2 font-display text-3xl font-extrabold">
             Mes produits
           </h1>
           <p className="mt-1 text-ink-muted">
-            {user!.sellerProfile!.shopName} — {rows.length} produit
+            {user!.sellerProfile!.shopName} - {rows.length} produit
             {rows.length > 1 ? "s" : ""}
           </p>
         </div>

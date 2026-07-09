@@ -70,7 +70,7 @@ export function PhoneSignupForm() {
     } catch (err) {
       setError(authErrorMessage(err));
       // Doc Firebase : après un échec d'envoi, le reCAPTCHA doit être
-      // réinitialisé — un jeton consommé ferait échouer la tentative suivante.
+      // réinitialisé - un jeton consommé ferait échouer la tentative suivante.
       verifierRef.current?.clear();
       verifierRef.current = null;
     } finally {
@@ -117,7 +117,7 @@ export function PhoneSignupForm() {
 
       const credential = await confirmation.confirm(code);
 
-      // Le numéro est vérifié — on attache l'identifiant mot de passe
+      // Le numéro est vérifié - on attache l'identifiant mot de passe
       // (connexion future : téléphone + mot de passe, sans SMS).
       await linkWithCredential(
         credential.user,

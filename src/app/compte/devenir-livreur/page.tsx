@@ -20,7 +20,7 @@ export default async function DevenirLivreurPage() {
           href="/compte"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mon compte
+          ‹ Mon compte
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Devenir livreur
@@ -35,13 +35,13 @@ export default async function DevenirLivreurPage() {
         <Card>
           <div className="flex items-center gap-3">
             <h2 className="font-display text-xl font-bold">
-              Livreur — {vehicleTypeLabels[profile.vehicleType]}
+              Livreur - {vehicleTypeLabels[profile.vehicleType]}
             </h2>
             <Badge>En attente de validation</Badge>
           </div>
           <p className="mt-3 text-sm text-ink-muted">
             Votre demande a bien été reçue. Notre équipe vérifie vos documents
-            — vous serez notifié dès qu&apos;elle est traitée.
+            - vous serez notifié dès qu&apos;elle est traitée.
           </p>
         </Card>
       ) : profile?.status === "approved" ? (
@@ -50,7 +50,7 @@ export default async function DevenirLivreurPage() {
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="font-display text-xl font-bold">
-                  Livreur — {vehicleTypeLabels[profile.vehicleType]}
+                  Livreur - {vehicleTypeLabels[profile.vehicleType]}
                 </h2>
                 <Badge variant="verified">Livreur vérifié</Badge>
               </div>

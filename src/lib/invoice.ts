@@ -64,7 +64,7 @@ export async function generateInvoicePdf(input: {
     font: bold,
     color: GOLD,
   });
-  page.drawText("La marketplace B2B & B2C du Togo — deallome.com", {
+  page.drawText("La marketplace B2B & B2C du Togo - deallome.com", {
     x: left,
     y: y - 16,
     size: 9,
@@ -185,7 +185,7 @@ export async function generateInvoicePdf(input: {
   if (order.status === "refunded") {
     y -= 24;
     page.drawText(
-      "Commande remboursée intégralement après litige — cette facture est annulée.",
+      "Commande remboursée intégralement après litige - cette facture est annulée.",
       { x: left, y, size: 10, font: bold, color: GOLD },
     );
   }
@@ -200,7 +200,7 @@ export async function generateInvoicePdf(input: {
   });
   y -= 16;
   page.drawText(
-    "TVA non applicable (MVP — régime fiscal à préciser).",
+    "TVA non applicable (MVP - régime fiscal à préciser).",
     { x: left, y, size: 9, font, color: MUTED },
   );
   y -= 12;

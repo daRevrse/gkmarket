@@ -20,8 +20,8 @@ export type CheckoutAddress = {
 };
 
 const disabledMethods = [
-  "Mobile Money (Flooz, Tmoney, MTN, Moov) — paiement direct",
-  "Carte bancaire (Visa, Mastercard) — paiement direct",
+  "Mobile Money (Flooz, Tmoney, MTN, Moov) - paiement direct",
+  "Carte bancaire (Visa, Mastercard) - paiement direct",
 ];
 
 export function CheckoutForm({
@@ -76,7 +76,7 @@ export function CheckoutForm({
               href="/compte/adresses?retour=/commande"
               className="text-emerald hover:underline"
             >
-              Ajouter une adresse →
+              Ajouter une adresse ›
             </Link>
           </p>
         ) : (
@@ -102,7 +102,7 @@ export function CheckoutForm({
                   <span className="font-medium">
                     {address.label || "Adresse"}
                   </span>{" "}
-                  — {address.recipientName}, {address.recipientPhone}
+                  - {address.recipientName}, {address.recipientPhone}
                   <span className="block text-ink-muted">
                     {[address.city, address.district].filter(Boolean).join(" · ")}
                   </span>
@@ -140,7 +140,7 @@ export function CheckoutForm({
               className="mt-1 accent-emerald"
             />
             <span className="text-sm">
-              <span className="font-medium">Wallet Deal Lomé</span> — solde :{" "}
+              <span className="font-medium">Wallet Deal Lomé</span> - solde :{" "}
               {walletBalance.toLocaleString("fr-FR")} FCFA
               <span className="block text-ink-muted">
                 Paiement immédiat, fonds sécurisés jusqu&apos;à la
@@ -151,7 +151,7 @@ export function CheckoutForm({
                   href="/compte/wallet"
                   className="mt-1 block text-emerald hover:underline"
                 >
-                  Solde insuffisant — recharger mon wallet →
+                  Solde insuffisant - recharger mon wallet ›
                 </Link>
               ) : null}
             </span>
@@ -175,7 +175,7 @@ export function CheckoutForm({
             <span className="text-sm">
               <span className="font-medium">Payer plus tard</span>
               <span className="block text-ink-muted">
-                La commande est créée « en attente de paiement » — le vendeur
+                La commande est créée « en attente de paiement » - le vendeur
                 ne la traite qu&apos;une fois payée.
               </span>
             </span>

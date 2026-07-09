@@ -13,7 +13,7 @@ export default async function NouveauProduitPage() {
           href="/vendeur/produits"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mes produits
+          ‹ Mes produits
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Nouveau produit

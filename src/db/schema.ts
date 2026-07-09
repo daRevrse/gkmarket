@@ -80,7 +80,7 @@ export const sellerProfiles = pgTable("seller_profiles", {
   city: text("city").notNull().default("Lomé"),
   district: text("district"),
   contactPhone: text("contact_phone"),
-  // N° RCCM (registre du commerce) — optionnel, beaucoup de vendeurs informels
+  // N° RCCM (registre du commerce) - optionnel, beaucoup de vendeurs informels
   rccm: text("rccm"),
   idDocumentPath: text("id_document_path").notNull(),
   rccmDocumentPath: text("rccm_document_path"),
@@ -189,7 +189,7 @@ export const productImages = pgTable("product_images", {
   position: integer("position").notNull().default(0),
 });
 
-// Panier (itération 4) — lié au compte, un article par produit.
+// Panier (itération 4) - lié au compte, un article par produit.
 export const cartItems = pgTable(
   "cart_items",
   {
@@ -212,7 +212,7 @@ export const cartItems = pgTable(
 );
 
 export const orderStatusEnum = pgEnum("order_status", [
-  "pending_payment", // créée — le paiement Escrow arrive à l'itération 5
+  "pending_payment", // créée - le paiement Escrow arrive à l'itération 5
   "paid",
   "processing",
   "shipped",
@@ -258,7 +258,7 @@ export const orders = pgTable("orders", {
 });
 
 // Lignes de commande : snapshot du produit au moment de l'achat
-// (titre, prix appliqué — gros ou détail — et photo).
+// (titre, prix appliqué - gros ou détail - et photo).
 export const orderItems = pgTable("order_items", {
   id: uuid("id").defaultRandom().primaryKey(),
   orderId: uuid("order_id")
@@ -321,8 +321,8 @@ export const walletTransactions = pgTable("wallet_transactions", {
 export const deliveryStatusEnum = pgEnum("delivery_status", [
   "proposed",  // proposée par le vendeur à un livreur précis
   "accepted",  // acceptée par le livreur
-  "refused",   // refusée — le vendeur peut proposer à un autre livreur
-  "picked_up", // colis récupéré chez le vendeur (commande → expédiée)
+  "refused",   // refusée - le vendeur peut proposer à un autre livreur
+  "picked_up", // colis récupéré chez le vendeur (commande › expédiée)
   "delivered", // colis remis au destinataire (preuve enregistrée)
   "cancelled", // course annulée (commande annulée…)
 ]);
@@ -369,7 +369,7 @@ export const deliveries = pgTable(
   ],
 );
 
-// Motifs prédéfinis d'ouverture de litige (MVP n°187 — les incidents
+// Motifs prédéfinis d'ouverture de litige (MVP n°187 - les incidents
 // n°180-184 du cahier des charges deviennent des motifs).
 export const disputeReasonEnum = pgEnum("dispute_reason", [
   "damaged",          // colis endommagé
@@ -440,7 +440,7 @@ export const disputeMessages = pgTable("dispute_messages", {
     .defaultNow(),
 });
 
-// Preuves photo du litige (MVP n°189) — Storage privé `disputes/{uid}/`,
+// Preuves photo du litige (MVP n°189) - Storage privé `disputes/{uid}/`,
 // consultation via /api/disputes/evidence (parties prenantes uniquement).
 export const disputeEvidence = pgTable("dispute_evidence", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -475,7 +475,7 @@ export const notifications = pgTable(
 );
 
 // Emails transactionnels (MVP n°221) : journal d'envoi. En local, les emails
-// sont « simulés » (status = simulated) — en production, Brevo les envoie
+// sont « simulés » (status = simulated) - en production, Brevo les envoie
 // réellement (sent/failed). Sert d'audit et de visualisation de test.
 export const emailOutbox = pgTable("email_outbox", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -489,7 +489,7 @@ export const emailOutbox = pgTable("email_outbox", {
     .defaultNow(),
 });
 
-// Adresses de livraison (MVP n°12 — ajout/modification/suppression)
+// Adresses de livraison (MVP n°12 - ajout/modification/suppression)
 export const addresses = pgTable("addresses", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")

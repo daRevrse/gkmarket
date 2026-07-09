@@ -68,7 +68,7 @@ export function CourierPicker({
               ) : null}
               <p className="mt-1 text-xs text-ink-muted">
                 {courier.activeCourses === 0
-                  ? "Disponible — aucune course en cours"
+                  ? "Disponible - aucune course en cours"
                   : `${courier.activeCourses} course${courier.activeCourses > 1 ? "s" : ""} en cours`}
               </p>
             </div>

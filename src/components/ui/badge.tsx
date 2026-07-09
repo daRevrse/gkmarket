@@ -5,9 +5,9 @@ type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
 };
 
 const variants = {
-  // B2B « Vente en gros » — contour or
+  // B2B « Vente en gros » - contour or
   wholesale: "border border-gold text-gold",
-  // « Vendeur vérifié » — fond émeraude
+  // « Vendeur vérifié » - fond émeraude
   verified: "bg-emerald text-navy-deep",
   neutral: "border border-white/15 text-ink-muted",
   danger: "border border-danger text-danger",

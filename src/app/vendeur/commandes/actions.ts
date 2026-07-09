@@ -141,7 +141,7 @@ export async function proposeDelivery(
 
   await notify(courier.userId, {
     type: "delivery_proposed",
-    title: `Nouvelle course proposée — ${order.number}`,
+    title: `Nouvelle course proposée - ${order.number}`,
     body: `Gain : ${formatFcfa(order.deliveryFeeFcfa)}. Livraison à ${order.shippingCity}${order.shippingDistrict ? ` (${order.shippingDistrict})` : ""}. Acceptez ou refusez depuis vos courses.`,
     link: "/livreur/courses",
     email: true,

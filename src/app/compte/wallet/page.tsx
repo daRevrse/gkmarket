@@ -36,7 +36,7 @@ export default async function WalletPage() {
           href="/compte"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mon compte
+          ‹ Mon compte
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Mon wallet
@@ -101,7 +101,7 @@ export default async function WalletPage() {
                       : "shrink-0 font-display font-bold text-danger"
                   }
                 >
-                  {transaction.amountFcfa >= 0 ? "+" : "−"}
+                  {transaction.amountFcfa >= 0 ? "+" : "-"}
                   {formatFcfa(Math.abs(transaction.amountFcfa))}
                 </span>
               </div>

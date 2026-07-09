@@ -45,7 +45,7 @@ export default function InscriptionPage() {
         password,
       );
       await updateProfile(credential.user, { displayName: fullName });
-      // Vérification email (MVP n°6) — politique douce : le lien est envoyé,
+      // Vérification email (MVP n°6) - politique douce : le lien est envoyé,
       // sans bloquer l'usage du compte. Échec non bloquant.
       sendEmailVerification(credential.user).catch(() => undefined);
       const idToken = await credential.user.getIdToken();

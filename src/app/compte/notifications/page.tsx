@@ -40,7 +40,7 @@ export default async function NotificationsPage() {
           href="/compte"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mon compte
+          ‹ Mon compte
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Notifications
@@ -55,7 +55,7 @@ export default async function NotificationsPage() {
       {items.length === 0 ? (
         <Card className="text-center">
           <p className="text-ink-muted">
-            Aucune notification pour le moment — elles arriveront avec vos
+            Aucune notification pour le moment - elles arriveront avec vos
             commandes, courses et litiges.
           </p>
         </Card>

@@ -43,7 +43,7 @@ export default async function OuvrirLitigePage({
           href={`/compte/commandes/${id}`}
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Commande {row.order.number}
+          ‹ Commande {row.order.number}
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Ouvrir un litige
@@ -51,7 +51,7 @@ export default async function OuvrirLitigePage({
         <p className="mt-1 text-ink-muted">
           Commande {row.order.number} chez {row.shopName}. À l&apos;ouverture
           du litige, les fonds sont bloqués jusqu&apos;à la résolution
-          — le vendeur ne sera pas payé tant que le problème n&apos;est pas
+          - le vendeur ne sera pas payé tant que le problème n&apos;est pas
           tranché.
         </p>
       </div>
@@ -61,8 +61,8 @@ export default async function OuvrirLitigePage({
       </Card>
 
       <p className="mt-4 text-xs text-ink-muted">
-        Comment ça marche : 1. vous décrivez le problème avec vos preuves —
-        2. le vendeur est invité à répondre — 3. si aucun accord n&apos;est
+        Comment ça marche : 1. vous décrivez le problème avec vos preuves -
+        2. le vendeur est invité à répondre - 3. si aucun accord n&apos;est
         trouvé, l&apos;équipe Deal Lomé tranche (remboursement total, partiel
         ou rejet du litige).
       </p>

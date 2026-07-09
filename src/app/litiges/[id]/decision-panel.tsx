@@ -50,7 +50,7 @@ export function DecisionPanel({
           required
           className="w-full rounded-md border border-white/10 bg-navy-deep px-4 py-3 text-sm text-ink focus:border-emerald focus:outline-none"
         >
-          <option value="">— Choisir —</option>
+          <option value="">- Choisir -</option>
           {Object.entries(disputeResolutionLabels).map(([value, label]) => (
             <option key={value} value={value}>
               {label}

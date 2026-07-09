@@ -34,7 +34,7 @@ function revalidateDisputePaths(orderId: string, disputeId?: string) {
 /**
  * Ouverture d'un litige par l'acheteur (MVP n°186-190) : possible tant que
  * les fonds sont en Escrow (commande payée, en préparation ou expédiée).
- * La commande passe en `disputed` — plus de confirmation, d'annulation ni
+ * La commande passe en `disputed` - plus de confirmation, d'annulation ni
  * de versement jusqu'à la décision d'un admin.
  */
 export async function openDispute(
@@ -134,14 +134,14 @@ export async function openDispute(
     await notify(seller.userId, {
       type: "dispute_opened",
       title: `Litige ouvert sur ${order.number}`,
-      body: `Motif : ${reasonLabel}. Le paiement est gelé le temps du litige — répondez à l'acheteur dans le fil du litige.`,
+      body: `Motif : ${reasonLabel}. Le paiement est gelé le temps du litige - répondez à l'acheteur dans le fil du litige.`,
       link: disputeId ? `/litiges/${disputeId}` : "/vendeur/commandes",
       email: true,
     });
   }
   await notifyMany(await adminUserIds(), {
     type: "dispute_opened",
-    title: `Litige à arbitrer — ${order.number}`,
+    title: `Litige à arbitrer - ${order.number}`,
     body: `Motif : ${reasonLabel}. ${formatFcfa(order.totalFcfa)} bloqués le temps de l'arbitrage.`,
     link: disputeId ? `/litiges/${disputeId}` : "/admin/litiges",
     email: true,
@@ -171,7 +171,7 @@ async function getDisputeForUser(disputeId: string, user: CurrentUser) {
   return isParty ? row : null;
 }
 
-/** Message dans le fil du litige (MVP n°196, 204 — dialogue des parties). */
+/** Message dans le fil du litige (MVP n°196, 204 - dialogue des parties). */
 export async function postDisputeMessage(
   disputeId: string,
   body: string,
@@ -201,7 +201,7 @@ export async function postDisputeMessage(
   recipients.delete(user.id);
   await notifyMany([...recipients], {
     type: "dispute_message",
-    title: `Nouveau message — litige ${row.orderNumber}`,
+    title: `Nouveau message - litige ${row.orderNumber}`,
     body: body.trim().slice(0, 120),
     link: `/litiges/${disputeId}`,
   });
@@ -315,7 +315,7 @@ export async function resolveDispute(
         type: "order_refund",
         amountFcfa: refund,
         orderId: order.id,
-        description: `Litige ${order.number} — remboursement ${refund === order.totalFcfa ? "intégral" : "partiel"}`,
+        description: `Litige ${order.number} - remboursement ${refund === order.totalFcfa ? "intégral" : "partiel"}`,
       });
     }
 
@@ -325,7 +325,7 @@ export async function resolveDispute(
         type: "sale_income",
         amountFcfa: sellerPart - commission,
         orderId: order.id,
-        description: `Litige ${order.number} — versement de ${formatFcfa(sellerPart)} moins ${formatFcfa(commission)} de commission (5 %)`,
+        description: `Litige ${order.number} - versement de ${formatFcfa(sellerPart)} moins ${formatFcfa(commission)} de commission (5 %)`,
       });
     }
 
@@ -341,7 +341,7 @@ export async function resolveDispute(
         type: "delivery_income",
         amountFcfa: deliveryRow.delivery.feeFcfa,
         orderId: order.id,
-        description: `Course ${order.number} — frais de livraison (litige tranché)`,
+        description: `Course ${order.number} - frais de livraison (litige tranché)`,
       });
     }
   });
@@ -361,7 +361,7 @@ export async function resolveDispute(
   if (payCourier && deliveryRow) {
     await notify(deliveryRow.courierUserId, {
       type: "delivery_paid",
-      title: `Course ${order.number} — gain versé`,
+      title: `Course ${order.number} - gain versé`,
       body: `${formatFcfa(deliveryRow.delivery.feeFcfa)} versés sur votre wallet (litige tranché).`,
       link: "/compte/wallet",
       email: true,

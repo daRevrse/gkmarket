@@ -16,7 +16,7 @@ export type HeroBanner = {
 
 const AUTO_ADVANCE_MS = 5000;
 
-/** Carrousel de bannières produits du héro — image pleine largeur, texte lisible sur voile sombre. */
+/** Carrousel de bannières produits du héro - image pleine largeur, texte lisible sur voile sombre. */
 export function HeroSlider({ banners }: { banners: HeroBanner[] }) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);

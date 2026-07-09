@@ -7,7 +7,7 @@ const FROM_NAME = "Deal Lomé";
 const FROM_EMAIL = process.env.EMAIL_FROM ?? "no-reply@deallome.com";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://deallome.com";
 
-// Palette de marque (cf. globals.css) — valeurs en dur car un email HTML ne
+// Palette de marque (cf. globals.css) - valeurs en dur car un email HTML ne
 // voit pas les variables CSS de l'application.
 const NAVY = "#0d1b2a";
 const NAVY_DEEP = "#08121c";
@@ -17,7 +17,7 @@ const INK_MUTED = "#8899aa";
 /**
  * Email transactionnel (MVP n°221) via Brevo (plan gratuit 300/jour).
  * Sans BREVO_API_KEY (développement local), l'email n'est pas envoyé mais
- * journalisé dans email_outbox avec le statut « simulated » — même
+ * journalisé dans email_outbox avec le statut « simulated » - même
  * philosophie que les SMS et le Mobile Money simulés.
  * Ne lève jamais : un échec d'email ne doit pas casser l'action métier.
  */
@@ -103,7 +103,7 @@ export function renderTransactionalEmail(input: {
     "",
     body ?? "",
     url ? `\nDétails : ${url}` : "",
-    "\n— L'équipe Deal Lomé",
+    "\n- L'équipe Deal Lomé",
   ].join("\n");
 
   const bodyHtml = body
@@ -137,7 +137,7 @@ export function renderTransactionalEmail(input: {
         <tr><td style="padding:20px 32px 28px;border-top:1px solid #eef0f3;">
           <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:${INK_MUTED};">
             Vous recevez cet email car vous avez un compte sur <a href="${SITE_URL}" style="color:${INK_MUTED};">deallome.com</a>.<br>
-            © 2026 Deal Lomé · GK NÉGOCES — Lomé, Togo
+            © 2026 Deal Lomé · GK NÉGOCES - Lomé, Togo
           </p>
         </td></tr>
       </table>

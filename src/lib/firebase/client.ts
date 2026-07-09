@@ -27,7 +27,7 @@ function createFirebase() {
     connectAuthEmulator(auth, `http://${emulatorHost}`, {
       disableWarnings: true,
     });
-    // L'émulateur ne vérifie pas le reCAPTCHA — on le neutralise pour les tests.
+    // L'émulateur ne vérifie pas le reCAPTCHA - on le neutralise pour les tests.
     auth.settings.appVerificationDisabledForTesting = true;
   }
 
@@ -43,7 +43,7 @@ function createFirebase() {
 
 // Le prérendu (`next build`) importe ce module sans jamais utiliser Firebase :
 // tous les usages sont dans des handlers ou des useEffect, exécutés dans le
-// navigateur. On n'initialise donc que côté client — un build sans variables
+// navigateur. On n'initialise donc que côté client - un build sans variables
 // d'environnement (CI) reste possible.
 export const { auth, storage } =
   typeof window === "undefined"

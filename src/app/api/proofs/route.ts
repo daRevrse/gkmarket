@@ -8,8 +8,8 @@ import { adminStorage } from "@/lib/firebase/admin";
 /**
  * Consultation des preuves de livraison. Les fichiers ne sont jamais
  * accessibles directement depuis Storage (règles read: false) : cette route
- * vérifie que le demandeur est partie prenante de la course — acheteur,
- * vendeur, livreur — ou admin.
+ * vérifie que le demandeur est partie prenante de la course - acheteur,
+ * vendeur, livreur - ou admin.
  */
 export async function GET(request: Request) {
   const user = await getCurrentUser();

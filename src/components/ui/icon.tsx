@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Jeu d'icônes linéaires (style Lucide, 24×24, trait 1.75) — remplace les
+ * Jeu d'icônes linéaires (style Lucide, 24×24, trait 1.75) - remplace les
  * émojis par des pictogrammes cohérents. `filled` pour les glyphes pleins (étoile).
  */
 const PATHS: Record<string, React.ReactNode> = {

@@ -22,6 +22,7 @@ import { categories, products } from "@/db/schema";
 import { HeroSlider, type HeroBanner } from "@/components/hero-slider";
 import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { PromoBanner, type HouseBanner } from "@/components/promo-banner";
+import { PromoCarousel } from "@/components/promo-carousel";
 import { SiteHeader } from "@/components/site-header";
 import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
@@ -68,11 +69,11 @@ export default async function Home() {
       ),
     )
     .orderBy(asc(products.promoEndsAt))
-    .limit(6);
+    .limit(12);
 
   // « À la une » : les nouveautés les plus récentes, mises en avant
   // (emplacement éditorial, sponsorisable). Le reste alimente le rayon
-  // Nouveautés — pas de doublon.
+  // Nouveautés - pas de doublon.
   const featured = latest.length > 4 ? latest.slice(0, 4) : [];
   const newArrivals = latest.length > 4 ? latest.slice(4) : latest;
 
@@ -144,7 +145,7 @@ export default async function Home() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
 
-      {/* 1. Rampe de catégories — les portes d'entrée du magasin */}
+      {/* 1. Rampe de catégories - les portes d'entrée du magasin */}
       <nav className="border-b border-white/5 bg-navy-deep/40">
         <div className="no-scrollbar mx-auto flex max-w-(--container-page) items-center gap-2 overflow-x-auto px-4 py-3 md:px-10">
           {parents.map((category) => {
@@ -185,11 +186,7 @@ export default async function Home() {
                 <ChevronRightIcon className="size-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              {promos.map((product: CatalogProduct) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <PromoCarousel products={promos} />
           </section>
         ) : null}
 
@@ -231,7 +228,7 @@ export default async function Home() {
               </p>
               <p className="mx-auto mt-1 max-w-md text-sm text-ink-muted">
                 Les premières boutiques de Lomé publient leurs produits en ce
-                moment. Revenez très vite — ou prenez de l&apos;avance et ouvrez
+                moment. Revenez très vite - ou prenez de l&apos;avance et ouvrez
                 la vôtre.
               </p>
               <div className="mt-6">
@@ -306,7 +303,7 @@ export default async function Home() {
           </section>
         ))}
 
-        {/* 6. Bande de confiance — utilitaire, façon marketplace */}
+        {/* 6. Bande de confiance - utilitaire, façon marketplace */}
         <section className="mt-14 grid gap-6 border-y border-white/5 py-8 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
@@ -347,7 +344,7 @@ export default async function Home() {
               Vous vendez déjà à Lomé ?
             </h2>
             <p className="mt-1 text-ink-muted">
-              Ouvrez votre boutique en ligne gratuitement — vous ne payez que 5 %
+              Ouvrez votre boutique en ligne gratuitement - vous ne payez que 5 %
               quand vous vendez. Livreurs bienvenus aussi.
             </p>
           </div>

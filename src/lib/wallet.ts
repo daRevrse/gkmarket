@@ -35,7 +35,7 @@ export async function getOrCreateWallet(userId: string, dbx: DbOrTx = db) {
 /**
  * Mouvement de wallet atomique : met à jour le solde ET trace l'écriture.
  * `amountFcfa` signé (crédit positif, débit négatif). Pour un débit, le
- * WHERE garantit un solde suffisant — retourne false sinon.
+ * WHERE garantit un solde suffisant - retourne false sinon.
  */
 export async function applyWalletMovement(
   tx: Tx,

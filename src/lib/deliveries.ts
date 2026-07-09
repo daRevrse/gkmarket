@@ -7,7 +7,7 @@ export const deliveryStatusLabels: Record<
   proposed: { label: "Course proposée", variant: "neutral" },
   accepted: { label: "Course acceptée", variant: "wholesale" },
   refused: { label: "Course refusée", variant: "neutral" },
-  picked_up: { label: "Colis récupéré — en route" },
+  picked_up: { label: "Colis récupéré - en route" },
   delivered: { label: "Colis remis", variant: "verified" },
   cancelled: { label: "Course annulée", variant: "neutral" },
 };

@@ -147,7 +147,7 @@ export default async function AdminDashboardPage() {
                     </span>{" "}
                     {task.label}
                   </span>
-                  <span className="text-sm text-emerald">Traiter →</span>
+                  <span className="text-sm text-emerald">Traiter ›</span>
                 </CardSection>
               </Link>
             ))}

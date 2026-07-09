@@ -15,7 +15,7 @@ import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
 /**
  * Délai de déblocage automatique (MVP n°119, 272) : une commande expédiée
- * non confirmée (et sans litige) est considérée livrée après ce délai —
+ * non confirmée (et sans litige) est considérée livrée après ce délai -
  * les fonds sont versés comme si l'acheteur avait confirmé.
  */
 export const ESCROW_AUTO_RELEASE_DAYS = 7;
@@ -82,7 +82,7 @@ export async function releaseEscrowForOrder(
         type: "sale_income",
         amountFcfa: sellerNet,
         orderId: order.id,
-        description: `Vente ${order.number} — ${formatFcfa(order.subtotalFcfa)} moins ${formatFcfa(commission)} de commission (5 %)${mode === "auto" ? " (déblocage automatique)" : ""}`,
+        description: `Vente ${order.number} - ${formatFcfa(order.subtotalFcfa)} moins ${formatFcfa(commission)} de commission (5 %)${mode === "auto" ? " (déblocage automatique)" : ""}`,
       });
 
       if (deliveryRow) {
@@ -107,7 +107,7 @@ export async function releaseEscrowForOrder(
           type: "delivery_income",
           amountFcfa: deliveryRow.delivery.feeFcfa,
           orderId: order.id,
-          description: `Course ${order.number} — frais de livraison`,
+          description: `Course ${order.number} - frais de livraison`,
         });
       }
     });
@@ -115,18 +115,18 @@ export async function releaseEscrowForOrder(
     return { error: "Conflit : le statut de la commande a changé." };
   }
 
-  // Notifications après commit (MVP n°306) — jamais bloquantes.
+  // Notifications après commit (MVP n°306) - jamais bloquantes.
   await notify(seller.userId, {
     type: "order_delivered",
-    title: `Commande ${order.number} livrée — fonds versés`,
-    body: `${formatFcfa(sellerNet)} versés sur votre wallet (commission de 5 % déduite)${mode === "auto" ? " — déblocage automatique après délai." : "."}`,
+    title: `Commande ${order.number} livrée - fonds versés`,
+    body: `${formatFcfa(sellerNet)} versés sur votre wallet (commission de 5 % déduite)${mode === "auto" ? " - déblocage automatique après délai." : "."}`,
     link: "/compte/wallet",
     email: true,
   });
   if (deliveryRow) {
     await notify(deliveryRow.courierUserId, {
       type: "delivery_paid",
-      title: `Course ${order.number} — gain versé`,
+      title: `Course ${order.number} - gain versé`,
       body: `${formatFcfa(deliveryRow.delivery.feeFcfa)} versés sur votre wallet.`,
       link: "/compte/wallet",
       email: true,

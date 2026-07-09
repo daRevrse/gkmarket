@@ -28,7 +28,7 @@ export async function approveSeller(
     .where(eq(sellerProfiles.id, profileId))
     .returning({ userId: sellerProfiles.userId, shopName: sellerProfiles.shopName });
 
-  // MVP n°310 — validation du compte vendeur.
+  // MVP n°310 - validation du compte vendeur.
   if (profile) {
     await notify(profile.userId, {
       type: "seller_approved",

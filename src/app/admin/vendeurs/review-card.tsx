@@ -76,9 +76,9 @@ export function ReviewCard({ application }: { application: SellerApplication }) 
           ) : null}
           <p className="mt-3 text-sm">
             <span className="text-ink-muted">Demandeur :</span>{" "}
-            {application.applicantName ?? "—"}{" "}
+            {application.applicantName ?? "-"}{" "}
             <span className="text-ink-muted">
-              ({application.applicantEmail ?? application.applicantPhone ?? "—"})
+              ({application.applicantEmail ?? application.applicantPhone ?? "-"})
             </span>
           </p>
           <p className="text-xs text-ink-muted">

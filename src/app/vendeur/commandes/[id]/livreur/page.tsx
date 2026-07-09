@@ -108,13 +108,13 @@ export default async function ChoixLivreurPage({
           href="/vendeur/commandes"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Commandes reçues
+          ‹ Commandes reçues
         </Link>
         <h1 className="mt-2 font-display text-3xl font-extrabold">
           Demander un livreur
         </h1>
         <p className="mt-1 text-ink-muted">
-          Commande {order.number} — à livrer à {order.shippingCity}
+          Commande {order.number} - à livrer à {order.shippingCity}
           {order.shippingDistrict ? ` (${order.shippingDistrict})` : ""}. Le
           livreur recevra {formatFcfa(order.deliveryFeeFcfa)} (les frais de
           livraison), versés à la confirmation de réception.

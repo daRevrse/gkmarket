@@ -78,7 +78,7 @@ export default async function CommandeDetailPage({
           href="/compte/commandes"
           className="text-sm text-ink-muted hover:text-emerald"
         >
-          ← Mes commandes
+          ‹ Mes commandes
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <h1 className="font-display text-3xl font-extrabold">
@@ -182,7 +182,7 @@ export default async function CommandeDetailPage({
                 href={`/litiges/${dispute.id}`}
                 className="text-sm text-emerald hover:underline"
               >
-                Suivre le litige →
+                Suivre le litige ›
               </Link>
             </div>
           </Card>
@@ -195,7 +195,7 @@ export default async function CommandeDetailPage({
             >
               Ouvrir un litige
             </Link>{" "}
-            — les fonds seront bloqués jusqu&apos;à la résolution.
+            - les fonds seront bloqués jusqu&apos;à la résolution.
           </p>
         ) : null}
 
@@ -215,7 +215,7 @@ export default async function CommandeDetailPage({
               </Badge>
             </div>
             <p className="mt-2 text-sm">
-              Livreur : {deliveryRow.courierName ?? "—"} (
+              Livreur : {deliveryRow.courierName ?? "-"} (
               {vehicleTypeLabels[deliveryRow.vehicleType] ??
                 deliveryRow.vehicleType}
               )
@@ -261,7 +261,7 @@ export default async function CommandeDetailPage({
             Adresse de livraison
           </h2>
           <p className="mt-2 text-sm">
-            {row.order.shippingName} — {row.order.shippingPhone}
+            {row.order.shippingName} - {row.order.shippingPhone}
           </p>
           <p className="text-sm text-ink-muted">
             {[

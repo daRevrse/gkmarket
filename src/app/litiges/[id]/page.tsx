@@ -71,13 +71,13 @@ export default async function LitigePage({
     label: dispute.status,
   };
   const backLink = user.isAdmin
-    ? { href: "/admin/litiges", label: "← Litiges" }
+    ? { href: "/admin/litiges", label: "‹ Litiges" }
     : isBuyer
       ? {
           href: `/compte/commandes/${order.id}`,
-          label: `← Commande ${order.number}`,
+          label: `‹ Commande ${order.number}`,
         }
-      : { href: "/vendeur/commandes", label: "← Commandes reçues" };
+      : { href: "/vendeur/commandes", label: "‹ Commandes reçues" };
 
   function authorTag(author: typeof users.$inferSelect) {
     if (author.isAdmin) return "Deal Lomé";
@@ -97,7 +97,7 @@ export default async function LitigePage({
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <h1 className="font-display text-3xl font-extrabold">
-            Litige — {order.number}
+            Litige - {order.number}
           </h1>
           <Badge variant={status.variant}>{status.label}</Badge>
         </div>
@@ -137,7 +137,7 @@ export default async function LitigePage({
           ) : null}
           <p className="mt-4 text-xs text-ink-muted">
             Fonds bloqués : {formatFcfa(order.totalFcfa)}. Résolution en
-            3 phases — dialogue entre les parties, médiation Deal Lomé,
+            3 phases - dialogue entre les parties, médiation Deal Lomé,
             décision administrative.
           </p>
         </Card>
@@ -148,9 +148,9 @@ export default async function LitigePage({
             <p className="mt-2 text-sm font-medium">
               {dispute.resolution
                 ? disputeResolutionLabels[dispute.resolution]
-                : "—"}
+                : "-"}
               {dispute.refundFcfa
-                ? ` — ${formatFcfa(dispute.refundFcfa)} remboursés`
+                ? ` - ${formatFcfa(dispute.refundFcfa)} remboursés`
                 : ""}
             </p>
             {dispute.decisionNote ? (
@@ -187,7 +187,7 @@ export default async function LitigePage({
                 >
                   <p className="text-xs text-ink-muted">
                     <span className="font-medium text-ink">
-                      {author.fullName ?? "—"}
+                      {author.fullName ?? "-"}
                     </span>{" "}
                     · {authorTag(author)} ·{" "}
                     {message.createdAt.toLocaleString("fr-FR")}

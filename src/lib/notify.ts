@@ -17,7 +17,7 @@ export type NotificationInput = {
 
 /**
  * Notification in-app (+ email optionnel) pour un utilisateur.
- * À appeler APRÈS la transaction métier — ne lève jamais : la communication
+ * À appeler APRÈS la transaction métier - ne lève jamais : la communication
  * ne doit pas faire échouer l'action qui la déclenche.
  */
 export async function notify(
@@ -47,7 +47,7 @@ export async function notify(
         });
         await sendEmail({
           toEmail: user.email,
-          subject: `Deal Lomé — ${input.title}`,
+          subject: `Deal Lomé - ${input.title}`,
           bodyText: text,
           bodyHtml: html,
         });

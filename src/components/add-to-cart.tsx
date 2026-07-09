@@ -54,7 +54,7 @@ export function AddToCart({
             onClick={() => setQuantity((q) => Math.max(minOrderQty, q - 1))}
             className="px-3 py-2 text-ink-muted hover:text-ink"
           >
-            −
+            -
           </button>
           <span className="min-w-10 text-center font-display font-bold">
             {quantity}

@@ -15,7 +15,7 @@ const MAX_LINES = 50; // garde-fou anti-cookie géant
 
 export type GuestCartItem = { productId: string; quantity: number };
 
-/** Lecture — utilisable partout (server components inclus). */
+/** Lecture - utilisable partout (server components inclus). */
 export async function readGuestCart(): Promise<GuestCartItem[]> {
   const raw = (await cookies()).get(GUEST_CART_COOKIE)?.value;
   if (!raw) return [];
@@ -42,7 +42,7 @@ export async function guestCartCount(): Promise<number> {
   return items.reduce((sum, item) => sum + item.quantity, 0);
 }
 
-/** Écriture — UNIQUEMENT dans une server action ou un route handler. */
+/** Écriture - UNIQUEMENT dans une server action ou un route handler. */
 export async function writeGuestCart(items: GuestCartItem[]): Promise<void> {
   const store = await cookies();
   if (items.length === 0) {

@@ -81,9 +81,9 @@ export function CourierReviewCard({
           ) : null}
           <p className="mt-3 text-sm">
             <span className="text-ink-muted">Contact :</span>{" "}
-            {application.applicantEmail ?? "—"}{" "}
+            {application.applicantEmail ?? "-"}{" "}
             <span className="text-ink-muted">
-              ({application.contactPhone ?? application.applicantPhone ?? "—"})
+              ({application.contactPhone ?? application.applicantPhone ?? "-"})
             </span>
           </p>
           <p className="text-xs text-ink-muted">

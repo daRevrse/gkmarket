@@ -18,7 +18,7 @@ export default async function AdressesPage({
   // Lien de retour restreint aux pages internes connues (pas de redirection ouverte).
   const backHref = retour === "/commande" ? "/commande" : "/compte";
   const backLabel =
-    retour === "/commande" ? "← Retour à la commande" : "← Mon compte";
+    retour === "/commande" ? "‹ Retour à la commande" : "‹ Mon compte";
 
   const rows = await db
     .select()

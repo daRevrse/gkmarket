@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 /**
  * Renvoi d'un code OTP avec délai de grâce : les codes SMS Firebase expirent
- * au bout de quelques minutes, et Google limite les envois par numéro —
+ * au bout de quelques minutes, et Google limite les envois par numéro -
  * le cooldown évite de déclencher ce throttling.
  * `onResend` doit renvoyer un nouveau code (et lever en cas d'échec :
  * le parent affiche l'erreur, ici on ne gère que l'état du bouton).

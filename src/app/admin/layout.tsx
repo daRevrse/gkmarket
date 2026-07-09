@@ -42,7 +42,7 @@ export default async function AdminLayout({
             href="/compte"
             className="text-sm text-ink-muted transition-colors hover:text-emerald"
           >
-            ← Retour au site
+            ‹ Retour au site
           </Link>
         </div>
       </header>

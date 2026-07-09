@@ -35,7 +35,7 @@ export function EmailVerificationBanner() {
 
   return (
     <p className="mb-6 rounded-md border border-gold/40 bg-gold/10 px-4 py-3 text-sm">
-      Votre adresse email n&apos;est pas encore vérifiée — pensez à cliquer le
+      Votre adresse email n&apos;est pas encore vérifiée - pensez à cliquer le
       lien reçu par email.{" "}
       {sent ? (
         <span className="text-emerald">Email renvoyé ✓</span>

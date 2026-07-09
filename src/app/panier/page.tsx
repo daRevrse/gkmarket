@@ -17,6 +17,9 @@ export default async function PanierPage() {
   const cart = user
     ? await getCart(user.id)
     : await getGuestCart(await readGuestCart());
+  const cartProductIds = cart.groups.flatMap((group) =>
+    group.lines.map((line) => line.productId),
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -45,6 +48,7 @@ export default async function PanierPage() {
             <ProductSuggestions />
           </>
         ) : (
+          <>
           <div className="mt-6 flex flex-col gap-6">
             {cart.groups.map((group) => (
               <Card key={group.sellerId} className="p-0">
@@ -126,6 +130,12 @@ export default async function PanierPage() {
               </LinkButton>
             </Card>
           </div>
+          <ProductSuggestions
+            title="Continuez vos achats"
+            excludeIds={cartProductIds}
+            limit={12}
+          />
+          </>
         )}
       </main>
     </div>

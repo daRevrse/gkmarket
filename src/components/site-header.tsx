@@ -3,7 +3,6 @@ import {
   BellIcon,
   ShoppingCartIcon,
   Squares2X2Icon,
-  UserCircleIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { and, eq, isNull, sql } from "drizzle-orm";
@@ -11,6 +10,7 @@ import { db } from "@/db";
 import { cartItems, notifications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { guestCartCount } from "@/lib/guest-cart";
+import { UserMenu } from "@/components/user-menu";
 
 /** En-tête public : logo, recherche globale, panier, accès compte. */
 export async function SiteHeader({ query }: { query?: string }) {
@@ -93,14 +93,7 @@ export async function SiteHeader({ query }: { query?: string }) {
             </Link>
           ) : null}
           {user ? (
-            <Link
-              href="/compte"
-              aria-label="Mon compte"
-              title="Mon compte"
-              className="rounded-md p-2 text-emerald transition-colors hover:bg-emerald/10"
-            >
-              <UserCircleIcon className="size-6" />
-            </Link>
+            <UserMenu name={user.fullName ?? user.email} />
           ) : (
             <Link
               href="/connexion"

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/firebase/client";
 import { authErrorMessage } from "@/lib/firebase/errors";
+import { nextFromLocation } from "@/lib/next-path";
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -56,7 +57,7 @@ export default function InscriptionPage() {
       });
       if (!response.ok) throw new Error("session");
 
-      router.push("/compte");
+      router.push(nextFromLocation());
       router.refresh();
     } catch (err) {
       setError(authErrorMessage(err));

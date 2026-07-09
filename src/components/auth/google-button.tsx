@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/auth-card";
 import { auth } from "@/lib/firebase/client";
 import { authErrorMessage } from "@/lib/firebase/errors";
+import { nextFromLocation } from "@/lib/next-path";
 
 function GoogleIcon() {
   return (
@@ -53,7 +54,7 @@ export function GoogleButton({ label }: { label: string }) {
       });
       if (!response.ok) throw new Error("session");
 
-      router.push("/compte");
+      router.push(nextFromLocation());
       router.refresh();
     } catch (err) {
       // Fermeture volontaire de la fenêtre Google : pas un message d'erreur.

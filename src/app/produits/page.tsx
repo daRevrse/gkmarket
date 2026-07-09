@@ -16,6 +16,7 @@ import {
 import { db } from "@/db";
 import { categories, productImages, products, sellerProfiles } from "@/db/schema";
 import { ProductCard } from "@/components/product-card";
+import { ProductSuggestions } from "@/components/product-suggestions";
 import { SiteHeader } from "@/components/site-header";
 import { cn } from "@/lib/utils";
 
@@ -257,9 +258,12 @@ export default async function CataloguePage({
 
         {/* Grille produits */}
         {rows.length === 0 ? (
-          <p className="mt-12 text-center text-ink-muted">
-            Aucun produit ne correspond à votre recherche.
-          </p>
+          <>
+            <p className="mt-12 text-center text-ink-muted">
+              Aucun produit ne correspond à votre recherche.
+            </p>
+            <ProductSuggestions title="Découvrez plutôt ces produits" />
+          </>
         ) : (
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {rows.map((product) => (

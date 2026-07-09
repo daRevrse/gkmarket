@@ -1,10 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { cartItems, products, sellerProfiles, users } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { adminAuth } from "@/lib/firebase/admin";
+import { clearGuestCart, readGuestCart } from "@/lib/guest-cart";
 import { isPhoneAliasEmail } from "@/lib/phone";
+
+/**
+ * Fusionne le panier invité (cookie) dans le panier en base de l'utilisateur
+ * qui vient de se connecter : additionne les quantités, plafonné au stock,
+ * en ignorant les produits devenus indisponibles.
+ */
+async function mergeGuestCart(userId: string): Promise<void> {
+  const guest = await readGuestCart();
+  if (guest.length === 0) return;
+
+  const rows = await db
+    .select({ id: products.id, stock: products.stock })
+    .from(products)
+    .innerJoin(
+      sellerProfiles,
+      and(
+        eq(sellerProfiles.id, products.sellerId),
+        eq(sellerProfiles.status, "approved"),
+      ),
+    )
+    .where(eq(products.status, "published"));
+  const stockById = new Map(rows.map((r) => [r.id, r.stock]));
+
+  for (const item of guest) {
+    const stock = stockById.get(item.productId);
+    if (!stock || stock <= 0) continue;
+    const qty = Math.min(item.quantity, stock);
+    await db
+      .insert(cartItems)
+      .values({ userId, productId: item.productId, quantity: qty })
+      .onConflictDoUpdate({
+        target: [cartItems.userId, cartItems.productId],
+        set: {
+          quantity: sql`LEAST(${cartItems.quantity} + ${qty}, ${stock})`,
+          updatedAt: sql`now()`,
+        },
+      });
+  }
+  await clearGuestCart();
+}
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 5; // 5 jours
 
@@ -30,7 +71,7 @@ export async function POST(request: NextRequest) {
     // L'identifiant interne dérivé du téléphone n'est pas un vrai email.
     const email = isPhoneAliasEmail(decoded.email) ? null : (decoded.email ?? null);
 
-    await db
+    const [row] = await db
       .insert(users)
       .values({
         firebaseUid: decoded.uid,
@@ -46,7 +87,11 @@ export async function POST(request: NextRequest) {
           ...(fullName ? { fullName } : {}),
           updatedAt: sql`now()`,
         },
-      });
+      })
+      .returning({ id: users.id });
+
+    // Récupère le panier constitué avant connexion.
+    if (row) await mergeGuestCart(row.id);
 
     const response = NextResponse.json({ ok: true });
     response.cookies.set(SESSION_COOKIE, sessionCookie, {

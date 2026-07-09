@@ -10,6 +10,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cartItems, notifications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { guestCartCount } from "@/lib/guest-cart";
 
 /** En-tête public : logo, recherche globale, panier, accès compte. */
 export async function SiteHeader({ query }: { query?: string }) {
@@ -34,6 +35,9 @@ export async function SiteHeader({ query }: { query?: string }) {
     ]);
     cartCount = cartRow?.count ?? 0;
     unreadCount = unreadRow?.count ?? 0;
+  } else {
+    // Visiteur non connecté : panier stocké dans un cookie.
+    cartCount = await guestCartCount();
   }
 
   return (

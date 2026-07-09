@@ -16,7 +16,14 @@ export type CatalogProduct = {
   promoEndsAt?: Date | string | null;
 };
 
-export function ProductCard({ product }: { product: CatalogProduct }) {
+export function ProductCard({
+  product,
+  tag,
+}: {
+  product: CatalogProduct;
+  /** Pastille de mise en avant (ex. « À la une », « Sponsorisé »). */
+  tag?: string;
+}) {
   const promo = isPromoActive({ ...product, wholesaleMinQty: null });
   const promoPct = promo
     ? Math.round(
@@ -51,6 +58,11 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
         ) : promo ? (
           <span className="absolute top-2 left-2 rounded-full bg-danger px-2.5 py-1 font-label text-[11px] font-bold text-navy-deep">
             −{promoPct} %
+          </span>
+        ) : null}
+        {tag ? (
+          <span className="absolute top-2 right-2 rounded-full bg-gold/90 px-2.5 py-1 font-label text-[11px] font-bold text-navy-deep">
+            {tag}
           </span>
         ) : null}
       </div>

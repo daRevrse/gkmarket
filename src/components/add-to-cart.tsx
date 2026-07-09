@@ -36,10 +36,6 @@ export function AddToCart({
     setLoading(true);
     const result = await addToCart(productId, quantity);
     setLoading(false);
-    if (result.authRequired) {
-      router.push("/connexion");
-      return;
-    }
     if (result.error) {
       setError(result.error);
       return;

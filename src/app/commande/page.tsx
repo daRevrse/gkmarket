@@ -12,7 +12,9 @@ import { CheckoutForm } from "./checkout-form";
 
 export default async function CommandePage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/connexion");
+  // Seul point du parcours où l'authentification est requise. On revient
+  // ici après connexion (le panier invité est alors fusionné en base).
+  if (!user) redirect("/connexion?next=/commande");
 
   const cart = await getCart(user.id);
   if (cart.groups.length === 0) redirect("/panier");

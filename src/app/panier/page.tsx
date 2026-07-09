@@ -1,19 +1,22 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { ProductSuggestions } from "@/components/product-suggestions";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
+import { readGuestCart } from "@/lib/guest-cart";
 import { ClearCartButton, QuantityStepper, RemoveItemButton } from "./cart-controls";
-import { getCart } from "./queries";
+import { getCart, getGuestCart } from "./queries";
 
 export default async function PanierPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/connexion");
-
-  const cart = await getCart(user.id);
+  // Panier public : connecté → base ; visiteur → cookie. L'authentification
+  // n'est demandée qu'à la validation de la commande.
+  const cart = user
+    ? await getCart(user.id)
+    : await getGuestCart(await readGuestCart());
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -32,12 +35,15 @@ export default async function PanierPage() {
         </div>
 
         {cart.groups.length === 0 ? (
-          <Card className="mt-6 text-center">
-            <p className="text-ink-muted">Votre panier est vide.</p>
-            <LinkButton href="/produits" className="mt-4">
-              Explorer le catalogue
-            </LinkButton>
-          </Card>
+          <>
+            <Card className="mt-6 text-center">
+              <p className="text-ink-muted">Votre panier est vide.</p>
+              <LinkButton href="/produits" className="mt-4">
+                Explorer le catalogue
+              </LinkButton>
+            </Card>
+            <ProductSuggestions />
+          </>
         ) : (
           <div className="mt-6 flex flex-col gap-6">
             {cart.groups.map((group) => (

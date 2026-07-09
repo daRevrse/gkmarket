@@ -21,6 +21,7 @@ import { db } from "@/db";
 import { categories, products } from "@/db/schema";
 import { HeroSlider, type HeroBanner } from "@/components/hero-slider";
 import { ProductCard, type CatalogProduct } from "@/components/product-card";
+import { PromoBanner, type HouseBanner } from "@/components/promo-banner";
 import { SiteHeader } from "@/components/site-header";
 import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
@@ -68,6 +69,22 @@ export default async function Home() {
     )
     .orderBy(asc(products.promoEndsAt))
     .limit(6);
+
+  // « À la une » : les nouveautés les plus récentes, mises en avant
+  // (emplacement éditorial, sponsorisable). Le reste alimente le rayon
+  // Nouveautés — pas de doublon.
+  const featured = latest.length > 4 ? latest.slice(0, 4) : [];
+  const newArrivals = latest.length > 4 ? latest.slice(4) : latest;
+
+  // Bandeau promo maison inséré dans le flux (à la place d'une pub latérale).
+  const houseBanner: HouseBanner = {
+    tone: "gold",
+    kicker: "Deal Lomé",
+    title: "Payé en sécurité, livré à Lomé",
+    text: "TMoney & Moov Money, fonds sécurisés jusqu'à la réception. Vendeurs vérifiés, livraison rapide dans la capitale.",
+    ctaLabel: "Découvrir les offres",
+    ctaHref: "/produits",
+  };
 
   // Rayons par catégorie racine (racine + sous-catégories), affichés
   // seulement s'ils ont assez de produits pour faire un vrai rayon.
@@ -176,6 +193,23 @@ export default async function Home() {
           </section>
         ) : null}
 
+        {/* 3b. Sélection « À la une » (emplacement mis en avant) */}
+        {featured.length > 0 ? (
+          <section className="pt-12">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <h2 className="flex items-center gap-2 font-display text-2xl font-bold">
+                <SparklesIcon className="size-6 text-gold" />
+                À la une
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {featured.map((product: CatalogProduct) => (
+                <ProductCard key={product.id} product={product} tag="À la une" />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {/* 4. Rayon « Nouveautés » */}
         <section className="pt-12">
           <div className="mb-5 flex items-end justify-between gap-4">
@@ -189,7 +223,7 @@ export default async function Home() {
             </Link>
           </div>
 
-          {latest.length === 0 ? (
+          {newArrivals.length === 0 ? (
             <div className="glass rounded-xl px-6 py-14 text-center">
               <BuildingStorefrontIcon className="mx-auto size-8 text-gold" />
               <p className="mt-4 font-display text-lg font-bold">
@@ -208,12 +242,17 @@ export default async function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-              {latest.map((product: CatalogProduct) => (
+              {newArrivals.map((product: CatalogProduct) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
         </section>
+
+        {/* 4b. Bandeau promo maison (in-feed, responsive) */}
+        <div className="pt-12">
+          <PromoBanner banner={houseBanner} />
+        </div>
 
         {/* 4. Tuiles catégories */}
         <section className="pt-12">

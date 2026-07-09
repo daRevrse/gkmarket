@@ -77,6 +77,8 @@ export const sellerProfiles = pgTable("seller_profiles", {
     .references(() => users.id, { onDelete: "cascade" }),
   shopName: text("shop_name").notNull(),
   shopDescription: text("shop_description"),
+  // Logo de la boutique (URL publique Firebase Storage), optionnel.
+  logoUrl: text("logo_url"),
   city: text("city").notNull().default("Lomé"),
   district: text("district"),
   contactPhone: text("contact_phone"),

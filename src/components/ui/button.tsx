@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
+  /** Affiche un loader et désactive le bouton (soumission, upload…). */
+  loading?: boolean;
 };
 
 const variants = {
@@ -31,13 +34,21 @@ export function Button({
   variant = "primary",
   size = "md",
   className,
+  loading = false,
+  disabled,
+  children,
   ...props
 }: ButtonProps) {
   return (
     <button
       className={cn(base, variants[variant], sizes[size], className)}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
-    />
+    >
+      {loading ? <Spinner className="size-4" /> : null}
+      {children}
+    </button>
   );
 }
 

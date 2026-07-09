@@ -172,7 +172,13 @@ export default async function ComptePage() {
             Bonjour{user.fullName ? `, ${user.fullName}` : ""}
           </h1>
         </div>
-        <LogoutButton />
+        <div className="flex items-center gap-2">
+          <LinkButton href="/compte/profil" size="sm" variant="secondary">
+            <Icon name="user" className="size-4" />
+            Modifier mon profil
+          </LinkButton>
+          <LogoutButton />
+        </div>
       </div>
 
       {/* Chiffres clés */}

@@ -78,6 +78,13 @@
       "when": 1783470478651,
       "tag": "0010_breezy_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783623601403,
+      "tag": "0011_clumsy_gladiator",
+      "breakpoints": true
     }
   ]
 }

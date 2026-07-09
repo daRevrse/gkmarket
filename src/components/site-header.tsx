@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { cartItems, notifications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { guestCartCount } from "@/lib/guest-cart";
+import { StickyHeader } from "@/components/sticky-header";
 import { UserMenu } from "@/components/user-menu";
 
 /** En-tête public : logo, recherche globale, panier, accès compte. */
@@ -41,7 +42,7 @@ export async function SiteHeader({ query }: { query?: string }) {
   }
 
   return (
-    <header className="border-b border-white/[0.06]">
+    <StickyHeader>
       <div className="mx-auto flex w-full max-w-(--container-page) flex-wrap items-center gap-4 px-4 py-4 md:px-10">
         <Link href="/" className="font-display text-xl font-extrabold">
           Deal <span className="text-gold">Lomé</span>
@@ -107,6 +108,6 @@ export async function SiteHeader({ query }: { query?: string }) {
           )}
         </nav>
       </div>
-    </header>
+    </StickyHeader>
   );
 }

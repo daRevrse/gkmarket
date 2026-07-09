@@ -122,7 +122,7 @@ export default function InscriptionPage() {
             required
           />
         </FormField>
-        <Button type="submit" disabled={loading} className="mt-2">
+        <Button type="submit" loading={loading} className="mt-2">
           {loading ? "Création du compte…" : "Créer mon compte"}
         </Button>
       </form>

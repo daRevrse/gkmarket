@@ -201,7 +201,7 @@ export function SellerForm({
         privés et consultés uniquement par notre équipe de validation.
       </p>
 
-      <Button type="submit" disabled={loading} className="mt-2 self-start">
+      <Button type="submit" loading={loading} className="mt-2 self-start">
         {loading ? "Envoi en cours…" : "Soumettre ma demande"}
       </Button>
     </form>

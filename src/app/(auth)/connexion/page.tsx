@@ -93,7 +93,7 @@ export default function ConnexionPage() {
               Mot de passe oublié ?
             </Link>
           </div>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" loading={loading}>
             {loading ? "Connexion…" : "Se connecter"}
           </Button>
         </form>

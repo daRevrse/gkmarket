@@ -76,7 +76,7 @@ export function PhoneLoginForm() {
           required
         />
       </FormField>
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" loading={loading}>
         {loading ? "Connexion…" : "Se connecter"}
       </Button>
     </form>

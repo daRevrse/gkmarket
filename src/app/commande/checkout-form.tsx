@@ -212,6 +212,7 @@ export function CheckoutForm({
       <Button
         type="submit"
         size="lg"
+        loading={loading}
         disabled={loading || !cgvAccepted || addresses.length === 0}
         className="self-start"
       >

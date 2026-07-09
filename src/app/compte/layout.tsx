@@ -38,6 +38,7 @@ export default async function CompteLayout({
       title: "Mon espace",
       items: [
         { href: "/compte", label: "Aperçu", icon: "activity" },
+        { href: "/compte/profil", label: "Mon profil", icon: "user" },
         { href: "/compte/commandes", label: "Mes commandes", icon: "package" },
         { href: "/compte/wallet", label: "Mon wallet", icon: "wallet" },
         { href: "/compte/adresses", label: "Mes adresses", icon: "map-pin" },

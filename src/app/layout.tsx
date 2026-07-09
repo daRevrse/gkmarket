@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoToTop } from "@/components/go-to-top";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         {children}
         <SiteFooter />
+        <GoToTop />
       </body>
     </html>
   );

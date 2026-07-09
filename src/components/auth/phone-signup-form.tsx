@@ -161,7 +161,7 @@ export function PhoneSignupForm() {
             required
           />
         </FormField>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" loading={loading}>
           {loading ? "Vérification…" : "Vérifier et créer mon compte"}
         </Button>
         <ResendCode onResend={resendCode} />
@@ -228,7 +228,7 @@ export function PhoneSignupForm() {
           required
         />
       </FormField>
-      <Button type="submit" disabled={loading} className="mt-2">
+      <Button type="submit" loading={loading} className="mt-2">
         {loading ? "Envoi du code…" : "Recevoir le code par SMS"}
       </Button>
       <div id="recaptcha-container" />

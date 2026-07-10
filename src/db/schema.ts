@@ -528,3 +528,30 @@ export const addresses = pgTable("addresses", {
     .notNull()
     .defaultNow(),
 });
+
+// Paramètres de plateforme éditables par l'admin (MVP n°267, 270, 271) :
+// clé/valeur texte, lus côté serveur avec repli sur les constantes de
+// src/lib/pricing.ts. Clés : commission_rate_pct, delivery_fee_fcfa.
+export const platformSettings = pgTable("platform_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Journal d'activité admin (MVP n°296) : trace des actions sensibles
+// (validations, suspensions, arbitrages, paramètres, catégories).
+export const adminLogs = pgTable("admin_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  adminId: uuid("admin_id")
+    .notNull()
+    .references(() => users.id),
+  action: text("action").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  details: text("details"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

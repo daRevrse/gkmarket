@@ -16,7 +16,8 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { notify } from "@/lib/notify";
-import { DELIVERY_FEE_PER_SELLER_FCFA, unitPriceFcfa } from "@/lib/pricing";
+import { unitPriceFcfa } from "@/lib/pricing";
+import { getPlatformSettings } from "@/lib/settings";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
 function generateOrderNumber(): string {
@@ -82,6 +83,7 @@ export async function createOrder(
   }
 
   const groupId = randomUUID();
+  const { deliveryFeeFcfa } = await getPlatformSettings();
   const wallet = payWithWallet ? await getOrCreateWallet(user.id) : null;
   const createdOrders: { number: string; sellerId: string; total: number }[] =
     [];
@@ -103,7 +105,7 @@ export async function createOrder(
           0,
         );
 
-        const total = subtotal + DELIVERY_FEE_PER_SELLER_FCFA;
+        const total = subtotal + deliveryFeeFcfa;
         const number = generateOrderNumber();
         const [order] = await tx
           .insert(orders)
@@ -121,7 +123,7 @@ export async function createOrder(
             shippingDistrict: address.district,
             shippingDetails: address.details,
             subtotalFcfa: subtotal,
-            deliveryFeeFcfa: DELIVERY_FEE_PER_SELLER_FCFA,
+            deliveryFeeFcfa,
             totalFcfa: total,
           })
           .returning({ id: orders.id });

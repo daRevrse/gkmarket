@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { products } from "@/db/schema";
+import { logAdmin } from "@/lib/admin-log";
 import { getCurrentUser } from "@/lib/auth";
 
 /**
@@ -25,8 +26,14 @@ export async function moderateProduct(
       updatedAt: new Date(),
     })
     .where(eq(products.id, productId))
-    .returning({ id: products.id });
+    .returning({ id: products.id, title: products.title });
   if (updated.length === 0) return { error: "Produit introuvable." };
+
+  await logAdmin(
+    admin.id,
+    action === "archive" ? "Produit retiré du catalogue" : "Produit rétabli",
+    { targetType: "produit", targetId: productId, details: updated[0].title },
+  );
 
   revalidatePath("/admin/produits");
   revalidatePath("/produits");

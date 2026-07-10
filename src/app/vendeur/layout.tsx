@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
+import { AccountShell } from "@/components/compte/account-shell";
 import { getCurrentUser } from "@/lib/auth";
-import { WorkspaceHeader } from "@/components/workspace-header";
 
-// Espace réservé aux vendeurs approuvés.
+// Espace réservé aux vendeurs approuvés, rendu dans la coquille compte
+// commune (sidebar avec le groupe « Espace vendeur »).
 export default async function VendeurLayout({
   children,
 }: {
@@ -14,19 +15,5 @@ export default async function VendeurLayout({
     redirect("/compte/devenir-vendeur");
   }
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <WorkspaceHeader
-        accent="Vendeur"
-        items={[
-          { href: "/vendeur/produits", label: "Produits" },
-          { href: "/vendeur/commandes", label: "Commandes" },
-          { href: `/boutique/${user.sellerProfile.id}`, label: "Ma boutique" },
-          { href: "/compte/profil", label: "Profil & versement" },
-        ]}
-        back={{ href: "/compte", label: "‹ Mon compte" }}
-      />
-      {children}
-    </div>
-  );
+  return <AccountShell user={user}>{children}</AccountShell>;
 }

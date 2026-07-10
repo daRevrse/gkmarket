@@ -64,6 +64,8 @@ export default async function DevenirVendeurPage() {
             </Link>
             <Link
               href={`/boutique/${profile.id}`}
+              target="_blank"
+              rel="noreferrer"
               className="rounded-md border border-emerald px-4 py-2 font-label text-sm text-emerald hover:bg-emerald/10"
             >
               Voir ma boutique

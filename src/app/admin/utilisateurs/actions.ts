@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { logAdmin } from "@/lib/admin-log";
 import { getCurrentUser } from "@/lib/auth";
 
 /**
@@ -41,6 +42,17 @@ export async function setUserStatus(
     .update(users)
     .set({ status, updatedAt: new Date() })
     .where(eq(users.id, userId));
+
+  const actionLabel: Record<typeof status, string> = {
+    active: "Compte réactivé",
+    suspended: "Compte suspendu",
+    banned: "Compte banni",
+  };
+  await logAdmin(admin.id, actionLabel[status], {
+    targetType: "utilisateur",
+    targetId: userId,
+    details: target.fullName ?? target.email ?? target.phone ?? undefined,
+  });
 
   revalidatePath("/admin/utilisateurs");
   return {};

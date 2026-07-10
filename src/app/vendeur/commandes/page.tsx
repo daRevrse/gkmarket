@@ -78,7 +78,7 @@ export default async function VendeurCommandesPage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full flex-1">
       <div className="mb-8">
         <Link
           href="/vendeur/produits"

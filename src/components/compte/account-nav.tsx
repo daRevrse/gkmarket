@@ -11,6 +11,8 @@ export type AccountNavItem = {
   icon: string;
   /** Pastille d'état affichée à droite (ex. « En attente »). */
   badge?: string;
+  /** Ouvre dans un nouvel onglet (ex. page publique de la boutique). */
+  newTab?: boolean;
 };
 
 export type AccountNavGroup = {
@@ -44,6 +46,8 @@ export function AccountNav({ groups }: { groups: AccountNavGroup[] }) {
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    target={item.newTab ? "_blank" : undefined}
+                    rel={item.newTab ? "noreferrer" : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2.5 font-label text-sm transition-colors",
                       active
@@ -88,6 +92,8 @@ export function AccountNavMobile({ groups }: { groups: AccountNavGroup[] }) {
           <Link
             key={item.href}
             href={item.href}
+            target={item.newTab ? "_blank" : undefined}
+            rel={item.newTab ? "noreferrer" : undefined}
             className={cn(
               "flex shrink-0 items-center gap-2 rounded-full px-4 py-2 font-label text-sm whitespace-nowrap transition-colors",
               active

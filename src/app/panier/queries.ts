@@ -3,11 +3,8 @@ import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { cartItems, productImages, products, sellerProfiles } from "@/db/schema";
-import {
-  DELIVERY_FEE_PER_SELLER_FCFA,
-  unitPriceFcfa,
-  isWholesaleApplied,
-} from "@/lib/pricing";
+import { unitPriceFcfa, isWholesaleApplied } from "@/lib/pricing";
+import { getPlatformSettings } from "@/lib/settings";
 import type { GuestCartItem } from "@/lib/guest-cart";
 
 export type CartLine = {
@@ -56,7 +53,7 @@ const EMPTY_CART: CartSummary = {
 };
 
 /** Construit le récapitulatif (groupé par vendeur, prix de gros appliqués). */
-function buildCartSummary(rows: CartRow[]): CartSummary {
+function buildCartSummary(rows: CartRow[], deliveryFee: number): CartSummary {
   const groups = new Map<string, SellerGroup>();
   for (const row of rows) {
     // Les produits dépubliés entre-temps restent visibles mais le checkout les bloque.
@@ -78,7 +75,7 @@ function buildCartSummary(rows: CartRow[]): CartSummary {
       shopName: row.shopName,
       lines: [],
       subtotal: 0,
-      deliveryFee: DELIVERY_FEE_PER_SELLER_FCFA,
+      deliveryFee,
     };
     group.lines.push(line);
     group.subtotal += line.lineTotal;
@@ -122,6 +119,7 @@ export async function getCart(userId: string): Promise<CartSummary> {
     .where(eq(cartItems.userId, userId))
     .orderBy(asc(cartItems.createdAt));
 
+  const { deliveryFeeFcfa } = await getPlatformSettings();
   return buildCartSummary(
     rows.map((row) => ({
       itemId: row.item.id,
@@ -130,6 +128,7 @@ export async function getCart(userId: string): Promise<CartSummary> {
       imageUrl: row.imageUrl,
       quantity: row.item.quantity,
     })),
+    deliveryFeeFcfa,
   );
 }
 
@@ -189,5 +188,6 @@ export async function getGuestCart(
     })
     .filter((row): row is CartRow => row !== null);
 
-  return buildCartSummary(cartRows);
+  const { deliveryFeeFcfa } = await getPlatformSettings();
+  return buildCartSummary(cartRows, deliveryFeeFcfa);
 }

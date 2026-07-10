@@ -31,7 +31,7 @@ export default async function VendeurProduitsPage() {
     .orderBy(desc(products.createdAt), asc(productImages.position));
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full flex-1">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-extrabold">
@@ -45,12 +45,11 @@ export default async function VendeurProduitsPage() {
         <div className="flex items-center gap-3">
           <LinkButton
             href={`/boutique/${user.sellerProfile.id}`}
+            target="_blank"
+            rel="noreferrer"
             variant="ghost"
           >
             Voir ma boutique
-          </LinkButton>
-          <LinkButton href="/vendeur/commandes" variant="secondary">
-            Commandes reçues
           </LinkButton>
           <LinkButton href="/vendeur/produits/nouveau">
             + Nouveau produit

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { DeleteAccount } from "@/components/auth/delete-account";
 import { getCurrentUser } from "@/lib/auth";
 import { ProfileForm } from "./profile-form";
 
@@ -51,6 +52,9 @@ export default async function ProfilPage() {
               : null
           }
         />
+        <div className="mt-10">
+          <DeleteAccount />
+        </div>
       </div>
     </main>
   );

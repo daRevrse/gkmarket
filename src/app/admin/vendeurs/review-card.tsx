@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveSeller, rejectSeller, setSellerSuspension } from "./actions";
-import { FormError } from "@/components/auth/auth-card";
+import {
+  approveSeller,
+  rejectSeller,
+  setSellerSuspension,
+  updateSellerInfo,
+} from "./actions";
+import { FormError, FormField } from "@/components/auth/auth-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -40,6 +45,14 @@ export function ReviewCard({ application }: { application: SellerApplication }) 
   const router = useRouter();
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    shopName: application.shopName,
+    shopDescription: application.shopDescription ?? "",
+    city: application.city,
+    district: application.district ?? "",
+    contactPhone: application.contactPhone ?? "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,8 +66,84 @@ export function ReviewCard({ application }: { application: SellerApplication }) 
     if (result.error) setError(result.error);
     else {
       setRejecting(false);
+      setEditing(false);
       router.refresh();
     }
+  }
+
+  if (editing) {
+    return (
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-bold">
+            Modifier {application.shopName}
+          </h2>
+          <Badge variant={badge.variant}>{badge.label}</Badge>
+        </div>
+        <div className="mt-4 flex flex-col gap-4">
+          <FormError message={error} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField label="Nom de la boutique" htmlFor={`shopName-${application.id}`}>
+              <Input
+                id={`shopName-${application.id}`}
+                value={form.shopName}
+                onChange={(e) => setForm({ ...form, shopName: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Téléphone" htmlFor={`phone-${application.id}`}>
+              <Input
+                id={`phone-${application.id}`}
+                type="tel"
+                value={form.contactPhone}
+                onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
+                placeholder="+228 90 12 34 56"
+              />
+            </FormField>
+            <FormField label="Ville" htmlFor={`city-${application.id}`}>
+              <Input
+                id={`city-${application.id}`}
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+              />
+            </FormField>
+            <FormField label="Quartier" htmlFor={`district-${application.id}`}>
+              <Input
+                id={`district-${application.id}`}
+                value={form.district}
+                onChange={(e) => setForm({ ...form, district: e.target.value })}
+              />
+            </FormField>
+          </div>
+          <FormField label="Description" htmlFor={`desc-${application.id}`}>
+            <Input
+              id={`desc-${application.id}`}
+              value={form.shopDescription}
+              onChange={(e) =>
+                setForm({ ...form, shopDescription: e.target.value })
+              }
+            />
+          </FormField>
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={loading}
+              onClick={() => setEditing(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              size="sm"
+              loading={loading}
+              onClick={() => run(() => updateSellerInfo(application.id, form))}
+            >
+              Enregistrer
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
   }
 
   return (
@@ -130,6 +219,13 @@ export function ReviewCard({ application }: { application: SellerApplication }) 
                 Justificatif d&apos;adresse
               </a>
             ) : null}
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="rounded-md border border-white/15 px-3 py-1.5 text-sm text-ink-muted hover:text-ink"
+            >
+              Modifier
+            </button>
           </div>
 
           {application.status === "approved" ? (

@@ -48,6 +48,7 @@ export default async function AdminLayout({
             badge: pendingCouriers.value || undefined,
           },
           { href: "/admin/produits", label: "Produits" },
+          { href: "/admin/categories", label: "Catégories" },
           { href: "/admin/commandes", label: "Commandes" },
           {
             href: "/admin/litiges",
@@ -55,6 +56,8 @@ export default async function AdminLayout({
             badge: openDisputes.value || undefined,
           },
           { href: "/admin/financier", label: "Financier" },
+          { href: "/admin/parametres", label: "Paramètres" },
+          { href: "/admin/journal", label: "Journal" },
         ]}
         back={{ href: "/compte", label: "‹ Retour au site" }}
       />

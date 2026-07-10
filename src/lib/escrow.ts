@@ -10,7 +10,7 @@ import {
 } from "@/db/schema";
 import { formatFcfa } from "@/lib/format";
 import { notify } from "@/lib/notify";
-import { commissionFcfa } from "@/lib/pricing";
+import { commissionFromRate, getPlatformSettings } from "@/lib/settings";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
 /**
@@ -60,7 +60,8 @@ export async function releaseEscrowForOrder(
     )
     .limit(1);
 
-  const commission = commissionFcfa(order.subtotalFcfa);
+  const { commissionRatePct } = await getPlatformSettings();
+  const commission = commissionFromRate(order.subtotalFcfa, commissionRatePct);
   const sellerNet = order.subtotalFcfa - commission;
 
   try {

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { courierProfiles } from "@/db/schema";
+import { logAdmin } from "@/lib/admin-log";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 
@@ -15,7 +16,8 @@ async function requireAdmin() {
 export async function approveCourier(
   profileId: string,
 ): Promise<{ error?: string }> {
-  if (!(await requireAdmin())) return { error: "Accès refusé." };
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
 
   const [profile] = await db
     .update(courierProfiles)
@@ -36,6 +38,10 @@ export async function approveCourier(
       link: "/livreur/courses",
       email: true,
     });
+    await logAdmin(admin.id, "Livreur approuvé", {
+      targetType: "livreur",
+      targetId: profileId,
+    });
   }
 
   revalidatePath("/admin/livreurs");
@@ -46,7 +52,8 @@ export async function rejectCourier(
   profileId: string,
   reason: string,
 ): Promise<{ error?: string }> {
-  if (!(await requireAdmin())) return { error: "Accès refusé." };
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
   if (!reason?.trim()) {
     return { error: "Indiquez le motif du refus (visible par le livreur)." };
   }
@@ -69,6 +76,11 @@ export async function rejectCourier(
       body: `Motif : ${reason.trim()}. Vous pouvez corriger et soumettre à nouveau.`,
       link: "/compte/devenir-livreur",
       email: true,
+    });
+    await logAdmin(admin.id, "Demande livreur refusée", {
+      targetType: "livreur",
+      targetId: profileId,
+      details: reason.trim(),
     });
   }
 

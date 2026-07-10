@@ -17,7 +17,8 @@ import { getCurrentUser, type CurrentUser } from "@/lib/auth";
 import { disputeReasonLabels, disputeResolutionLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
 import { adminUserIds, notify, notifyMany } from "@/lib/notify";
-import { commissionFcfa } from "@/lib/pricing";
+import { commissionFromRate, getPlatformSettings } from "@/lib/settings";
+import { logAdmin } from "@/lib/admin-log";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
 const MAX_EVIDENCE = 4;
@@ -280,7 +281,9 @@ export async function resolveDispute(
     return { error: "Choisissez une décision." };
   }
 
-  const commission = sellerPart > 0 ? commissionFcfa(sellerPart) : null;
+  const { commissionRatePct } = await getPlatformSettings();
+  const commission =
+    sellerPart > 0 ? commissionFromRate(sellerPart, commissionRatePct) : null;
   const payCourier = sellerPart > 0 && deliveryRow != null;
 
   await db.transaction(async (tx) => {
@@ -367,6 +370,12 @@ export async function resolveDispute(
       email: true,
     });
   }
+
+  await logAdmin(user.id, "Litige tranché", {
+    targetType: "litige",
+    targetId: disputeId,
+    details: `${order.number} : ${resolutionLabel}${refund > 0 ? ` (${formatFcfa(refund)})` : ""}`,
+  });
 
   revalidateDisputePaths(order.id, disputeId);
   return {};

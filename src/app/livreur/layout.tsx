@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
+import { AccountShell } from "@/components/compte/account-shell";
 import { getCurrentUser } from "@/lib/auth";
-import { WorkspaceHeader } from "@/components/workspace-header";
 
-// Espace réservé aux livreurs approuvés.
+// Espace réservé aux livreurs approuvés, rendu dans la coquille compte
+// commune (sidebar avec le groupe « Espace livreur »).
 export default async function LivreurLayout({
   children,
 }: {
@@ -14,18 +15,5 @@ export default async function LivreurLayout({
     redirect("/compte/devenir-livreur");
   }
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <WorkspaceHeader
-        accent="Livreur"
-        items={[
-          { href: "/livreur/courses", label: "Mes courses" },
-          { href: "/compte/wallet", label: "Mes gains" },
-          { href: "/compte/profil", label: "Profil" },
-        ]}
-        back={{ href: "/compte", label: "‹ Mon compte" }}
-      />
-      {children}
-    </div>
-  );
+  return <AccountShell user={user}>{children}</AccountShell>;
 }

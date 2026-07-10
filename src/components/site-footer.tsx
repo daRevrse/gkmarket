@@ -57,6 +57,18 @@ export function SiteFooter() {
         <p className="font-label text-xs text-ink-muted">
           © 2026 Deal Lomé · GK NÉGOCES. Tous droits réservés.
         </p>
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-label text-xs text-ink-muted">
+          {[
+            ["Conditions d'utilisation", "/cgu"],
+            ["Conditions de vente", "/cgv"],
+            ["Mentions légales", "/mentions-legales"],
+            ["Contact", "/contact"],
+          ].map(([label, href]) => (
+            <Link key={href} href={href} className="transition-colors hover:text-gold">
+              {label}
+            </Link>
+          ))}
+        </nav>
         <div className="flex items-center gap-4 text-ink-muted">
           <CreditCardIcon className="size-6" />
           <DevicePhoneMobileIcon className="size-6" />

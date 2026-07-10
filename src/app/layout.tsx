@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CookieConsent } from "@/components/cookie-consent";
 import { GoToTop } from "@/components/go-to-top";
 import { NavProgressProvider } from "@/components/nav-progress";
 import { SiteFooter } from "@/components/site-footer";
@@ -39,6 +40,7 @@ export default function RootLayout({
         <NavProgressProvider>{children}</NavProgressProvider>
         <SiteFooter />
         <GoToTop />
+        <CookieConsent />
       </body>
     </html>
   );

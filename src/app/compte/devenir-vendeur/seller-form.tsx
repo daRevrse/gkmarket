@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { ref, uploadBytes } from "firebase/storage";
@@ -37,6 +38,8 @@ export function SellerForm({
   const [rccm, setRccm] = useState("");
   const [idFile, setIdFile] = useState<File | null>(null);
   const [rccmFile, setRccmFile] = useState<File | null>(null);
+  const [addressFile, setAddressFile] = useState<File | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -61,7 +64,11 @@ export function SellerForm({
       setError("La pièce d'identité est requise.");
       return;
     }
-    for (const file of [idFile, rccmFile]) {
+    if (!termsAccepted) {
+      setError("Vous devez accepter les conditions vendeur.");
+      return;
+    }
+    for (const file of [idFile, rccmFile, addressFile]) {
       if (file && file.size > MAX_FILE_SIZE) {
         setError(`${file.name} dépasse 5 Mo.`);
         return;
@@ -78,6 +85,9 @@ export function SellerForm({
       const rccmDocumentPath = rccmFile
         ? await uploadDocument(firebaseUser.uid, "rccm", rccmFile)
         : undefined;
+      const addressDocumentPath = addressFile
+        ? await uploadDocument(firebaseUser.uid, "justificatif-adresse", addressFile)
+        : undefined;
 
       const result = await submitSellerApplication({
         shopName,
@@ -88,6 +98,8 @@ export function SellerForm({
         rccm,
         idDocumentPath,
         rccmDocumentPath,
+        addressDocumentPath,
+        termsAccepted,
       });
       if (result.error) {
         setError(result.error);
@@ -196,10 +208,45 @@ export function SellerForm({
         />
       </FormField>
 
+      <FormField
+        label="Justificatif d'adresse (optionnel - facture, attestation)"
+        htmlFor="addressFile"
+      >
+        <input
+          id="addressFile"
+          type="file"
+          accept={ACCEPTED}
+          onChange={(e) => setAddressFile(e.target.files?.[0] ?? null)}
+          className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-muted file:mr-4 file:rounded-sm file:border-0 file:bg-emerald/20 file:px-3 file:py-1 file:text-emerald"
+        />
+      </FormField>
+
       <p className="text-xs text-ink-muted">
         Formats acceptés : JPG, PNG, WebP, PDF - 5 Mo max. Vos documents sont
         privés et consultés uniquement par notre équipe de validation.
       </p>
+
+      <label className="flex items-start gap-3 rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm">
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(e) => setTermsAccepted(e.target.checked)}
+          className="mt-0.5 size-4 shrink-0 accent-emerald"
+          required
+        />
+        <span className="text-ink-muted">
+          J&apos;ai lu et j&apos;accepte les{" "}
+          <Link
+            href="/cgv-vendeur"
+            target="_blank"
+            className="text-emerald hover:underline"
+          >
+            conditions vendeur
+          </Link>{" "}
+          de Deal Lomé (paiement sécurisé, commission de 5 %, obligations du
+          vendeur).
+        </span>
+      </label>
 
       <Button type="submit" loading={loading} className="mt-2 self-start">
         {loading ? "Envoi en cours…" : "Soumettre ma demande"}

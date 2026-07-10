@@ -24,6 +24,8 @@ export default async function AdminVendeursPage() {
     rccm: row.seller_profiles.rccm,
     idDocumentPath: row.seller_profiles.idDocumentPath,
     rccmDocumentPath: row.seller_profiles.rccmDocumentPath,
+    addressDocumentPath: row.seller_profiles.addressDocumentPath,
+    payoutMethod: row.seller_profiles.payoutMethod,
     status: row.seller_profiles.status,
     rejectionReason: row.seller_profiles.rejectionReason,
     createdAt: row.seller_profiles.createdAt.toISOString(),

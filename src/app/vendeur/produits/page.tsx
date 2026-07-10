@@ -49,6 +49,12 @@ export default async function VendeurProduitsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <LinkButton
+            href={`/boutique/${user!.sellerProfile!.id}`}
+            variant="ghost"
+          >
+            Voir ma boutique
+          </LinkButton>
           <LinkButton href="/vendeur/commandes" variant="secondary">
             Commandes reçues
           </LinkButton>

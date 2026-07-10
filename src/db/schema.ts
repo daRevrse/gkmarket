@@ -86,6 +86,20 @@ export const sellerProfiles = pgTable("seller_profiles", {
   rccm: text("rccm"),
   idDocumentPath: text("id_document_path").notNull(),
   rccmDocumentPath: text("rccm_document_path"),
+  // Justificatif de domicile/adresse (facture, attestation), privé comme le KYC.
+  addressDocumentPath: text("address_document_path"),
+  // Coordonnées de versement des gains (privées, visibles vendeur + admin) :
+  // Mobile Money (Flooz/T-Money) ou virement bancaire.
+  payoutMethod: text("payout_method"), // "mobile_money" | "bank"
+  mobileMoneyOperator: text("mobile_money_operator"), // "flooz" | "tmoney"
+  mobileMoneyNumber: text("mobile_money_number"),
+  bankName: text("bank_name"),
+  bankAccountName: text("bank_account_name"),
+  bankIban: text("bank_iban"),
+  // Conditions de vente de la boutique (délais, retours, garanties), publiques.
+  sellingConditions: text("selling_conditions"),
+  // Acceptation des conditions vendeur (CGV vendeur) à la candidature.
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
   status: profileStatusEnum("status").notNull().default("pending"),
   rejectionReason: text("rejection_reason"),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),

@@ -51,9 +51,30 @@ export default async function DevenirVendeurPage() {
             <Badge variant="verified">Vendeur vérifié</Badge>
           </div>
           <p className="mt-3 text-sm text-ink-muted">
-            Félicitations, votre boutique est active ! La gestion des produits
-            arrive à la prochaine itération.
+            Félicitations, votre boutique est active ! Ajoutez vos produits,
+            gérez vos commandes et complétez vos coordonnées de versement pour
+            recevoir vos gains.
           </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/vendeur/produits"
+              className="rounded-md bg-gold px-4 py-2 font-label text-sm font-bold text-navy-deep hover:bg-gold-light"
+            >
+              Gérer mes produits
+            </Link>
+            <Link
+              href={`/boutique/${profile.id}`}
+              className="rounded-md border border-emerald px-4 py-2 font-label text-sm text-emerald hover:bg-emerald/10"
+            >
+              Voir ma boutique
+            </Link>
+            <Link
+              href="/compte/profil"
+              className="rounded-md border border-white/15 px-4 py-2 font-label text-sm text-ink-muted hover:text-ink"
+            >
+              Coordonnées de versement
+            </Link>
+          </div>
         </Card>
       ) : profile?.status === "suspended" ? (
         <Card>

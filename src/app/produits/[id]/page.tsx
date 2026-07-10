@@ -216,12 +216,23 @@ export default async function ProduitPage({
             <Card className="p-4">
               <p className="text-xs text-ink-muted">Vendu par</p>
               <div className="mt-1 flex items-center gap-2">
-                <span className="font-display font-bold">{seller.shopName}</span>
+                <Link
+                  href={`/boutique/${product.sellerId}`}
+                  className="font-display font-bold hover:text-emerald"
+                >
+                  {seller.shopName}
+                </Link>
                 <Badge variant="verified">Vendeur vérifié</Badge>
               </div>
               <p className="mt-1 text-sm text-ink-muted">
                 {[seller.city, seller.district].filter(Boolean).join(" · ")}
               </p>
+              <Link
+                href={`/boutique/${product.sellerId}`}
+                className="mt-2 inline-block font-label text-sm text-emerald hover:underline"
+              >
+                Voir la boutique ›
+              </Link>
             </Card>
 
             {product.description ? (
@@ -242,6 +253,12 @@ export default async function ProduitPage({
               <h2 className="font-display text-2xl font-bold">
                 Du même vendeur - {seller.shopName}
               </h2>
+              <Link
+                href={`/boutique/${product.sellerId}`}
+                className="font-label text-sm text-emerald hover:underline"
+              >
+                Toute la boutique
+              </Link>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
               {sellerProducts.map((p: CatalogProduct) => (

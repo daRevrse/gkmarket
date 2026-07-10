@@ -16,6 +16,8 @@ export type SellerApplicationInput = {
   rccm?: string;
   idDocumentPath: string;
   rccmDocumentPath?: string;
+  addressDocumentPath?: string;
+  termsAccepted: boolean;
 };
 
 export async function submitSellerApplication(
@@ -30,6 +32,9 @@ export async function submitSellerApplication(
   if (!input.city?.trim()) {
     return { error: "La ville est requise." };
   }
+  if (!input.termsAccepted) {
+    return { error: "Vous devez accepter les conditions vendeur." };
+  }
 
   // Les documents doivent appartenir au dossier KYC de l'utilisateur :
   // empêche de référencer le document d'un autre compte.
@@ -39,6 +44,12 @@ export async function submitSellerApplication(
   }
   if (input.rccmDocumentPath && !input.rccmDocumentPath.startsWith(prefix)) {
     return { error: "Document RCCM invalide." };
+  }
+  if (
+    input.addressDocumentPath &&
+    !input.addressDocumentPath.startsWith(prefix)
+  ) {
+    return { error: "Justificatif d'adresse invalide." };
   }
 
   let contactPhone: string | null = null;
@@ -58,6 +69,8 @@ export async function submitSellerApplication(
     rccm: input.rccm?.trim() || null,
     idDocumentPath: input.idDocumentPath,
     rccmDocumentPath: input.rccmDocumentPath || null,
+    addressDocumentPath: input.addressDocumentPath || null,
+    termsAcceptedAt: new Date(),
     status: "pending" as const,
     rejectionReason: null,
     reviewedAt: null,

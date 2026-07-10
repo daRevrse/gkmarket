@@ -19,6 +19,8 @@ export type SellerApplication = {
   rccm: string | null;
   idDocumentPath: string;
   rccmDocumentPath: string | null;
+  addressDocumentPath: string | null;
+  payoutMethod: string | null;
   status: string;
   rejectionReason: string | null;
   createdAt: string;
@@ -83,6 +85,13 @@ export function ReviewCard({ application }: { application: SellerApplication }) 
           </p>
           <p className="text-xs text-ink-muted">
             Demande du {new Date(application.createdAt).toLocaleDateString("fr-FR")}
+            {application.payoutMethod
+              ? ` · Versement : ${
+                  application.payoutMethod === "mobile_money"
+                    ? "Mobile Money"
+                    : "Virement bancaire"
+                }`
+              : " · Versement non renseigné"}
           </p>
           {application.rejectionReason ? (
             <p className="mt-2 text-sm text-danger">
@@ -109,6 +118,16 @@ export function ReviewCard({ application }: { application: SellerApplication }) 
                 className="rounded-md border border-emerald px-3 py-1.5 text-sm text-emerald hover:bg-emerald/10"
               >
                 Document RCCM
+              </a>
+            ) : null}
+            {application.addressDocumentPath ? (
+              <a
+                href={`/api/admin/kyc?path=${encodeURIComponent(application.addressDocumentPath)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-md border border-emerald px-3 py-1.5 text-sm text-emerald hover:bg-emerald/10"
+              >
+                Justificatif d&apos;adresse
               </a>
             ) : null}
           </div>

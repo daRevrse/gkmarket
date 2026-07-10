@@ -36,6 +36,16 @@ export default async function ProfilPage() {
                   city: seller.city,
                   district: seller.district ?? "",
                   contactPhone: seller.contactPhone ?? "",
+                  sellingConditions: seller.sellingConditions ?? "",
+                  payoutMethod:
+                    (seller.payoutMethod as "" | "mobile_money" | "bank") ?? "",
+                  mobileMoneyOperator:
+                    (seller.mobileMoneyOperator as "" | "flooz" | "tmoney") ??
+                    "",
+                  mobileMoneyNumber: seller.mobileMoneyNumber ?? "",
+                  bankName: seller.bankName ?? "",
+                  bankAccountName: seller.bankAccountName ?? "",
+                  bankIban: seller.bankIban ?? "",
                   logoUrl: seller.logoUrl,
                 }
               : null

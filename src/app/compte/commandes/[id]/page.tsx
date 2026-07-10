@@ -199,6 +199,32 @@ export default async function CommandeDetailPage({
           </p>
         ) : null}
 
+        {row.order.trackingNumber || row.order.estimatedDeliveryAt ? (
+          <Card>
+            <h2 className="font-display text-lg font-bold">Expédition</h2>
+            <ul className="mt-2 text-sm text-ink-muted">
+              {row.order.trackingNumber ? (
+                <li>
+                  N° de suivi :{" "}
+                  <span className="text-ink">{row.order.trackingNumber}</span>
+                </li>
+              ) : null}
+              {row.order.estimatedDeliveryAt ? (
+                <li>
+                  Livraison estimée :{" "}
+                  <span className="text-ink">
+                    {row.order.estimatedDeliveryAt.toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </li>
+              ) : null}
+            </ul>
+          </Card>
+        ) : null}
+
         {deliveryRow ? (
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">

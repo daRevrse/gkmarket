@@ -11,10 +11,58 @@ import {
   sellerProfiles,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { renderTransactionalEmail, sendEmail } from "@/lib/email";
 import { releaseEscrowForOrder } from "@/lib/escrow";
 import { formatFcfa } from "@/lib/format";
+import { generateInvoicePdf } from "@/lib/invoice";
 import { notify } from "@/lib/notify";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
+
+/**
+ * Envoie la facture PDF en pièce jointe à l'acheteur (MVP n°123). Jamais
+ * bloquant : un échec d'email ne doit pas casser le paiement.
+ */
+async function emailInvoice(
+  order: typeof orders.$inferSelect,
+  toEmail: string,
+): Promise<void> {
+  try {
+    const [shop] = await db
+      .select({ shopName: sellerProfiles.shopName, shopCity: sellerProfiles.city })
+      .from(sellerProfiles)
+      .where(eq(sellerProfiles.id, order.sellerId))
+      .limit(1);
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, order.id));
+    const pdf = await generateInvoicePdf({
+      order,
+      items,
+      shopName: shop?.shopName ?? "Deal Lomé",
+      shopCity: shop?.shopCity ?? "Lomé",
+    });
+    const { text, html } = renderTransactionalEmail({
+      title: `Facture ${order.number}`,
+      body: `Votre paiement de ${formatFcfa(order.totalFcfa)} est confirmé et sécurisé jusqu'à la réception. Votre facture est jointe à cet email (PDF).`,
+      link: `/compte/commandes/${order.id}`,
+    });
+    await sendEmail({
+      toEmail,
+      subject: `Deal Lomé - Facture ${order.number}`,
+      bodyText: text,
+      bodyHtml: html,
+      attachments: [
+        {
+          name: `facture-${order.number}.pdf`,
+          contentBase64: Buffer.from(pdf).toString("base64"),
+        },
+      ],
+    });
+  } catch {
+    // Génération/envoi facture indisponible : on n'interrompt pas le paiement.
+  }
+}
 
 async function sellerUserId(sellerProfileId: string): Promise<string | null> {
   const [seller] = await db
@@ -87,14 +135,16 @@ export async function payOrder(orderId: string): Promise<{ error?: string }> {
       email: true,
     });
   }
-  // Reçu de paiement pour l'acheteur, avec facture (MVP n°123).
+  // Reçu de paiement pour l'acheteur (in-app). L'email part avec la facture
+  // PDF en pièce jointe (MVP n°123).
   await notify(user.id, {
     type: "order_paid_receipt",
     title: `Paiement de ${order.number} confirmé`,
-    body: `${formatFcfa(order.totalFcfa)} débités de votre wallet et sécurisés jusqu'à la réception. Votre facture PDF est disponible depuis le détail de la commande.`,
+    body: `${formatFcfa(order.totalFcfa)} débités de votre wallet et sécurisés jusqu'à la réception. Votre facture est jointe à l'email de confirmation.`,
     link: `/compte/commandes/${order.id}`,
-    email: true,
+    email: false,
   });
+  if (user.email) await emailInvoice({ ...order, status: "paid", paidAt: new Date() }, user.email);
 
   revalidateOrderPaths(orderId);
   return {};

@@ -27,6 +27,8 @@ export async function sendEmail(input: {
   bodyText: string;
   bodyHtml?: string;
   replyTo?: { email: string; name?: string };
+  /** Pièces jointes : contenu encodé en base64. */
+  attachments?: { name: string; contentBase64: string }[];
 }): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
 
@@ -48,6 +50,14 @@ export async function sendEmail(input: {
           textContent: input.bodyText,
           ...(input.bodyHtml ? { htmlContent: input.bodyHtml } : {}),
           ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+          ...(input.attachments?.length
+            ? {
+                attachment: input.attachments.map((a) => ({
+                  name: a.name,
+                  content: a.contentBase64,
+                })),
+              }
+            : {}),
         }),
       });
       if (response.ok) {

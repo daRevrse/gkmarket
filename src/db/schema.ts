@@ -251,6 +251,9 @@ export const orders = pgTable("orders", {
   // Point de départ du délai de déblocage automatique (MVP n°119)
   shippedAt: timestamp("shipped_at", { withTimezone: true }),
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  // Suivi d'expédition (MVP n°148, 161, 162) — saisi par le vendeur.
+  trackingNumber: text("tracking_number"),
+  estimatedDeliveryAt: timestamp("estimated_delivery_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

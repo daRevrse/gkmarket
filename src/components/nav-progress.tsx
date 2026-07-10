@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 type NavProgressState = { active: boolean; progress: number };
 
@@ -40,7 +40,6 @@ export function NavProgressProvider({
   const safety = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const finish = useCallback(() => {
     if (safety.current) {
@@ -55,18 +54,24 @@ export function NavProgressProvider({
     setTimeout(() => setState({ active: false, progress: 0 }), 350);
   }, []);
 
-  const begin = useCallback(() => {
-    if (trickle.current) return; // déjà en cours
-    setState({ active: true, progress: 12 });
-    trickle.current = setInterval(() => {
-      setState((s) => ({
-        active: true,
-        progress: s.progress >= 90 ? s.progress : s.progress + (90 - s.progress) * 0.14,
-      }));
-    }, 180);
-    if (safety.current) clearTimeout(safety.current);
-    safety.current = setTimeout(finish, 8000); // filet de sécurité
-  }, [finish]);
+  // `quick` : navigation à query seule (même chemin) — usePathname ne change
+  // pas, donc on termine via un court délai plutôt que le filet de 8 s.
+  const begin = useCallback(
+    (quick = false) => {
+      if (trickle.current) return; // déjà en cours
+      setState({ active: true, progress: 12 });
+      trickle.current = setInterval(() => {
+        setState((s) => ({
+          active: true,
+          progress:
+            s.progress >= 90 ? s.progress : s.progress + (90 - s.progress) * 0.14,
+        }));
+      }, 180);
+      if (safety.current) clearTimeout(safety.current);
+      safety.current = setTimeout(finish, quick ? 900 : 8000);
+    },
+    [finish],
+  );
 
   // Début : clic sur lien interne, ou retour/avance navigateur.
   useEffect(() => {
@@ -93,23 +98,26 @@ export function NavProgressProvider({
       if (url.origin !== location.origin) return;
       if (url.href === location.href) return; // même page
       if (url.pathname === location.pathname && url.hash) return; // ancre interne
-      begin();
+      begin(url.pathname === location.pathname); // même chemin -> query seule
+    }
+    function onPop() {
+      begin(false);
     }
     // Phase CAPTURE : on intercepte le clic avant que Next (Link) n'appelle
     // preventDefault() pour sa navigation SPA — sinon `defaultPrevented`
     // serait déjà vrai et on manquerait la navigation.
     document.addEventListener("click", onClick, true);
-    window.addEventListener("popstate", begin);
+    window.addEventListener("popstate", onPop);
     return () => {
       document.removeEventListener("click", onClick, true);
-      window.removeEventListener("popstate", begin);
+      window.removeEventListener("popstate", onPop);
     };
   }, [begin]);
 
-  // Fin : la nouvelle route est rendue (chemin ou query a changé).
+  // Fin : la nouvelle route est rendue (le chemin a changé).
   useEffect(() => {
     if (trickle.current) finish();
-  }, [pathname, searchParams, finish]);
+  }, [pathname, finish]);
 
   useEffect(() => {
     return () => {

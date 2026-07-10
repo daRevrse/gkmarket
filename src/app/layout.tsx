@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { GoToTop } from "@/components/go-to-top";
 import { NavProgressProvider } from "@/components/nav-progress";
 import { SiteFooter } from "@/components/site-footer";
@@ -37,9 +36,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col">
-        <Suspense fallback={null}>
-          <NavProgressProvider>{children}</NavProgressProvider>
-        </Suspense>
+        <NavProgressProvider>{children}</NavProgressProvider>
         <SiteFooter />
         <GoToTop />
       </body>

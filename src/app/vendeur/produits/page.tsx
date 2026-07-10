@@ -5,7 +5,7 @@ import { productImages, products } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApprovedSeller } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { ProductActions } from "./product-actions";
 
@@ -16,7 +16,7 @@ const statusLabel: Record<string, { label: string; variant?: "verified" | "neutr
 };
 
 export default async function VendeurProduitsPage() {
-  const user = await getCurrentUser();
+  const user = await requireApprovedSeller();
   const rows = await db
     .select()
     .from(products)
@@ -27,7 +27,7 @@ export default async function VendeurProduitsPage() {
         eq(productImages.position, 0),
       ),
     )
-    .where(eq(products.sellerId, user!.sellerProfile!.id))
+    .where(eq(products.sellerId, user.sellerProfile.id))
     .orderBy(desc(products.createdAt), asc(productImages.position));
 
   return (
@@ -38,13 +38,13 @@ export default async function VendeurProduitsPage() {
             Mes produits
           </h1>
           <p className="mt-1 text-ink-muted">
-            {user!.sellerProfile!.shopName} - {rows.length} produit
+            {user.sellerProfile.shopName} - {rows.length} produit
             {rows.length > 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <LinkButton
-            href={`/boutique/${user!.sellerProfile!.id}`}
+            href={`/boutique/${user.sellerProfile.id}`}
             variant="ghost"
           >
             Voir ma boutique

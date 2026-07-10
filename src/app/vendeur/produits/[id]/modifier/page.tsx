@@ -4,7 +4,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { productImages, products } from "@/db/schema";
 import { Card } from "@/components/ui/card";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApprovedSeller } from "@/lib/auth";
 import { ProductForm } from "../../product-form";
 import { getCategoryOptions } from "../../queries";
 
@@ -14,13 +14,13 @@ export default async function ModifierProduitPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getCurrentUser();
+  const user = await requireApprovedSeller();
 
   const [product] = await db
     .select()
     .from(products)
     .where(
-      and(eq(products.id, id), eq(products.sellerId, user!.sellerProfile!.id)),
+      and(eq(products.id, id), eq(products.sellerId, user.sellerProfile.id)),
     )
     .limit(1);
   if (!product) notFound();

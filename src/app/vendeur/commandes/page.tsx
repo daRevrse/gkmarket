@@ -11,7 +11,7 @@ import {
 } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApprovedSeller } from "@/lib/auth";
 import { deliveryStatusLabels } from "@/lib/deliveries";
 import { disputeReasonLabels, disputeStatusLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
@@ -19,7 +19,7 @@ import { orderStatusLabels } from "@/lib/orders";
 import { SellerOrderActions } from "./seller-order-actions";
 
 export default async function VendeurCommandesPage() {
-  const user = await getCurrentUser();
+  const user = await requireApprovedSeller();
 
   const rows = await db
     .select({
@@ -28,7 +28,7 @@ export default async function VendeurCommandesPage() {
     })
     .from(orders)
     .innerJoin(users, eq(users.id, orders.buyerId))
-    .where(eq(orders.sellerId, user!.sellerProfile!.id))
+    .where(eq(orders.sellerId, user.sellerProfile.id))
     .orderBy(desc(orders.createdAt));
 
   const orderIds = rows.map((row) => row.order.id);

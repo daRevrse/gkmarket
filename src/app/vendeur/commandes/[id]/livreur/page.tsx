@@ -4,7 +4,7 @@ import { and, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { courierProfiles, deliveries, orders, users } from "@/db/schema";
 import { Card } from "@/components/ui/card";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApprovedSeller } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { CourierPicker, type CourierCandidate } from "./courier-picker";
 
@@ -19,13 +19,13 @@ export default async function ChoixLivreurPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
+  const user = await requireApprovedSeller();
   const { id } = await params;
 
   const [order] = await db
     .select()
     .from(orders)
-    .where(and(eq(orders.id, id), eq(orders.sellerId, user!.sellerProfile!.id)))
+    .where(and(eq(orders.id, id), eq(orders.sellerId, user.sellerProfile.id)))
     .limit(1);
   if (!order) notFound();
   if (order.status !== "paid" && order.status !== "processing") {

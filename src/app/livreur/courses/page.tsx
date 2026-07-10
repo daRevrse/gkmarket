@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { deliveries, orders, sellerProfiles } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApprovedCourier } from "@/lib/auth";
 import { deliveryStatusLabels } from "@/lib/deliveries";
 import { formatFcfa } from "@/lib/format";
 import { CourseActions } from "./course-actions";
@@ -12,7 +12,7 @@ import { CourseActions } from "./course-actions";
 const ACTIVE_STATUSES = ["proposed", "accepted", "picked_up"];
 
 export default async function LivreurCoursesPage() {
-  const user = await getCurrentUser();
+  const user = await requireApprovedCourier();
 
   const rows = await db
     .select({
@@ -26,7 +26,7 @@ export default async function LivreurCoursesPage() {
     .from(deliveries)
     .innerJoin(orders, eq(orders.id, deliveries.orderId))
     .innerJoin(sellerProfiles, eq(sellerProfiles.id, deliveries.sellerId))
-    .where(eq(deliveries.courierId, user!.courierProfile!.id))
+    .where(eq(deliveries.courierId, user.courierProfile.id))
     .orderBy(desc(deliveries.createdAt));
 
   const active = rows.filter((row) =>

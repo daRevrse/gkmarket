@@ -46,13 +46,7 @@ export default async function LivreurCoursesPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
       <div className="mb-8">
-        <Link
-          href="/compte"
-          className="text-sm text-ink-muted hover:text-emerald"
-        >
-          ‹ Mon compte
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-display text-3xl font-extrabold">Mes courses</h1>
           <Link href="/compte/wallet" className="text-sm text-emerald hover:underline">
             Gains versés : {formatFcfa(totalEarned)} - voir mon wallet ›

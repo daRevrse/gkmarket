@@ -1,6 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { count, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { courierProfiles, disputes, sellerProfiles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { WorkspaceHeader } from "@/components/workspace-header";
 
 export default async function AdminLayout({
   children,
@@ -10,42 +13,51 @@ export default async function AdminLayout({
   const user = await getCurrentUser();
   if (!user?.isAdmin) redirect("/");
 
+  // Compteurs de tâches en attente, affichés en pastille sur la navigation.
+  const [[pendingSellers], [pendingCouriers], [openDisputes]] =
+    await Promise.all([
+      db
+        .select({ value: count() })
+        .from(sellerProfiles)
+        .where(eq(sellerProfiles.status, "pending")),
+      db
+        .select({ value: count() })
+        .from(courierProfiles)
+        .where(eq(courierProfiles.status, "pending")),
+      db
+        .select({ value: count() })
+        .from(disputes)
+        .where(eq(disputes.status, "open")),
+    ]);
+
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-white/10 bg-white/[0.03]">
-        <div className="mx-auto flex w-full max-w-(--container-page) items-center justify-between gap-4 px-4 py-4 md:px-10">
-          <div className="flex items-center gap-6">
-            <Link href="/admin" className="font-display text-lg font-extrabold">
-              Deal Lomé <span className="text-gold">Admin</span>
-            </Link>
-            <nav className="flex flex-wrap items-center gap-4 text-sm">
-              {[
-                { href: "/admin/utilisateurs", label: "Utilisateurs" },
-                { href: "/admin/vendeurs", label: "Vendeurs" },
-                { href: "/admin/livreurs", label: "Livreurs" },
-                { href: "/admin/produits", label: "Produits" },
-                { href: "/admin/commandes", label: "Commandes" },
-                { href: "/admin/litiges", label: "Litiges" },
-                { href: "/admin/financier", label: "Financier" },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-ink-muted transition-colors hover:text-ink"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-          <Link
-            href="/compte"
-            className="text-sm text-ink-muted transition-colors hover:text-emerald"
-          >
-            ‹ Retour au site
-          </Link>
-        </div>
-      </header>
+      <WorkspaceHeader
+        accent="Admin"
+        items={[
+          { href: "/admin", label: "Vue d'ensemble", exact: true },
+          { href: "/admin/utilisateurs", label: "Utilisateurs" },
+          {
+            href: "/admin/vendeurs",
+            label: "Vendeurs",
+            badge: pendingSellers.value || undefined,
+          },
+          {
+            href: "/admin/livreurs",
+            label: "Livreurs",
+            badge: pendingCouriers.value || undefined,
+          },
+          { href: "/admin/produits", label: "Produits" },
+          { href: "/admin/commandes", label: "Commandes" },
+          {
+            href: "/admin/litiges",
+            label: "Litiges",
+            badge: openDisputes.value || undefined,
+          },
+          { href: "/admin/financier", label: "Financier" },
+        ]}
+        back={{ href: "/compte", label: "‹ Retour au site" }}
+      />
       {children}
     </div>
   );

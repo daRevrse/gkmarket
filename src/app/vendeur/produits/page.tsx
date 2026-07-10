@@ -34,13 +34,7 @@ export default async function VendeurProduitsPage() {
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <Link
-            href="/compte"
-            className="text-sm text-ink-muted hover:text-emerald"
-          >
-            ‹ Mon compte
-          </Link>
-          <h1 className="mt-2 font-display text-3xl font-extrabold">
+          <h1 className="font-display text-3xl font-extrabold">
             Mes produits
           </h1>
           <p className="mt-1 text-ink-muted">

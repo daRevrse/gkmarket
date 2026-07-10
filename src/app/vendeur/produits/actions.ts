@@ -15,11 +15,22 @@ export type ProductInput = {
   priceFcfa: number;
   wholesalePriceFcfa?: number | null;
   wholesaleMinQty?: number | null;
+  /** Prix promotionnel (barre le prix de base jusqu'à l'échéance). */
+  promoPriceFcfa?: number | null;
+  /** Échéance de la promo, chaîne « AAAA-MM-JJ » du champ date. */
+  promoEndsAt?: string | null;
   stock: number;
   minOrderQty?: number;
   weightGrams?: number | null;
   prepDelayDays?: number;
 };
+
+/** Parse la date « AAAA-MM-JJ » du champ promo en fin de journée. */
+function parsePromoEnd(value?: string | null): Date | null {
+  if (!value) return null;
+  const d = new Date(`${value}T23:59:59`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 export type ImageInput = { path: string; url: string };
 
@@ -68,6 +79,22 @@ async function validate(
     }
   }
 
+  // Promo : prix et échéance vont de pair ; le prix doit être inférieur et
+  // l'échéance dans le futur.
+  const hasPromoPrice = input.promoPriceFcfa != null;
+  const promoEnd = parsePromoEnd(input.promoEndsAt);
+  if (hasPromoPrice !== (promoEnd !== null)) {
+    return "Promo : indiquez à la fois le prix promo et la date de fin.";
+  }
+  if (hasPromoPrice) {
+    if (input.promoPriceFcfa! <= 0 || input.promoPriceFcfa! >= input.priceFcfa) {
+      return "Le prix promo doit être inférieur au prix unitaire.";
+    }
+    if (promoEnd! <= new Date()) {
+      return "La date de fin de la promo doit être dans le futur.";
+    }
+  }
+
   // La catégorie doit être une sous-catégorie existante.
   const [category] = await db
     .select({ id: categories.id })
@@ -90,6 +117,8 @@ function toValues(input: ProductInput) {
     priceFcfa: input.priceFcfa,
     wholesalePriceFcfa: input.wholesalePriceFcfa ?? null,
     wholesaleMinQty: input.wholesaleMinQty ?? null,
+    promoPriceFcfa: input.promoPriceFcfa ?? null,
+    promoEndsAt: parsePromoEnd(input.promoEndsAt),
     stock: input.stock,
     minOrderQty: input.minOrderQty && input.minOrderQty > 0 ? input.minOrderQty : 1,
     weightGrams: input.weightGrams ?? null,

@@ -58,6 +58,10 @@ export default async function ModifierProduitPage({
             priceFcfa: product.priceFcfa,
             wholesalePriceFcfa: product.wholesalePriceFcfa,
             wholesaleMinQty: product.wholesaleMinQty,
+            promoPriceFcfa: product.promoPriceFcfa,
+            promoEndsAt: product.promoEndsAt
+              ? product.promoEndsAt.toISOString().slice(0, 10)
+              : null,
             stock: product.stock,
             minOrderQty: product.minOrderQty,
             weightGrams: product.weightGrams,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import {
   createProduct,
   updateProduct,
@@ -13,6 +13,7 @@ import {
 import { FormError, FormField } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { auth, storage } from "@/lib/firebase/client";
 
 const MIN_IMAGES = 3;
@@ -34,6 +35,9 @@ export type ProductFormInitial = {
   priceFcfa: number;
   wholesalePriceFcfa: number | null;
   wholesaleMinQty: number | null;
+  promoPriceFcfa: number | null;
+  /** Échéance promo au format « AAAA-MM-JJ » (champ date). */
+  promoEndsAt: string | null;
   stock: number;
   minOrderQty: number;
   weightGrams: number | null;
@@ -68,6 +72,10 @@ export function ProductForm({
   const [wholesaleQty, setWholesaleQty] = useState(
     initial?.wholesaleMinQty ? String(initial.wholesaleMinQty) : "",
   );
+  const [promoPrice, setPromoPrice] = useState(
+    initial?.promoPriceFcfa ? String(initial.promoPriceFcfa) : "",
+  );
+  const [promoEnds, setPromoEnds] = useState(initial?.promoEndsAt ?? "");
   const [stock, setStock] = useState(initial ? String(initial.stock) : "");
   const [minOrderQty, setMinOrderQty] = useState(
     initial ? String(initial.minOrderQty) : "1",
@@ -84,6 +92,11 @@ export function ProductForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Progression de téléversement : % par emplacement + compteur global.
+  const [slotProgress, setSlotProgress] = useState<Record<number, number>>({});
+  const [uploadCount, setUploadCount] = useState<{ done: number; total: number } | null>(
+    null,
+  );
 
   useEffect(() => onAuthStateChanged(auth, setFirebaseUser), []);
 
@@ -143,20 +156,40 @@ export function ProductForm({
     }
 
     setLoading(true);
+    setSlotProgress({});
+    const toUpload = slots.filter((s) => s.kind === "new").length;
+    setUploadCount(toUpload > 0 ? { done: 0, total: toUpload } : null);
     try {
       const images: ImageInput[] = [];
-      for (const slot of slots) {
+      for (let index = 0; index < slots.length; index++) {
+        const slot = slots[index];
         if (slot.kind === "existing") {
           images.push({ path: slot.path, url: slot.url });
-        } else {
-          const safeName = slot.file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-          const path = `products/${firebaseUser.uid}/${Date.now()}-${safeName}`;
-          const storageRef = ref(storage, path);
-          await uploadBytes(storageRef, slot.file, {
-            contentType: slot.file.type,
-          });
-          images.push({ path, url: await getDownloadURL(storageRef) });
+          continue;
         }
+        const safeName = slot.file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        const path = `products/${firebaseUser.uid}/${Date.now()}-${safeName}`;
+        const task = uploadBytesResumable(ref(storage, path), slot.file, {
+          contentType: slot.file.type,
+        });
+        // Progression réelle du transfert, remontée dans l'aperçu.
+        await new Promise<void>((resolve, reject) => {
+          task.on(
+            "state_changed",
+            (snapshot) => {
+              const pct = Math.round(
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+              );
+              setSlotProgress((prev) => ({ ...prev, [index]: pct }));
+            },
+            reject,
+            () => resolve(),
+          );
+        });
+        images.push({ path, url: await getDownloadURL(task.snapshot.ref) });
+        setUploadCount((prev) =>
+          prev ? { ...prev, done: prev.done + 1 } : prev,
+        );
       }
 
       const input: ProductInput = {
@@ -167,6 +200,8 @@ export function ProductForm({
         priceFcfa: Number(price),
         wholesalePriceFcfa: wholesalePrice ? Number(wholesalePrice) : null,
         wholesaleMinQty: wholesaleQty ? Number(wholesaleQty) : null,
+        promoPriceFcfa: promoPrice ? Number(promoPrice) : null,
+        promoEndsAt: promoEnds || null,
         stock: Number(stock),
         minOrderQty: Number(minOrderQty) || 1,
         weightGrams: weight ? Number(weight) : null,
@@ -180,6 +215,7 @@ export function ProductForm({
       if (result.error) {
         setError(result.error);
         setLoading(false);
+        setUploadCount(null);
         return;
       }
       router.push("/vendeur/produits");
@@ -187,6 +223,7 @@ export function ProductForm({
     } catch {
       setError("L'envoi a échoué. Réessayez.");
       setLoading(false);
+      setUploadCount(null);
     }
   }
 
@@ -281,6 +318,49 @@ export function ProductForm({
         </FormField>
       </div>
 
+      <div className="rounded-lg border border-gold/25 bg-gold/[0.04] p-4">
+        <p className="font-label text-sm font-semibold text-gold">
+          Promotion (optionnelle)
+        </p>
+        <p className="mt-0.5 text-xs text-ink-muted">
+          Le prix promo barre le prix normal jusqu&apos;à l&apos;échéance, avec
+          un badge de remise et un compte à rebours sur la fiche.
+        </p>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <FormField label="Prix promo (FCFA)" htmlFor="promoPrice">
+            <Input
+              id="promoPrice"
+              type="number"
+              min={1}
+              value={promoPrice}
+              onChange={(e) => setPromoPrice(e.target.value)}
+              placeholder="12000"
+            />
+          </FormField>
+          <FormField label="Fin de la promo" htmlFor="promoEnds">
+            <input
+              id="promoEnds"
+              type="date"
+              value={promoEnds}
+              onChange={(e) => setPromoEnds(e.target.value)}
+              className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink focus:border-emerald focus:outline-none"
+            />
+          </FormField>
+        </div>
+        {promoPrice || promoEnds ? (
+          <button
+            type="button"
+            onClick={() => {
+              setPromoPrice("");
+              setPromoEnds("");
+            }}
+            className="mt-2 font-label text-xs text-ink-muted hover:text-danger"
+          >
+            Retirer la promo
+          </button>
+        ) : null}
+      </div>
+
       <div className="grid gap-4 md:grid-cols-4">
         <FormField label="Stock" htmlFor="stock">
           <Input
@@ -340,6 +420,14 @@ export function ProductForm({
                 alt={`Photo ${index + 1}`}
                 className="h-full w-full object-cover"
               />
+              {loading && slot.kind === "new" ? (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-navy-deep/75 backdrop-blur-sm">
+                  <Spinner className="size-5 text-gold" />
+                  <span className="font-label text-xs font-semibold text-ink">
+                    {slotProgress[index] ?? 0} %
+                  </span>
+                </div>
+              ) : null}
               {index === 0 ? (
                 <span className="absolute top-1 left-1 rounded-sm bg-gold px-1.5 py-0.5 text-[10px] font-bold text-navy-deep">
                   Principale
@@ -382,10 +470,28 @@ export function ProductForm({
         </div>
       </div>
 
+      {loading && uploadCount ? (
+        <div className="flex flex-col gap-1.5">
+          <p className="font-label text-sm text-ink-muted">
+            Téléversement des photos… {uploadCount.done}/{uploadCount.total}
+          </p>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gold transition-[width] duration-300"
+              style={{
+                width: `${Math.round((uploadCount.done / uploadCount.total) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex gap-3">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" loading={loading}>
           {loading
-            ? "Enregistrement…"
+            ? uploadCount
+              ? "Téléversement…"
+              : "Enregistrement…"
             : initial
               ? "Enregistrer les modifications"
               : "Créer le produit (brouillon)"}
@@ -393,6 +499,7 @@ export function ProductForm({
         <Button
           type="button"
           variant="ghost"
+          disabled={loading}
           onClick={() => router.push("/vendeur/produits")}
         >
           Annuler

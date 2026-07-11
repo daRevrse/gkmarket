@@ -10,6 +10,7 @@ import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
+import { contactSeller } from "@/app/compte/messages/actions";
 import { getCurrentUser } from "@/lib/auth";
 import { publishedProducts } from "@/lib/catalog";
 import { formatFcfa } from "@/lib/format";
@@ -266,12 +267,29 @@ export default async function ProduitPage({
               <p className="mt-1 text-sm text-ink-muted">
                 {[seller.city, seller.district].filter(Boolean).join(" · ")}
               </p>
-              <Link
-                href={`/boutique/${product.sellerId}`}
-                className="mt-2 inline-block font-label text-sm text-emerald hover:underline"
-              >
-                Voir la boutique ›
-              </Link>
+              <div className="mt-2 flex flex-wrap items-center gap-4">
+                <Link
+                  href={`/boutique/${product.sellerId}`}
+                  className="font-label text-sm text-emerald hover:underline"
+                >
+                  Voir la boutique ›
+                </Link>
+                <form
+                  action={contactSeller.bind(
+                    null,
+                    product.sellerId,
+                    canonical,
+                    `Bonjour, à propos de « ${product.title} » : `,
+                  )}
+                >
+                  <button
+                    type="submit"
+                    className="font-label text-sm text-emerald hover:underline"
+                  >
+                    Contacter le vendeur ›
+                  </button>
+                </form>
+              </div>
             </Card>
 
             <ReportProduct

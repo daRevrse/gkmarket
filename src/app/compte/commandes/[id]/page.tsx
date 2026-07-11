@@ -17,6 +17,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { deliveryStatusLabels, vehicleTypeLabels } from "@/lib/deliveries";
 import { disputeReasonLabels, disputeStatusLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
+import { contactSeller } from "@/app/compte/messages/actions";
 import { orderStatusLabels } from "@/lib/orders";
 import { productPath } from "@/lib/product-url";
 import { OrderActions } from "./order-actions";
@@ -95,6 +96,22 @@ export default async function CommandeDetailPage({
             year: "numeric",
           })}
         </p>
+        <form
+          action={contactSeller.bind(
+            null,
+            row.order.sellerId,
+            `/compte/commandes/${row.order.id}`,
+            `Au sujet de ma commande ${row.order.number} : `,
+          )}
+          className="mt-2"
+        >
+          <button
+            type="submit"
+            className="font-label text-sm text-emerald hover:underline"
+          >
+            Contacter le vendeur ›
+          </button>
+        </form>
       </div>
 
       <div className="flex flex-col gap-6">

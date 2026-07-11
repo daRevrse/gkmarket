@@ -6,6 +6,7 @@ import {
 } from "@/components/compte/account-nav";
 import { SiteHeader } from "@/components/site-header";
 import type { CurrentUser } from "@/lib/auth";
+import { unreadMessageCounts } from "@/lib/messaging";
 
 const pendingLabel: Record<string, string> = {
   pending: "En attente",
@@ -29,13 +30,15 @@ function initials(name: string | null) {
  * approuvées. Les liens « devenir vendeur/livreur » restent discrets en pied
  * de navigation. L'admin garde son layout dédié (/admin).
  */
-export function AccountShell({
+export async function AccountShell({
   user,
   children,
 }: {
   user: CurrentUser;
   children: React.ReactNode;
 }) {
+  const unread = await unreadMessageCounts(user);
+
   const groups: AccountNavGroup[] = [
     {
       title: "Mon espace",
@@ -43,6 +46,12 @@ export function AccountShell({
         { href: "/compte", label: "Aperçu", icon: "activity" },
         { href: "/compte/profil", label: "Mon profil", icon: "user" },
         { href: "/compte/commandes", label: "Mes commandes", icon: "package" },
+        {
+          href: "/compte/messages",
+          label: "Messages",
+          icon: "chat",
+          badge: unread.buyer > 0 ? String(unread.buyer) : undefined,
+        },
         { href: "/compte/wallet", label: "Mon wallet", icon: "wallet" },
         { href: "/compte/adresses", label: "Mes adresses", icon: "map-pin" },
         { href: "/compte/notifications", label: "Notifications", icon: "bell" },
@@ -65,6 +74,12 @@ export function AccountShell({
           href: "/vendeur/commandes",
           label: "Commandes reçues",
           icon: "package",
+        },
+        {
+          href: "/vendeur/messages",
+          label: "Messages",
+          icon: "chat",
+          badge: unread.seller > 0 ? String(unread.seller) : undefined,
         },
         {
           href: `/boutique/${user.sellerProfile.id}`,

@@ -575,3 +575,56 @@ export const productReports = pgTable("product_reports", {
     .notNull()
     .defaultNow(),
 });
+
+// Messagerie acheteur <-> boutique (MVP n°150, 155) : une conversation unique
+// par paire, ouverte depuis une fiche produit ou une commande. Les litiges
+// gardent leur fil dédié (dispute_messages).
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellerProfiles.id, { onDelete: "cascade" }),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("conversations_buyer_seller_idx").on(
+      table.buyerId,
+      table.sellerId,
+    ),
+  ],
+);
+
+export const conversationMessages = pgTable(
+  "conversation_messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    senderId: uuid("sender_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    // Lu par le destinataire (l'autre partie de la conversation).
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("conversation_messages_conv_idx").on(
+      table.conversationId,
+      table.createdAt,
+    ),
+  ],
+);

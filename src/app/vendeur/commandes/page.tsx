@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { contactBuyer } from "@/app/compte/messages/actions";
 import { requireApprovedSeller } from "@/lib/auth";
 import { deliveryStatusLabels } from "@/lib/deliveries";
 import { disputeReasonLabels, disputeStatusLabels } from "@/lib/disputes";
@@ -131,6 +132,17 @@ export default async function VendeurCommandesPage() {
                         ? ` (${order.shippingDistrict})`
                         : ""}
                     </p>
+                    <form
+                      action={contactBuyer.bind(null, order.id)}
+                      className="mt-1"
+                    >
+                      <button
+                        type="submit"
+                        className="font-label text-xs text-emerald hover:underline"
+                      >
+                        Contacter l&apos;acheteur ›
+                      </button>
+                    </form>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="font-display font-bold text-gold">

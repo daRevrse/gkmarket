@@ -83,7 +83,7 @@ export async function releaseEscrowForOrder(
         type: "sale_income",
         amountFcfa: sellerNet,
         orderId: order.id,
-        description: `Vente ${order.number} - ${formatFcfa(order.subtotalFcfa)} moins ${formatFcfa(commission)} de commission (5 %)${mode === "auto" ? " (déblocage automatique)" : ""}`,
+        description: `Vente ${order.number} - ${formatFcfa(order.subtotalFcfa)} moins ${formatFcfa(commission)} de commission (${commissionRatePct} %)${mode === "auto" ? " (déblocage automatique)" : ""}`,
       });
 
       if (deliveryRow) {
@@ -120,7 +120,7 @@ export async function releaseEscrowForOrder(
   await notify(seller.userId, {
     type: "order_delivered",
     title: `Commande ${order.number} livrée - fonds versés`,
-    body: `${formatFcfa(sellerNet)} versés sur votre wallet (commission de 5 % déduite)${mode === "auto" ? " - déblocage automatique après délai." : "."}`,
+    body: `${formatFcfa(sellerNet)} versés sur votre wallet (commission de ${commissionRatePct} % déduite)${mode === "auto" ? " - déblocage automatique après délai." : "."}`,
     link: "/compte/wallet",
     email: true,
   });

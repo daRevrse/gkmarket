@@ -19,7 +19,7 @@ export default async function AdminParametresPage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full max-w-3xl flex-1">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-extrabold">
           Paramètres de la plateforme

@@ -9,10 +9,12 @@ export type AccountNavItem = {
   href: string;
   label: string;
   icon: string;
-  /** Pastille d'état affichée à droite (ex. « En attente »). */
+  /** Pastille d'état affichée à droite (ex. « En attente », un compteur). */
   badge?: string;
   /** Ouvre dans un nouvel onglet (ex. page publique de la boutique). */
   newTab?: boolean;
+  /** Actif uniquement sur l'URL exacte (ex. tableau de bord racine). */
+  exact?: boolean;
 };
 
 export type AccountNavGroup = {
@@ -20,10 +22,10 @@ export type AccountNavGroup = {
   items: AccountNavItem[];
 };
 
-function isActive(pathname: string, href: string) {
-  // `/compte` ne doit pas rester actif sur toutes ses sous-pages.
-  if (href === "/compte") return pathname === "/compte";
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isActive(pathname: string, item: AccountNavItem) {
+  // Les index (`/compte`, `/admin`…) ne restent pas actifs sur leurs sous-pages.
+  if (item.exact || item.href === "/compte") return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 /** Navigation verticale de la sidebar (desktop). */
@@ -41,7 +43,7 @@ export function AccountNav({ groups }: { groups: AccountNavGroup[] }) {
           ) : null}
           <ul className="flex flex-col gap-1">
             {group.items.map((item) => {
-              const active = isActive(pathname, item.href);
+              const active = isActive(pathname, item);
               return (
                 <li key={item.href}>
                   <Link
@@ -87,7 +89,7 @@ export function AccountNavMobile({ groups }: { groups: AccountNavGroup[] }) {
   return (
     <nav className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
       {items.map((item) => {
-        const active = isActive(pathname, item.href);
+        const active = isActive(pathname, item);
         return (
           <Link
             key={item.href}

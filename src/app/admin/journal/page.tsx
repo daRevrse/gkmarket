@@ -22,7 +22,7 @@ export default async function AdminJournalPage() {
     .limit(200);
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full flex-1">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-extrabold">
           Journal d&apos;activité

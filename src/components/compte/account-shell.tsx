@@ -54,6 +54,12 @@ export function AccountShell({
     groups.push({
       title: "Espace vendeur",
       items: [
+        {
+          href: "/vendeur",
+          label: "Tableau de bord",
+          icon: "trending-up",
+          exact: true,
+        },
         { href: "/vendeur/produits", label: "Mes produits", icon: "bag" },
         {
           href: "/vendeur/commandes",

@@ -121,7 +121,7 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full flex-1">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-extrabold">
           Vue d&apos;ensemble

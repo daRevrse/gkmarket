@@ -35,7 +35,7 @@ export default async function AdminLitigesPage() {
     .reduce((sum, row) => sum + row.order.totalFcfa, 0);
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 md:px-10">
+    <main className="w-full flex-1">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-extrabold">Litiges</h1>
         <p className="mt-1 text-ink-muted">

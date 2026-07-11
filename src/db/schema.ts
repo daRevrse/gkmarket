@@ -555,3 +555,23 @@ export const adminLogs = pgTable("admin_logs", {
     .notNull()
     .defaultNow(),
 });
+
+// Signalements de produits par les utilisateurs (MVP n°275) : examinés par
+// l'admin qui retire le produit (modération) ou classe le signalement.
+export const productReports = pgTable("product_reports", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  reporterId: uuid("reporter_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  reason: text("reason").notNull(), // counterfeit | forbidden | misleading | other
+  details: text("details"),
+  status: text("status").notNull().default("open"), // open | resolved | dismissed
+  resolvedById: uuid("resolved_by_id").references(() => users.id),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

@@ -41,6 +41,30 @@ function buildQueryString(params: SearchParams, overrides: Partial<SearchParams>
   return qs ? `/produits?${qs}` : "/produits";
 }
 
+// Méta-titres dynamiques par rayon ou recherche (MVP n°290, 291).
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  let scope = "Catalogue";
+  if (params.categorie) {
+    const [category] = await db
+      .select({ name: categories.name })
+      .from(categories)
+      .where(eq(categories.slug, params.categorie))
+      .limit(1);
+    if (category) scope = category.name;
+  } else if (params.q?.trim()) {
+    scope = `Recherche « ${params.q.trim()} »`;
+  }
+  return {
+    title: `${scope} - Deal Lomé`,
+    description: `${scope} sur Deal Lomé, la marketplace du Togo : vendeurs vérifiés, paiement sécurisé, livraison à Lomé.`,
+  };
+}
+
 export default async function CataloguePage({
   searchParams,
 }: {

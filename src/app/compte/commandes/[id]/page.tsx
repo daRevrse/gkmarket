@@ -18,6 +18,7 @@ import { deliveryStatusLabels, vehicleTypeLabels } from "@/lib/deliveries";
 import { disputeReasonLabels, disputeStatusLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
+import { productPath } from "@/lib/product-url";
 import { OrderActions } from "./order-actions";
 
 export default async function CommandeDetailPage({
@@ -114,7 +115,7 @@ export default async function CommandeDetailPage({
                 <div className="min-w-0 flex-1">
                   {item.productId ? (
                     <Link
-                      href={`/produits/${item.productId}`}
+                      href={productPath({ id: item.productId, title: item.title })}
                       className="block truncate text-sm font-medium hover:text-emerald"
                     >
                       {item.title}

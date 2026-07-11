@@ -23,30 +23,52 @@ export function SiteFooter() {
             confiance.
           </p>
         </div>
-        {[
-          ["Société", ["À propos", "Carrières", "Presse", "Contact"]],
+        {(
           [
-            "Acheteurs",
-            ["Suivi de commande", "Livraison & tarifs", "Retours", "Aide"],
-          ],
-          [
-            "Vendeurs",
             [
-              "Vendre sur Deal Lomé",
-              "Portail marchand",
-              "Académie vendeurs",
-              "Publicité",
+              "Société",
+              [
+                ["À propos", null],
+                ["Carrières", null],
+                ["Presse", null],
+                ["Contact", "/contact"],
+              ],
             ],
-          ],
-        ].map(([title, links]) => (
-          <div key={title as string}>
+            [
+              "Acheteurs",
+              [
+                ["Suivi de commande", "/compte/commandes"],
+                ["Livraison & tarifs", "/faq"],
+                ["Retours & litiges", "/faq"],
+                ["Aide & FAQ", "/faq"],
+              ],
+            ],
+            [
+              "Vendeurs & livreurs",
+              [
+                ["Vendre sur Deal Lomé", "/compte/devenir-vendeur"],
+                ["Conditions vendeur", "/cgv-vendeur"],
+                ["Portail marchand", "/vendeur"],
+                ["Devenir livreur", "/compte/devenir-livreur"],
+              ],
+            ],
+          ] as [string, [string, string | null][]][]
+        ).map(([title, links]) => (
+          <div key={title}>
             <h4 className="mb-5 font-bold">{title}</h4>
             <ul className="space-y-3 font-label text-sm text-ink-muted">
-              {(links as string[]).map((l) => (
-                <li key={l}>
-                  <span className="cursor-default transition-colors hover:text-gold">
-                    {l}
-                  </span>
+              {links.map(([label, href]) => (
+                <li key={label}>
+                  {href ? (
+                    <Link
+                      href={href}
+                      className="transition-colors hover:text-gold"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <span className="cursor-default">{label}</span>
+                  )}
                 </li>
               ))}
             </ul>

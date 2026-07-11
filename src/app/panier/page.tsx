@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { readGuestCart } from "@/lib/guest-cart";
+import { productPath } from "@/lib/product-url";
 import { ClearCartButton, QuantityStepper, RemoveItemButton } from "./cart-controls";
 import { getCart, getGuestCart } from "./queries";
 
@@ -71,7 +72,7 @@ export default async function PanierPage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <Link
-                          href={`/produits/${line.productId}`}
+                          href={productPath({ id: line.productId, title: line.title })}
                           className="block truncate text-sm font-medium hover:text-emerald"
                         >
                           {line.title}

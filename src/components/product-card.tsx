@@ -3,6 +3,7 @@ import { Countdown } from "@/components/countdown";
 import { Badge } from "@/components/ui/badge";
 import { formatFcfa } from "@/lib/format";
 import { isPromoActive } from "@/lib/pricing";
+import { productPath } from "@/lib/product-url";
 
 export type CatalogProduct = {
   id: string;
@@ -39,7 +40,7 @@ export function ProductCard({
 
   return (
     <Link
-      href={`/produits/${product.id}`}
+      href={productPath(product)}
       className="group overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.03] transition-colors hover:border-emerald/40"
     >
       <div className="relative aspect-square overflow-hidden bg-white/5">

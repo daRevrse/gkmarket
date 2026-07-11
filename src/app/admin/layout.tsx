@@ -2,7 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { count, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { courierProfiles, disputes, sellerProfiles } from "@/db/schema";
+import {
+  courierProfiles,
+  disputes,
+  productReports,
+  sellerProfiles,
+} from "@/db/schema";
 import {
   AccountNav,
   AccountNavMobile,
@@ -20,7 +25,7 @@ export default async function AdminLayout({
   const user = await getCurrentUser();
   if (!user?.isAdmin) redirect("/");
 
-  const [[pendingSellers], [pendingCouriers], [openDisputes]] =
+  const [[pendingSellers], [pendingCouriers], [openDisputes], [openReports]] =
     await Promise.all([
       db
         .select({ value: count() })
@@ -34,6 +39,10 @@ export default async function AdminLayout({
         .select({ value: count() })
         .from(disputes)
         .where(eq(disputes.status, "open")),
+      db
+        .select({ value: count() })
+        .from(productReports)
+        .where(eq(productReports.status, "open")),
     ]);
 
   const badge = (n: number) => (n > 0 ? String(n) : undefined);
@@ -67,7 +76,12 @@ export default async function AdminLayout({
     {
       title: "Catalogue & ventes",
       items: [
-        { href: "/admin/produits", label: "Produits", icon: "basket" },
+        {
+          href: "/admin/produits",
+          label: "Produits",
+          icon: "basket",
+          badge: badge(openReports.value),
+        },
         { href: "/admin/categories", label: "Catégories", icon: "tag" },
         { href: "/admin/commandes", label: "Commandes", icon: "package" },
         { href: "/admin/financier", label: "Financier", icon: "wallet" },

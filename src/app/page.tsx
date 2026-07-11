@@ -28,6 +28,7 @@ import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 import { publishedProducts } from "@/lib/catalog";
 import { formatFcfa } from "@/lib/format";
+import { productPath } from "@/lib/product-url";
 
 /** Icône Heroicons par catégorie racine (slug). */
 const CATEGORY_ICON: Record<
@@ -122,7 +123,7 @@ export default async function Home() {
   const banners: HeroBanner[] =
     bannerPool.length > 0
       ? bannerPool.slice(0, 4).map((p) => ({
-          href: `/produits/${p.id}`,
+          href: productPath(p),
           image: p.imageUrl!,
           kicker: p.shopName ?? "Deal Lomé",
           title: p.title,

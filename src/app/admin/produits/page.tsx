@@ -1,10 +1,20 @@
+import Link from "next/link";
 import { and, desc, eq, ilike, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { productImages, products, sellerProfiles } from "@/db/schema";
+import {
+  productImages,
+  productReports,
+  products,
+  sellerProfiles,
+  users,
+} from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatFcfa } from "@/lib/format";
+import { productReportReasonLabels } from "@/lib/product-reports";
+import { productPath } from "@/lib/product-url";
 import { ProductModeration } from "./product-moderation";
+import { ReportActions } from "./report-actions";
 
 const statusLabel: Record<
   string,
@@ -32,25 +42,42 @@ export default async function AdminProduitsPage({
     );
   }
 
-  const rows = await db
-    .select({
-      product: products,
-      shopName: sellerProfiles.shopName,
-      sellerStatus: sellerProfiles.status,
-      imageUrl: productImages.url,
-    })
-    .from(products)
-    .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
-    .leftJoin(
-      productImages,
-      and(
-        eq(productImages.productId, products.id),
-        eq(productImages.position, 0),
-      ),
-    )
-    .where(filters.length > 0 ? and(...filters) : undefined)
-    .orderBy(desc(products.createdAt))
-    .limit(100);
+  const [rows, reports] = await Promise.all([
+    db
+      .select({
+        product: products,
+        shopName: sellerProfiles.shopName,
+        sellerStatus: sellerProfiles.status,
+        imageUrl: productImages.url,
+      })
+      .from(products)
+      .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
+      .leftJoin(
+        productImages,
+        and(
+          eq(productImages.productId, products.id),
+          eq(productImages.position, 0),
+        ),
+      )
+      .where(filters.length > 0 ? and(...filters) : undefined)
+      .orderBy(desc(products.createdAt))
+      .limit(100),
+    // Signalements à examiner (MVP n°275)
+    db
+      .select({
+        report: productReports,
+        productTitle: products.title,
+        productStatus: products.status,
+        shopName: sellerProfiles.shopName,
+        reporterName: users.fullName,
+      })
+      .from(productReports)
+      .innerJoin(products, eq(products.id, productReports.productId))
+      .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
+      .innerJoin(users, eq(users.id, productReports.reporterId))
+      .where(eq(productReports.status, "open"))
+      .orderBy(desc(productReports.createdAt)),
+  ]);
 
   return (
     <main className="w-full flex-1">
@@ -61,6 +88,51 @@ export default async function AdminProduitsPage({
           (le vendeur peut corriger et republier).
         </p>
       </div>
+
+      {reports.length > 0 ? (
+        <Card className="mb-6 border-gold/30">
+          <h2 className="font-display text-lg font-bold">
+            Signalements à examiner ({reports.length})
+          </h2>
+          <div className="mt-3 flex flex-col divide-y divide-white/[0.04]">
+            {reports.map((row) => (
+              <div
+                key={row.report.id}
+                className="flex flex-wrap items-center justify-between gap-3 py-3"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={productPath({
+                        id: row.report.productId,
+                        title: row.productTitle,
+                      })}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate font-medium hover:text-emerald"
+                    >
+                      {row.productTitle}
+                    </Link>
+                    <Badge variant="neutral">
+                      {productReportReasonLabels[row.report.reason] ??
+                        row.report.reason}
+                    </Badge>
+                    {row.productStatus !== "published" ? (
+                      <Badge variant="neutral">Déjà hors ligne</Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-0.5 text-sm text-ink-muted">
+                    {row.shopName} · signalé par {row.reporterName ?? "un utilisateur"}{" "}
+                    le {row.report.createdAt.toLocaleDateString("fr-FR")}
+                    {row.report.details ? ` : « ${row.report.details} »` : ""}
+                  </p>
+                </div>
+                <ReportActions reportId={row.report.id} />
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       <form action="/admin/produits" className="mb-6 flex flex-wrap gap-3">
         <input

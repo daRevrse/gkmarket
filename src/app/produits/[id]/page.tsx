@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, productImages, products, sellerProfiles } from "@/db/schema";
@@ -9,18 +10,17 @@ import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth";
 import { publishedProducts } from "@/lib/catalog";
 import { formatFcfa } from "@/lib/format";
-import { isPromoActive } from "@/lib/pricing";
+import { basePriceFcfa, isPromoActive } from "@/lib/pricing";
+import { productIdFromParam, productPath } from "@/lib/product-url";
 import { Gallery } from "./gallery";
+import { ReportProduct } from "./report-product";
 
-export default async function ProduitPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-
+async function getPublishedProduct(param: string) {
+  const id = productIdFromParam(param);
+  if (!id) return null;
   const [row] = await db
     .select()
     .from(products)
@@ -34,11 +34,50 @@ export default async function ProduitPage({
     row.products.status !== "published" ||
     row.seller_profiles.status !== "approved"
   )
-    notFound();
+    return null;
+  return row;
+}
+
+// Méta-titres et descriptions dynamiques (MVP n°290, 291) + URL canonique.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id: param } = await params;
+  const row = await getPublishedProduct(param);
+  if (!row) return { title: "Produit introuvable - Deal Lomé" };
+  const product = row.products;
+  const description = (product.description ?? "").replace(/\s+/g, " ").trim();
+  return {
+    title: `${product.title} - ${formatFcfa(basePriceFcfa(product))} | Deal Lomé`,
+    description: description
+      ? description.slice(0, 158)
+      : `Achetez ${product.title} chez ${row.seller_profiles.shopName} sur Deal Lomé. Paiement sécurisé, livraison à Lomé.`,
+    alternates: { canonical: productPath(product) },
+  };
+}
+
+export default async function ProduitPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: param } = await params;
+  const row = await getPublishedProduct(param);
+  if (!row) notFound();
 
   const product = row.products;
   const seller = row.seller_profiles;
   const category = row.categories;
+
+  // URL canonique avec slug (MVP n°289) : les anciens liens redirigent.
+  const canonical = productPath(product);
+  if (`/produits/${decodeURIComponent(param)}` !== canonical) {
+    permanentRedirect(canonical);
+  }
+
+  const user = await getCurrentUser();
 
   const parent = category.parentId
     ? (
@@ -53,7 +92,7 @@ export default async function ProduitPage({
   const images = await db
     .select({ url: productImages.url })
     .from(productImages)
-    .where(eq(productImages.productId, id))
+    .where(eq(productImages.productId, product.id))
     .orderBy(asc(productImages.position));
 
   const inStock = product.stock > 0;
@@ -234,6 +273,12 @@ export default async function ProduitPage({
                 Voir la boutique ›
               </Link>
             </Card>
+
+            <ReportProduct
+              productId={product.id}
+              productPath={canonical}
+              isLoggedIn={user !== null}
+            />
 
             {product.description ? (
               <div>

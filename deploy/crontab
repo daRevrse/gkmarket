@@ -1,0 +1,4 @@
+# Deal Lomé — crontab du user deploy (heure du serveur : UTC).
+# Installation : copier deploy/*.sh dans ~/ops puis `crontab deploy/crontab`.
+0 3 * * * $HOME/ops/backup-db.sh >> $HOME/backups/backup.log 2>&1
+0 6 * * * $HOME/ops/cron-escrow.sh >> $HOME/ops/cron-escrow.log 2>&1

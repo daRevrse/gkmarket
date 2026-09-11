@@ -1,0 +1,4 @@
+# Scripts exécutés sur le VPS Linux : toujours en LF, même extraits sous Windows
+# (core.autocrlf=true les passerait en CRLF et un `scp` les casserait).
+*.sh text eol=lf
+deploy/crontab text eol=lf

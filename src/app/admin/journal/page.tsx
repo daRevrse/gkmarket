@@ -12,6 +12,7 @@ const typeLabel: Record<string, string> = {
   categorie: "Catégorie",
   parametres: "Paramètres",
   conversation: "Conversation",
+  recherche: "Recherche",
 };
 
 export default async function AdminJournalPage() {

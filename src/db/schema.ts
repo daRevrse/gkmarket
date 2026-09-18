@@ -803,3 +803,33 @@ export const purchaseOrderItems = pgTable("purchase_order_items", {
   totalFcfa: integer("total_fcfa").notNull(),
   position: integer("position").notNull().default(0),
 });
+
+// Recherche (docs/CHANGEMENTS.md §5, lot 4). La recherche plein texte
+// s'appuie sur products.search_vector (tsvector généré, hors Drizzle :
+// migration 0021) et sur les extensions unaccent + pg_trgm.
+
+// Synonymes locaux, éditables par l'admin : une recherche sur l'un des
+// termes d'un groupe trouve aussi les autres (pagne / wax / tissu).
+// Termes stockés en minuscules, sans accents.
+export const searchSynonyms = pgTable("search_synonyms", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  terms: text("terms").array().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Journal anonyme des recherches (tendances, recherches sans résultat
+// montrées à l'admin et aux vendeurs). Requête normalisée, sans compte.
+export const searchQueries = pgTable(
+  "search_queries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    query: text("query").notNull(),
+    results: integer("results").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("search_queries_created_idx").on(table.createdAt)],
+);

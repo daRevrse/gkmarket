@@ -7,10 +7,9 @@ import {
   eq,
   gt,
   gte,
-  ilike,
   inArray,
   lte,
-  or,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/db";
@@ -18,7 +17,14 @@ import { categories, productImages, products, sellerProfiles } from "@/db/schema
 import { ProductCard } from "@/components/product-card";
 import { ProductSuggestions } from "@/components/product-suggestions";
 import { SiteHeader } from "@/components/site-header";
+import { catalogSelection } from "@/lib/catalog";
+import {
+  productSearch,
+  suggestCorrection,
+  type ProductSearch,
+} from "@/lib/search";
 import { cn } from "@/lib/utils";
+import { SearchLogger } from "./search-logger";
 
 const PAGE_SIZE = 12;
 
@@ -100,12 +106,6 @@ export default async function CataloguePage({
         .where(eq(sellerProfiles.status, "approved")),
     ),
   ];
-  if (params.q?.trim()) {
-    const pattern = `%${params.q.trim()}%`;
-    filters.push(
-      or(ilike(products.title, pattern), ilike(products.description, pattern))!,
-    );
-  }
   if (selected) {
     if (selected.parentId === null) {
       const subIds = allCategories
@@ -122,29 +122,43 @@ export default async function CataloguePage({
   if (prixMax > 0) filters.push(lte(products.priceFcfa, prixMax));
   if (params.en_stock === "1") filters.push(gt(products.stock, 0));
 
-  const where = and(...filters);
-  const orderBy =
-    params.tri === "prix-asc"
-      ? asc(products.priceFcfa)
-      : params.tri === "prix-desc"
-        ? desc(products.priceFcfa)
-        : desc(products.createdAt);
+  // Recherche intelligente (lot 4) : plein texte, synonymes, rayons et
+  // boutiques ; sans résultat, correction des fautes de frappe.
+  const countFor = async (candidate: ProductSearch | null) =>
+    (
+      await db
+        .select({ total: count() })
+        .from(products)
+        .where(and(...filters, ...(candidate ? [candidate.where] : [])))
+    )[0].total;
+  let search = params.q?.trim() ? await productSearch(params.q) : null;
+  let total = await countFor(search);
+  let correctedFrom: string | null = null;
+  if (search && total === 0) {
+    const correction = await suggestCorrection(search.normalized);
+    const corrected = correction ? await productSearch(correction) : null;
+    const correctedTotal = corrected ? await countFor(corrected) : 0;
+    if (corrected && correctedTotal > 0) {
+      correctedFrom = search.normalized;
+      search = corrected;
+      total = correctedTotal;
+    }
+  }
 
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(products)
-    .where(where);
+  const where = and(...filters, ...(search ? [search.where] : []));
+  // Tri : pertinence par défaut dès qu'il y a une recherche.
+  const sort = params.tri || (search ? "pertinence" : "recents");
+  const orderBy =
+    sort === "prix-asc"
+      ? [asc(products.priceFcfa)]
+      : sort === "prix-desc"
+        ? [desc(products.priceFcfa)]
+        : sort === "pertinence" && search
+          ? [desc(search.rank), desc(products.createdAt)]
+          : [desc(products.createdAt)];
 
   const rows = await db
-    .select({
-      id: products.id,
-      title: products.title,
-      priceFcfa: products.priceFcfa,
-      wholesalePriceFcfa: products.wholesalePriceFcfa,
-      stock: products.stock,
-      imageUrl: productImages.url,
-      shopName: sellerProfiles.shopName,
-    })
+    .select(catalogSelection)
     .from(products)
     .leftJoin(
       productImages,
@@ -155,9 +169,24 @@ export default async function CataloguePage({
     )
     .leftJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
     .where(where)
-    .orderBy(orderBy)
+    .orderBy(...orderBy)
     .limit(PAGE_SIZE)
     .offset((page - 1) * PAGE_SIZE);
+
+  // Boutiques dont le nom correspond à la recherche.
+  const matchingShops = search
+    ? await db
+        .select({ id: sellerProfiles.id, shopName: sellerProfiles.shopName })
+        .from(sellerProfiles)
+        .where(
+          and(
+            eq(sellerProfiles.status, "approved"),
+            sql`public.immutable_unaccent(lower(${sellerProfiles.shopName})) LIKE ${`%${search.normalized}%`}`,
+          ),
+        )
+        .limit(3)
+    : [];
+
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -264,10 +293,11 @@ export default async function CataloguePage({
             Trier par
             <select
               name="tri"
-              defaultValue={params.tri ?? ""}
+              defaultValue={sort}
               className="rounded-md border border-white/10 bg-navy-deep px-3 py-2 text-sm text-ink focus:border-emerald focus:outline-none"
             >
-              <option value="">Plus récents</option>
+              {search ? <option value="pertinence">Pertinence</option> : null}
+              <option value="recents">Plus récents</option>
               <option value="prix-asc">Prix croissant</option>
               <option value="prix-desc">Prix décroissant</option>
             </select>
@@ -279,6 +309,33 @@ export default async function CataloguePage({
             Appliquer
           </button>
         </form>
+
+        {/* Journal anonyme (tendances, recherches sans résultat). */}
+        {params.q?.trim() && page === 1 ? (
+          <SearchLogger query={params.q.trim()} />
+        ) : null}
+
+        {correctedFrom && search ? (
+          <p className="mt-3 text-sm text-ink-muted">
+            Aucun résultat pour « {correctedFrom} » : résultats pour{" "}
+            <span className="font-semibold text-ink">« {search.normalized} »</span>.
+          </p>
+        ) : null}
+
+        {matchingShops.length > 0 ? (
+          <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-ink-muted">Boutiques :</span>
+            {matchingShops.map((shop) => (
+              <Link
+                key={shop.id}
+                href={`/boutique/${shop.id}`}
+                className="rounded-full border border-emerald/40 px-3 py-1 text-emerald hover:bg-emerald/10"
+              >
+                {shop.shopName} ›
+              </Link>
+            ))}
+          </div>
+        ) : null}
 
         {/* Grille produits */}
         {rows.length === 0 ? (

@@ -231,7 +231,7 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
   sécurité : exécution aussi à l'ouverture du dashboard admin, et bouton
   manuel sur `/admin/financier`.
 
-## Flux acheteur-vendeur (conception — lots 1 à 3, 2026-09-18)
+## Flux acheteur-vendeur (conception — lots 1 à 4, 2026-09-18)
 
 Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
 
@@ -265,6 +265,19 @@ Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
   Money (`mobile_money_fee_pct`) répercutés à la recharge du wallet — à
   aligner sur le contrat de l'agrégateur. Les fonds sécurisés affichés en
   admin excluent les frais de service.
+- **Recherche** (`src/lib/search.ts`) : colonne générée
+  `products.search_vector` (français, sans accents via `immutable_unaccent`,
+  titre poids A, description B ; index GIN ; migration 0021, hors schéma
+  Drizzle). Requête par préfixes, tous les mots requis, élargie par les
+  **synonymes** admin (`search_synonyms`) ; correspondance aussi sur les
+  rayons et les boutiques ; tri par pertinence. Sans résultat : correction
+  orthographique mot par mot contre le vocabulaire du catalogue (pg_trgm,
+  similarité ≥ 0,4) et bandeau « Résultats pour … ». Autocomplétion
+  `/api/recherche/suggestions` (produits, rayons, boutiques, tendances ;
+  recherches récentes gardées sur l'appareil). Journal anonyme
+  `search_queries`, écrit une fois par recherche depuis le navigateur
+  (pas à chaque rendu) : tendances et demandes non servies en admin
+  (`/admin/recherche`) et sur le tableau de bord vendeur.
 
 ## Administration
 

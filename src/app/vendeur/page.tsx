@@ -15,6 +15,7 @@ import { Icon } from "@/components/ui/icon";
 import { requireApprovedSeller } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { orderStatusLabels } from "@/lib/orders";
+import { unmetSearches } from "@/lib/search";
 
 // Statuts où la vente est engagée (payée ou plus loin).
 const SALE_STATUSES = ["paid", "processing", "shipped", "delivered"] as const;
@@ -31,6 +32,7 @@ export default async function VendeurDashboardPage() {
     ordersByStatus,
     topProducts,
     lastPayouts,
+    unmet,
   ] = await Promise.all([
     db
       .select({ n: count() })
@@ -97,6 +99,7 @@ export default async function VendeurDashboardPage() {
       )
       .orderBy(desc(walletTransactions.createdAt))
       .limit(5),
+    unmetSearches(12).catch(() => []),
   ]);
 
   const kpis = [
@@ -287,6 +290,40 @@ export default async function VendeurDashboardPage() {
           </ul>
         )}
       </Card>
+
+      {/* Demande non servie (lot 4) : recherches sans aucun résultat. */}
+      {unmet.length > 0 ? (
+        <Card className="mt-6">
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="font-display text-lg font-bold">
+              Ce que les acheteurs cherchent sans trouver
+            </h2>
+            <Link
+              href="/vendeur/produits/nouveau"
+              className="font-label text-sm text-emerald hover:underline"
+            >
+              Ajouter un produit ›
+            </Link>
+          </div>
+          <p className="mt-1 text-sm text-ink-muted">
+            Recherches des 30 derniers jours restées sans résultat sur Deal
+            Lomé : autant d&apos;opportunités si vous pouvez les proposer.
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {unmet.map((row) => (
+              <li
+                key={row.query}
+                className="rounded-full border border-white/10 px-3 py-1 text-sm"
+              >
+                {row.query}{" "}
+                <span className="font-label text-xs text-ink-muted">
+                  {`× ${row.count}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
     </main>
   );
 }

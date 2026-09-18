@@ -11,6 +11,7 @@ import { db } from "@/db";
 import { cartItems, notifications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { guestCartCount } from "@/lib/guest-cart";
+import { SearchBox } from "@/components/search-box";
 import { StickyHeader } from "@/components/sticky-header";
 import { UserMenu } from "@/components/user-menu";
 
@@ -48,15 +49,8 @@ export async function SiteHeader({ query }: { query?: string }) {
         <Link href="/" className="font-display text-xl font-extrabold">
           Deal <span className="text-gold">Lomé</span>
         </Link>
-        <form action="/produits" className="min-w-48 flex-1">
-          <input
-            type="search"
-            name="q"
-            defaultValue={query}
-            placeholder="Rechercher un produit…"
-            className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-emerald focus:outline-none"
-          />
-        </form>
+        {/* Clé : le champ reprend la requête de la page affichée. */}
+        <SearchBox key={query ?? ""} defaultQuery={query} />
         <nav className="flex items-center gap-1.5">
           <Link
             href="/produits"

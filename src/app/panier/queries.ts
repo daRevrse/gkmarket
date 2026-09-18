@@ -191,3 +191,60 @@ export async function getGuestCart(
   const { deliveryFeeFcfa } = await getPlatformSettings();
   return buildCartSummary(cartRows, deliveryFeeFcfa);
 }
+
+/**
+ * Achat direct (« Acheter maintenant ») : récapitulatif d'un seul article,
+ * sans passer par le panier. Quantité ramenée entre le minimum de commande
+ * et le stock ; null si le produit n'est pas achetable.
+ */
+export async function getDirectPurchase(
+  productId: string,
+  quantity: number,
+): Promise<{ summary: CartSummary; quantity: number } | null> {
+  const [row] = await db
+    .select({
+      product: products,
+      shopName: sellerProfiles.shopName,
+      imageUrl: productImages.url,
+    })
+    .from(products)
+    .innerJoin(
+      sellerProfiles,
+      and(
+        eq(sellerProfiles.id, products.sellerId),
+        eq(sellerProfiles.status, "approved"),
+      ),
+    )
+    .leftJoin(
+      productImages,
+      and(
+        eq(productImages.productId, products.id),
+        eq(productImages.position, 0),
+      ),
+    )
+    .where(and(eq(products.id, productId), eq(products.status, "published")))
+    .limit(1)
+    .catch(() => []);
+  if (!row || row.product.stock < row.product.minOrderQty) return null;
+
+  const clamped = Math.max(
+    row.product.minOrderQty,
+    Math.min(Number.isInteger(quantity) ? quantity : 1, row.product.stock),
+  );
+  const { deliveryFeeFcfa } = await getPlatformSettings();
+  return {
+    quantity: clamped,
+    summary: buildCartSummary(
+      [
+        {
+          itemId: row.product.id,
+          product: row.product,
+          shopName: row.shopName,
+          imageUrl: row.imageUrl,
+          quantity: clamped,
+        },
+      ],
+      deliveryFeeFcfa,
+    ),
+  };
+}

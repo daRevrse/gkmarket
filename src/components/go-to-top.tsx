@@ -21,7 +21,8 @@ export function GoToTop() {
       aria-label="Revenir en haut"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       className={cn(
-        "fixed right-5 bottom-5 z-40 flex size-11 items-center justify-center rounded-full bg-gold text-navy-deep shadow-lg ring-1 ring-black/10 transition-all duration-300 hover:bg-gold-light md:right-8 md:bottom-8",
+        // --mobile-action-bar : hauteur de la barre d'actions fixe (fiche produit).
+        "fixed right-5 bottom-[calc(1.25rem+var(--mobile-action-bar,0px))] z-40 flex size-11 items-center justify-center rounded-full bg-gold text-navy-deep shadow-lg ring-1 ring-black/10 transition-all duration-300 hover:bg-gold-light md:right-8 md:bottom-[calc(2rem+var(--mobile-action-bar,0px))] lg:bottom-8",
         show
           ? "translate-y-0 opacity-100"
           : "pointer-events-none translate-y-4 opacity-0",

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { productImages, products } from "@/db/schema";
+import { productImages, products, wishlistItems } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,6 +29,20 @@ export default async function VendeurProduitsPage() {
     )
     .where(eq(products.sellerId, user.sellerProfile.id))
     .orderBy(desc(products.createdAt), asc(productImages.position));
+
+  // Intérêt des acheteurs : nombre de « Ma liste » contenant chaque produit.
+  const productIds = rows.map((row) => row.products.id);
+  const wishlistCounts = new Map(
+    productIds.length > 0
+      ? (
+          await db
+            .select({ productId: wishlistItems.productId, n: count() })
+            .from(wishlistItems)
+            .where(inArray(wishlistItems.productId, productIds))
+            .groupBy(wishlistItems.productId)
+        ).map((row) => [row.productId, row.n])
+      : [],
+  );
 
   return (
     <main className="w-full flex-1">
@@ -95,6 +109,11 @@ export default async function VendeurProduitsPage() {
                       ? ` · gros : ${formatFcfa(product.wholesalePriceFcfa)} dès ${product.wholesaleMinQty}`
                       : ""}
                   </p>
+                  {wishlistCounts.get(product.id) ? (
+                    <p className="mt-0.5 text-xs text-ink-muted">
+                      {`Dans la liste de ${wishlistCounts.get(product.id)} acheteur${wishlistCounts.get(product.id)! > 1 ? "s" : ""}`}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <Link

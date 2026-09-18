@@ -3,6 +3,7 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { GoToTop } from "@/components/go-to-top";
 import { NavProgressProvider } from "@/components/nav-progress";
 import { SiteFooter } from "@/components/site-footer";
+import { WishlistProvider } from "@/components/wishlist";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,7 +38,9 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col">
-        <NavProgressProvider>{children}</NavProgressProvider>
+        <NavProgressProvider>
+          <WishlistProvider>{children}</WishlistProvider>
+        </NavProgressProvider>
         <SiteFooter />
         <GoToTop />
         <CookieConsent />

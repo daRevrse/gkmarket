@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   BellIcon,
+  HeartIcon,
   ShoppingCartIcon,
   Squares2X2Icon,
   UserIcon,
@@ -64,6 +65,14 @@ export async function SiteHeader({ query }: { query?: string }) {
             className="rounded-md p-2 text-ink-muted transition-colors hover:bg-white/5 hover:text-ink"
           >
             <Squares2X2Icon className="size-5.5" />
+          </Link>
+          <Link
+            href={user ? "/compte/liste" : "/connexion?next=/compte/liste"}
+            aria-label="Ma liste"
+            title="Ma liste"
+            className="rounded-md p-2 text-ink-muted transition-colors hover:bg-white/5 hover:text-ink"
+          >
+            <HeartIcon className="size-5.5" />
           </Link>
           <Link
             href="/panier"

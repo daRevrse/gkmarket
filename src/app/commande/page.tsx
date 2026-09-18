@@ -7,16 +7,30 @@ import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
 import { getOrCreateWallet } from "@/lib/wallet";
-import { getCart } from "@/app/panier/queries";
+import { getCart, getDirectPurchase } from "@/app/panier/queries";
 import { CheckoutForm } from "./checkout-form";
 
-export default async function CommandePage() {
+export default async function CommandePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ produit?: string; qte?: string }>;
+}) {
+  const { produit, qte } = await searchParams;
+  // « Acheter maintenant » : commande de ce seul article, panier inchangé.
+  const selfPath = produit
+    ? `/commande?produit=${encodeURIComponent(produit)}&qte=${Number(qte) || 1}`
+    : "/commande";
+
   const user = await getCurrentUser();
   // Seul point du parcours où l'authentification est requise. On revient
   // ici après connexion (le panier invité est alors fusionné en base).
-  if (!user) redirect("/connexion?next=/commande");
+  if (!user) redirect(`/connexion?next=${encodeURIComponent(selfPath)}`);
 
-  const cart = await getCart(user.id);
+  const direct = produit
+    ? await getDirectPurchase(produit, Number(qte) || 1)
+    : null;
+  if (produit && !direct) redirect("/produits");
+  const cart = direct ? direct.summary : await getCart(user.id);
   if (cart.groups.length === 0) redirect("/panier");
 
   const userAddresses = await db
@@ -32,8 +46,13 @@ export default async function CommandePage() {
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:px-10">
         <h1 className="font-display text-2xl font-extrabold">
-          Finaliser ma commande
+          {direct ? "Achat direct" : "Finaliser ma commande"}
         </h1>
+        {direct ? (
+          <p className="mt-1 text-sm text-ink-muted">
+            Seul cet article est commandé : votre panier reste inchangé.
+          </p>
+        ) : null}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
           <CheckoutForm
@@ -48,6 +67,12 @@ export default async function CommandePage() {
             }))}
             walletBalance={wallet.balanceFcfa}
             total={cart.total}
+            direct={
+              direct && produit
+                ? { productId: produit, quantity: direct.quantity }
+                : undefined
+            }
+            returnPath={selfPath}
           />
 
           <div className="lg:sticky lg:top-6 lg:self-start">

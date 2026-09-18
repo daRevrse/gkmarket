@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
+import { after } from "next/server";
 import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, productImages, products, sellerProfiles } from "@/db/schema";
-import { AddToCart } from "@/components/add-to-cart";
 import { Countdown } from "@/components/countdown";
+import { ProductBuyActions } from "@/components/product-buy-actions";
 import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
-import { contactSeller } from "@/app/compte/messages/actions";
 import { getCurrentUser } from "@/lib/auth";
 import { publishedProducts } from "@/lib/catalog";
 import { formatFcfa } from "@/lib/format";
 import { basePriceFcfa, isPromoActive } from "@/lib/pricing";
 import { productIdFromParam, productPath } from "@/lib/product-url";
+import { isInWishlist, recordProductView } from "@/lib/shopping-list";
 import { Gallery } from "./gallery";
 import { ReportProduct } from "./report-product";
 
@@ -79,6 +80,9 @@ export default async function ProduitPage({
   }
 
   const user = await getCurrentUser();
+  // « Vus récemment » : enregistré après l'envoi de la page.
+  if (user) after(() => recordProductView(user.id, product.id));
+  const inList = user ? await isInWishlist(user.id, product.id) : false;
 
   const parent = category.parentId
     ? (
@@ -139,7 +143,8 @@ export default async function ProduitPage({
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-(--container-page) flex-1 px-4 py-8 md:px-10">
+      {/* pb-28 : place pour la barre d'actions fixe sur mobile */}
+      <main className="mx-auto w-full max-w-(--container-page) flex-1 px-4 pt-8 pb-28 md:px-10 lg:pb-8">
         <nav className="mb-6 text-sm text-ink-muted">
           <Link href="/produits" className="hover:text-emerald">
             Catalogue
@@ -238,20 +243,21 @@ export default async function ProduitPage({
               </li>
             </ul>
 
-            {inStock ? (
-              <AddToCart
-                productId={product.id}
-                product={{
-                  priceFcfa: product.priceFcfa,
-                  wholesalePriceFcfa: product.wholesalePriceFcfa,
-                  wholesaleMinQty: product.wholesaleMinQty,
-                  promoPriceFcfa: product.promoPriceFcfa,
-                  promoEndsAt: product.promoEndsAt?.toISOString() ?? null,
-                }}
-                minOrderQty={product.minOrderQty}
-                stock={product.stock}
-              />
-            ) : null}
+            <ProductBuyActions
+              productId={product.id}
+              productPath={canonical}
+              sellerId={product.sellerId}
+              product={{
+                priceFcfa: product.priceFcfa,
+                wholesalePriceFcfa: product.wholesalePriceFcfa,
+                wholesaleMinQty: product.wholesaleMinQty,
+                promoPriceFcfa: product.promoPriceFcfa,
+                promoEndsAt: product.promoEndsAt?.toISOString() ?? null,
+              }}
+              minOrderQty={product.minOrderQty}
+              stock={product.stock}
+              initialInList={inList}
+            />
 
             <Card className="p-4">
               <p className="text-xs text-ink-muted">Vendu par</p>
@@ -267,29 +273,12 @@ export default async function ProduitPage({
               <p className="mt-1 text-sm text-ink-muted">
                 {[seller.city, seller.district].filter(Boolean).join(" · ")}
               </p>
-              <div className="mt-2 flex flex-wrap items-center gap-4">
-                <Link
-                  href={`/boutique/${product.sellerId}`}
-                  className="font-label text-sm text-emerald hover:underline"
-                >
-                  Voir la boutique ›
-                </Link>
-                <form
-                  action={contactSeller.bind(
-                    null,
-                    product.sellerId,
-                    canonical,
-                    { productId: product.id },
-                  )}
-                >
-                  <button
-                    type="submit"
-                    className="font-label text-sm text-emerald hover:underline"
-                  >
-                    Discuter avec le vendeur ›
-                  </button>
-                </form>
-              </div>
+              <Link
+                href={`/boutique/${product.sellerId}`}
+                className="mt-2 inline-block font-label text-sm text-emerald hover:underline"
+              >
+                Voir la boutique ›
+              </Link>
             </Card>
 
             <ReportProduct

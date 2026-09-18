@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -229,6 +230,49 @@ export const cartItems = pgTable(
       .defaultNow(),
   },
   (table) => [uniqueIndex("cart_user_product_idx").on(table.userId, table.productId)],
+);
+
+// « Ma liste » (docs/CHANGEMENTS.md §5) : une seule liste par acheteur
+// (favoris / à acheter plus tard). Le prix à l'ajout signale les baisses.
+export const wishlistItems = pgTable(
+  "wishlist_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    priceAtAddFcfa: integer("price_at_add_fcfa").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("wishlist_user_product_idx").on(table.userId, table.productId),
+  ],
+);
+
+// « Vus récemment » : dernière consultation de chaque produit par compte
+// (historique borné, cf. src/lib/shopping-list.ts).
+export const productViews = pgTable(
+  "product_views",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    viewedAt: timestamp("viewed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.productId] }),
+    index("product_views_user_idx").on(table.userId, table.viewedAt),
+  ],
 );
 
 export const orderStatusEnum = pgEnum("order_status", [

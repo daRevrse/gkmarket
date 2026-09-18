@@ -15,10 +15,12 @@ export default async function AdressesPage({
   if (!user) redirect("/connexion");
 
   const { retour } = await searchParams;
-  // Lien de retour restreint aux pages internes connues (pas de redirection ouverte).
-  const backHref = retour === "/commande" ? "/commande" : "/compte";
-  const backLabel =
-    retour === "/commande" ? "‹ Retour à la commande" : "‹ Mon compte";
+  // Lien de retour restreint à la commande (panier ou achat direct) : pas de
+  // redirection ouverte.
+  const toCheckout =
+    retour === "/commande" || (retour?.startsWith("/commande?") ?? false);
+  const backHref = toCheckout ? retour! : "/compte";
+  const backLabel = toCheckout ? "‹ Retour à la commande" : "‹ Mon compte";
 
   const rows = await db
     .select()

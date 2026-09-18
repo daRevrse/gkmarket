@@ -31,9 +31,21 @@ function generateOrderNumber(): string {
   return `DL-${date}-${suffix}`;
 }
 
+type OrderLine = {
+  quantity: number;
+  product: typeof products.$inferSelect;
+  imageUrl: string | null;
+  sellerStatus: (typeof sellerProfiles.$inferSelect)["status"];
+};
+
+/**
+ * Crée les commandes du panier ou, en achat direct (« Acheter maintenant »),
+ * de ce seul article - le panier est alors laissé intact.
+ */
 export async function createOrder(
   addressId: string,
   payWithWallet: boolean,
+  direct?: { productId: string; quantity: number },
 ): Promise<{ error?: string; groupId?: string }> {
   const user = await getCurrentUser();
   if (!user) return { error: "Vous devez être connecté." };
@@ -45,37 +57,62 @@ export async function createOrder(
     .limit(1);
   if (!address) return { error: "Choisissez une adresse de livraison." };
 
-  const lines = await db
-    .select({
-      item: cartItems,
-      product: products,
-      imageUrl: productImages.url,
-      sellerStatus: sellerProfiles.status,
-    })
-    .from(cartItems)
-    .innerJoin(products, eq(products.id, cartItems.productId))
-    .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
-    .leftJoin(
-      productImages,
-      and(
-        eq(productImages.productId, products.id),
-        eq(productImages.position, 0),
-      ),
-    )
-    .where(eq(cartItems.userId, user.id));
+  if (
+    direct &&
+    (!Number.isInteger(direct.quantity) || direct.quantity < 1)
+  ) {
+    return { error: "Quantité invalide." };
+  }
 
-  if (lines.length === 0) return { error: "Votre panier est vide." };
+  const lineSelection = {
+    product: products,
+    imageUrl: productImages.url,
+    sellerStatus: sellerProfiles.status,
+  };
+  const mainImage = and(
+    eq(productImages.productId, products.id),
+    eq(productImages.position, 0),
+  );
+
+  let lines: OrderLine[];
+  if (direct) {
+    const rows = await db
+      .select(lineSelection)
+      .from(products)
+      .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
+      .leftJoin(productImages, mainImage)
+      .where(eq(products.id, direct.productId))
+      .limit(1)
+      .catch(() => []);
+    lines = rows.map((row) => ({ ...row, quantity: direct.quantity }));
+  } else {
+    lines = await db
+      .select({ ...lineSelection, quantity: cartItems.quantity })
+      .from(cartItems)
+      .innerJoin(products, eq(products.id, cartItems.productId))
+      .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
+      .leftJoin(productImages, mainImage)
+      .where(eq(cartItems.userId, user.id));
+  }
+
+  if (lines.length === 0) {
+    return {
+      error: direct ? "Produit indisponible." : "Votre panier est vide.",
+    };
+  }
 
   for (const line of lines) {
     if (line.product.status !== "published" || line.sellerStatus !== "approved") {
-      return { error: `« ${line.product.title} » n'est plus disponible - retirez-le du panier.` };
+      return {
+        error: `« ${line.product.title} » n'est plus disponible${direct ? "." : " - retirez-le du panier."}`,
+      };
     }
-    if (line.item.quantity > line.product.stock) {
+    if (line.quantity > line.product.stock) {
       return {
         error: `Stock insuffisant pour « ${line.product.title} » (${line.product.stock} restant${line.product.stock > 1 ? "s" : ""}).`,
       };
     }
-    if (line.item.quantity < line.product.minOrderQty) {
+    if (line.quantity < line.product.minOrderQty) {
       return {
         error: `Quantité minimum de ${line.product.minOrderQty} pour « ${line.product.title} ».`,
       };
@@ -101,7 +138,7 @@ export async function createOrder(
       for (const [sellerId, sellerLines] of bySeller) {
         const subtotal = sellerLines.reduce(
           (sum, line) =>
-            sum + unitPriceFcfa(line.product, line.item.quantity) * line.item.quantity,
+            sum + unitPriceFcfa(line.product, line.quantity) * line.quantity,
           0,
         );
 
@@ -141,15 +178,15 @@ export async function createOrder(
 
         await tx.insert(orderItems).values(
           sellerLines.map((line) => {
-            const unitPrice = unitPriceFcfa(line.product, line.item.quantity);
+            const unitPrice = unitPriceFcfa(line.product, line.quantity);
             return {
               orderId: order.id,
               productId: line.product.id,
               title: line.product.title,
               imageUrl: line.imageUrl,
               unitPriceFcfa: unitPrice,
-              quantity: line.item.quantity,
-              totalFcfa: unitPrice * line.item.quantity,
+              quantity: line.quantity,
+              totalFcfa: unitPrice * line.quantity,
             };
           }),
         );
@@ -160,13 +197,13 @@ export async function createOrder(
           const updated = await tx
             .update(products)
             .set({
-              stock: sql`${products.stock} - ${line.item.quantity}`,
+              stock: sql`${products.stock} - ${line.quantity}`,
               updatedAt: new Date(),
             })
             .where(
               and(
                 eq(products.id, line.product.id),
-                sql`${products.stock} >= ${line.item.quantity}`,
+                sql`${products.stock} >= ${line.quantity}`,
               ),
             )
             .returning({ id: products.id });
@@ -176,7 +213,10 @@ export async function createOrder(
         }
       }
 
-      await tx.delete(cartItems).where(eq(cartItems.userId, user.id));
+      // Achat direct : le panier n'est pas concerné.
+      if (!direct) {
+        await tx.delete(cartItems).where(eq(cartItems.userId, user.id));
+      }
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "";

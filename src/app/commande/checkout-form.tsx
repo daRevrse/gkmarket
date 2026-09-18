@@ -28,11 +28,18 @@ export function CheckoutForm({
   addresses,
   walletBalance,
   total,
+  direct,
+  returnPath,
 }: {
   addresses: CheckoutAddress[];
   walletBalance: number;
   total: number;
+  /** Achat direct d'un seul article (hors panier). */
+  direct?: { productId: string; quantity: number };
+  /** Page de commande courante (retour après ajout d'adresse). */
+  returnPath: string;
 }) {
+  const addressHref = `/compte/adresses?retour=${encodeURIComponent(returnPath)}`;
   const router = useRouter();
   const [addressId, setAddressId] = useState(
     addresses.find((a) => a.isDefault)?.id ?? addresses[0]?.id ?? "",
@@ -53,7 +60,7 @@ export function CheckoutForm({
       return;
     }
     setLoading(true);
-    const result = await createOrder(addressId, payment === "wallet");
+    const result = await createOrder(addressId, payment === "wallet", direct);
     if (result.error || !result.groupId) {
       setError(result.error ?? "La commande a échoué.");
       setLoading(false);
@@ -73,7 +80,7 @@ export function CheckoutForm({
           <p className="mt-3 text-sm text-ink-muted">
             Vous n&apos;avez pas encore d&apos;adresse.{" "}
             <Link
-              href="/compte/adresses?retour=/commande"
+              href={addressHref}
               className="text-emerald hover:underline"
             >
               Ajouter une adresse ›
@@ -110,7 +117,7 @@ export function CheckoutForm({
               </label>
             ))}
             <Link
-              href="/compte/adresses?retour=/commande"
+              href={addressHref}
               className="text-sm text-emerald hover:underline"
             >
               + Ajouter une autre adresse

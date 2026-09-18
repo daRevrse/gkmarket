@@ -36,6 +36,8 @@ export default async function AdminParametresPage() {
           <SettingsForm
             commissionRatePct={settings.commissionRatePct}
             deliveryFeeFcfa={settings.deliveryFeeFcfa}
+            serviceFeePct={settings.serviceFeePct}
+            mobileMoneyFeePct={settings.mobileMoneyFeePct}
           />
         </div>
       </Card>

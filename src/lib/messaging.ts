@@ -31,6 +31,12 @@ export function messagePreview(message: {
       return `Document : ${message.meta?.file?.name ?? "PDF"}`;
     case "audio":
       return "Message vocal";
+    case "quote_request":
+      return message.meta?.product
+        ? `Demande de devis : ${message.meta.product.title}`
+        : "Demande de devis";
+    case "purchase_order":
+      return `Bon de commande ${message.meta?.purchaseOrder?.number ?? ""}`.trim();
     default:
       return message.body;
   }

@@ -231,6 +231,41 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
   sécurité : exécution aussi à l'ouverture du dashboard admin, et bouton
   manuel sur `/admin/financier`.
 
+## Flux acheteur-vendeur (conception — lots 1 à 3, 2026-09-18)
+
+Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
+
+- **Messagerie temps réel** : `src/lib/realtime.ts` publie par Postgres
+  `NOTIFY` ; chaque processus Next écoute (`LISTEN`) et diffuse aux onglets
+  via `/api/realtime` (SSE, une connexion par onglet, heartbeat 25 s). Le
+  client rafraîchit la page (fil, badges) ; « en train d'écrire » passe par
+  `/api/realtime/typing`. Caddy sert `/api/realtime` sans compression.
+- **Messages typés** : texte, fiche produit, photo, PDF, vocal, demande de
+  devis, bon de commande. Pièces jointes dans Storage privé `chat/{uid}/`,
+  lues via `/api/messages/[id]/attachment` (parties + admins, Range).
+- **Anti-contournement** : `src/lib/contact-guard.ts` (détection) +
+  `src/lib/moderation.ts` (blocage, journal `contact_violations`,
+  `users.watched_at`, alerte admins). Appliqué aux messages, notes de devis
+  et de bons, fiches produit, boutique et profil. Page admin
+  `/admin/surveillance`, lecture des fils journalisée.
+- **Achat direct** : `/commande?produit=…&qte=…` commande un seul article
+  sans toucher au panier. **Ma liste** (`wishlist_items`, prix à l'ajout
+  mémorisé) et **Vus récemment** (`product_views`, 50 par compte, écrit via
+  `after()`).
+- **Bons de commande** (`purchase_orders`, `purchase_order_items`) : émis
+  par le vendeur dans le chat (lignes catalogue ou libres, prix, livraison,
+  validité 24 h à 7 j), modifiables (remplacement) ou annulables ; refusés
+  (motif) ou acceptés par l'acheteur via `/commande?bon=…`. L'acceptation
+  crée une commande normale aux prix négociés, dans la même transaction
+  (verrou `status = 'sent'` et échéance). « Expiré » est calculé, sans
+  cron. PDF proforma `/api/bons/[id]`.
+- **Frais acheteur** : `orders.service_fee_fcfa` = % du sous-total par
+  commande (`service_fee_pct`, 1 % par défaut), inclus dans le total, acquis
+  à la plateforme et **non remboursable** (`refundableFcfa`). Frais Mobile
+  Money (`mobile_money_fee_pct`) répercutés à la recharge du wallet — à
+  aligner sur le contrat de l'agrégateur. Les fonds sécurisés affichés en
+  admin excluent les frais de service.
+
 ## Administration
 
 - L'admin est un booléen `is_admin` sur `users` ; promotion manuelle en SQL :

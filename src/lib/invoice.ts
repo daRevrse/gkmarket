@@ -1,7 +1,12 @@
 import "server-only";
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import type { orderItems, orders } from "@/db/schema";
+import type {
+  orderItems,
+  orders,
+  purchaseOrderItems,
+  purchaseOrders,
+} from "@/db/schema";
 import { formatFcfa } from "@/lib/format";
 
 const GOLD = rgb(0.92, 0.7, 0.2);
@@ -11,6 +16,8 @@ const LINE = rgb(0.85, 0.86, 0.88);
 
 type Order = typeof orders.$inferSelect;
 type OrderItem = typeof orderItems.$inferSelect;
+type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
 
 function truncate(text: string, max: number) {
   const safe = pdfSafe(text);
@@ -33,21 +40,30 @@ function pdfSafe(text: string) {
     .replace(/[^\x20-\x7E\xA1-\xFF–—‘’“”€…]/g, "?");
 }
 
-/**
- * Facture PDF d'une commande payée (MVP n°122, 124) — générée à la volée,
- * jamais stockée. Mise en page A4 simple : en-tête Deal Lomé, parties,
- * lignes, totaux, mentions.
- */
-export async function generateInvoicePdf(input: {
-  order: Order;
-  items: OrderItem[];
-  shopName: string;
-  shopCity: string;
-  /** Exemplaire vendeur : sans le téléphone de l'acheteur (anti-contournement). */
-  hideBuyerPhone?: boolean;
-}): Promise<Uint8Array> {
-  const { order, items, shopName, shopCity, hideBuyerPhone } = input;
+/** Document commercial générique (facture, bon de commande). */
+type CommercialDocument = {
+  title: string;
+  dateLine: string;
+  seller: { name: string; lines: string[] };
+  buyer: { name: string; lines: string[] };
+  items: {
+    title: string;
+    quantity: number;
+    unitPriceFcfa: number;
+    totalFcfa: number;
+  }[];
+  totals: Array<[label: string, amountFcfa: number, strong: boolean]>;
+  /** Avertissement en évidence sous les totaux (ex. facture annulée). */
+  highlight?: string;
+  /** Mentions de pied de page. */
+  footer: string[];
+};
 
+/**
+ * Mise en page A4 commune : en-tête Deal Lomé, parties, lignes, totaux,
+ * mentions. Génération à la volée, jamais stockée.
+ */
+async function renderCommercialPdf(doc: CommercialDocument): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]); // A4 en points
   const font = await pdf.embedFont(StandardFonts.Helvetica);
@@ -74,17 +90,15 @@ export async function generateInvoicePdf(input: {
     color: MUTED,
   });
 
-  const invoiceTitle = `FACTURE ${order.number}`;
-  page.drawText(invoiceTitle, {
-    x: right - bold.widthOfTextAtSize(invoiceTitle, 14),
+  const title = pdfSafe(doc.title);
+  page.drawText(title, {
+    x: right - bold.widthOfTextAtSize(title, 14),
     y: y + 6,
     size: 14,
     font: bold,
     color: INK,
   });
-  const dateText = pdfSafe(
-    `Payée le ${(order.paidAt ?? order.createdAt).toLocaleDateString("fr-FR")}`,
-  );
+  const dateText = pdfSafe(doc.dateLine);
   page.drawText(dateText, {
     x: right - font.widthOfTextAtSize(dateText, 10),
     y: y - 10,
@@ -106,20 +120,19 @@ export async function generateInvoicePdf(input: {
   page.drawText("VENDEUR", { x: left, y, size: 9, font: bold, color: MUTED });
   page.drawText("ACHETEUR", { x: 320, y, size: 9, font: bold, color: MUTED });
   y -= 14;
-  page.drawText(truncate(shopName, 40), { x: left, y, size: 11, font: bold, color: INK });
-  page.drawText(truncate(order.shippingName, 35), { x: 320, y, size: 11, font: bold, color: INK });
-  y -= 13;
-  page.drawText(pdfSafe(shopCity), { x: left, y, size: 10, font, color: MUTED });
-  page.drawText(
-    pdfSafe(
-      [order.shippingCity, order.shippingDistrict].filter(Boolean).join(" · "),
-    ),
-    { x: 320, y, size: 10, font, color: MUTED },
-  );
-  y -= 13;
-  page.drawText("Vendeur vérifié Deal Lomé", { x: left, y, size: 10, font, color: MUTED });
-  if (!hideBuyerPhone) {
-    page.drawText(pdfSafe(order.shippingPhone), { x: 320, y, size: 10, font, color: MUTED });
+  page.drawText(truncate(doc.seller.name, 40), { x: left, y, size: 11, font: bold, color: INK });
+  page.drawText(truncate(doc.buyer.name, 35), { x: 320, y, size: 11, font: bold, color: INK });
+  const partyLines = Math.max(doc.seller.lines.length, doc.buyer.lines.length);
+  for (let index = 0; index < partyLines; index++) {
+    y -= 13;
+    const sellerLine = doc.seller.lines[index];
+    const buyerLine = doc.buyer.lines[index];
+    if (sellerLine) {
+      page.drawText(truncate(sellerLine, 45), { x: left, y, size: 10, font, color: MUTED });
+    }
+    if (buyerLine) {
+      page.drawText(truncate(buyerLine, 40), { x: 320, y, size: 10, font, color: MUTED });
+    }
   }
 
   // Tableau des lignes
@@ -143,7 +156,7 @@ export async function generateInvoicePdf(input: {
     color: LINE,
   });
 
-  for (const item of items) {
+  for (const item of doc.items) {
     y -= 20;
     page.drawText(truncate(item.title, 48), { x: left, y, size: 10, font, color: INK });
     page.drawText(String(item.quantity), { x: 360, y, size: 10, font, color: INK });
@@ -167,16 +180,12 @@ export async function generateInvoicePdf(input: {
   });
 
   // Totaux
-  const totals: Array<[string, string, boolean]> = [
-    ["Sous-total", fcfa(order.subtotalFcfa), false],
-    ["Frais de livraison", fcfa(order.deliveryFeeFcfa), false],
-    ["Total payé", fcfa(order.totalFcfa), true],
-  ];
-  for (const [label, value, strong] of totals) {
+  for (const [label, amount, strong] of doc.totals) {
     y -= 18;
     const f = strong ? bold : font;
     const size = strong ? 12 : 10;
-    page.drawText(label, { x: 360, y, size, font: f, color: strong ? INK : MUTED });
+    const value = fcfa(amount);
+    page.drawText(pdfSafe(label), { x: 360, y, size, font: f, color: strong ? INK : MUTED });
     page.drawText(value, {
       x: right - f.widthOfTextAtSize(value, size),
       y,
@@ -186,12 +195,9 @@ export async function generateInvoicePdf(input: {
     });
   }
 
-  if (order.status === "refunded") {
+  if (doc.highlight) {
     y -= 24;
-    page.drawText(
-      "Commande remboursée intégralement après litige - cette facture est annulée.",
-      { x: left, y, size: 10, font: bold, color: GOLD },
-    );
+    page.drawText(pdfSafe(doc.highlight), { x: left, y, size: 10, font: bold, color: GOLD });
   }
 
   // Mentions
@@ -202,16 +208,98 @@ export async function generateInvoicePdf(input: {
     thickness: 1,
     color: LINE,
   });
-  y -= 16;
-  page.drawText(
-    "TVA non applicable (MVP - régime fiscal à préciser).",
-    { x: left, y, size: 9, font, color: MUTED },
-  );
-  y -= 12;
-  page.drawText(
-    "Paiement sécurisé Deal Lomé : fonds versés au vendeur après confirmation de réception.",
-    { x: left, y, size: 9, font, color: MUTED },
-  );
+  for (const line of doc.footer) {
+    y -= y === 90 ? 16 : 12;
+    page.drawText(pdfSafe(line), { x: left, y, size: 9, font, color: MUTED });
+  }
 
   return pdf.save();
+}
+
+/** Facture PDF d'une commande payée (MVP n°122, 124). */
+export async function generateInvoicePdf(input: {
+  order: Order;
+  items: OrderItem[];
+  shopName: string;
+  shopCity: string;
+  /** Exemplaire vendeur : sans le téléphone de l'acheteur (anti-contournement). */
+  hideBuyerPhone?: boolean;
+}): Promise<Uint8Array> {
+  const { order, items, shopName, shopCity, hideBuyerPhone } = input;
+  return renderCommercialPdf({
+    title: `FACTURE ${order.number}`,
+    dateLine: `Payée le ${(order.paidAt ?? order.createdAt).toLocaleDateString("fr-FR")}`,
+    seller: { name: shopName, lines: [shopCity, "Vendeur vérifié Deal Lomé"] },
+    buyer: {
+      name: order.shippingName,
+      lines: [
+        [order.shippingCity, order.shippingDistrict].filter(Boolean).join(" · "),
+        ...(hideBuyerPhone ? [] : [order.shippingPhone]),
+      ],
+    },
+    items,
+    totals: [
+      ["Sous-total", order.subtotalFcfa, false],
+      ["Frais de livraison", order.deliveryFeeFcfa, false],
+      ...(order.serviceFeeFcfa > 0
+        ? [["Frais de service", order.serviceFeeFcfa, false] as [string, number, boolean]]
+        : []),
+      ["Total payé", order.totalFcfa, true],
+    ],
+    highlight:
+      order.status === "refunded"
+        ? order.serviceFeeFcfa > 0
+          ? "Commande remboursée après litige (hors frais de service) - cette facture est annulée."
+          : "Commande remboursée intégralement après litige - cette facture est annulée."
+        : undefined,
+    footer: [
+      "TVA non applicable (MVP - régime fiscal à préciser).",
+      "Paiement sécurisé Deal Lomé : fonds versés au vendeur après confirmation de réception.",
+    ],
+  });
+}
+
+/**
+ * Bon de commande PDF (docs/CHANGEMENTS.md §5, lot 3) : proposition du
+ * vendeur à prix négociés, à présenter avant acceptation (proforma).
+ */
+export async function generatePurchaseOrderPdf(input: {
+  purchaseOrder: PurchaseOrder;
+  items: PurchaseOrderItem[];
+  shopName: string;
+  shopCity: string;
+  buyerName: string;
+  serviceFeeFcfa: number;
+  stateLabel: string;
+}): Promise<Uint8Array> {
+  const { purchaseOrder: po, items, serviceFeeFcfa } = input;
+  const until = po.expiresAt.toLocaleString("fr-FR", {
+    timeZone: "Africa/Lome",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return renderCommercialPdf({
+    title: `BON DE COMMANDE ${po.number}`,
+    dateLine: `Émis le ${po.createdAt.toLocaleDateString("fr-FR")} - ${input.stateLabel}`,
+    seller: { name: input.shopName, lines: [input.shopCity, "Vendeur vérifié Deal Lomé"] },
+    buyer: { name: input.buyerName, lines: ["Client Deal Lomé"] },
+    items,
+    totals: [
+      ["Articles", po.subtotalFcfa, false],
+      ["Frais de livraison", po.deliveryFeeFcfa, false],
+      ...(serviceFeeFcfa > 0
+        ? [["Frais de service", serviceFeeFcfa, false] as [string, number, boolean]]
+        : []),
+      ["Total à payer", po.subtotalFcfa + po.deliveryFeeFcfa + serviceFeeFcfa, true],
+    ],
+    highlight: po.note ? `Note du vendeur : ${po.note.replace(/\s+/g, " ").slice(0, 110)}` : undefined,
+    footer: [
+      `Prix valables jusqu'au ${until} (heure de Lomé). Ce document n'est pas une facture.`,
+      "À accepter et payer sur deallome.com : fonds versés au vendeur après confirmation de réception.",
+      "Frais de service non remboursables.",
+    ],
+  });
 }

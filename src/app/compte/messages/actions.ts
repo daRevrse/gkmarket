@@ -1,11 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, asc, count, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
-  conversationMessages,
   conversations,
   orders,
   productImages,
@@ -13,126 +11,18 @@ import {
   sellerProfiles,
   type MessageMeta,
 } from "@/db/schema";
-import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { CONTACT_BLOCKED_MESSAGE } from "@/lib/contact-guard";
+import { deliver, openAsParty } from "@/lib/conversation-party";
 import { adminStorage } from "@/lib/firebase/admin";
-import { messagePreview } from "@/lib/messaging";
 import { blockContactInfo } from "@/lib/moderation";
-import { notify } from "@/lib/notify";
 import { basePriceFcfa } from "@/lib/pricing";
-import { isOnline, publish } from "@/lib/realtime";
 
 const MAX_BODY = 2000;
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const MAX_AUDIO_SECONDS = 180;
 
 type SendResult = { error?: string; blocked?: boolean };
-
-/** Charge une conversation avec l'utilisateur de la boutique. */
-async function getConversation(conversationId: string) {
-  const [row] = await db
-    .select({
-      conversation: conversations,
-      sellerUserId: sellerProfiles.userId,
-      shopName: sellerProfiles.shopName,
-    })
-    .from(conversations)
-    .innerJoin(sellerProfiles, eq(sellerProfiles.id, conversations.sellerId))
-    .where(eq(conversations.id, conversationId))
-    .limit(1);
-  return row ?? null;
-}
-
-type ConversationRow = NonNullable<Awaited<ReturnType<typeof getConversation>>>;
-
-/** Vérifie que l'utilisateur connecté est l'une des deux parties. */
-async function openAsParty(
-  conversationId: string,
-): Promise<
-  | { error: string }
-  | { user: CurrentUser; row: ConversationRow; isBuyer: boolean }
-> {
-  const user = await getCurrentUser();
-  if (!user) return { error: "Connectez-vous pour envoyer un message." };
-  const row = await getConversation(conversationId).catch(() => null);
-  if (!row) return { error: "Conversation introuvable." };
-  const isBuyer = row.conversation.buyerId === user.id;
-  const isSeller = row.sellerUserId === user.id;
-  if (!isBuyer && !isSeller) return { error: "Accès refusé." };
-  return { user, row, isBuyer };
-}
-
-/**
- * Enregistre un message puis prévient : temps réel pour les deux parties
- * (autres onglets compris), notification au destinataire uniquement s'il
- * n'avait aucun message non lu de l'expéditeur (évite le spam) - doublée
- * d'un email s'il n'est pas connecté.
- */
-async function deliver(
-  party: { user: CurrentUser; row: ConversationRow; isBuyer: boolean },
-  values: {
-    kind: (typeof conversationMessages.$inferInsert)["kind"];
-    body: string;
-    productId?: string;
-    attachmentPath?: string;
-    meta?: MessageMeta;
-  },
-): Promise<void> {
-  const { user, row, isBuyer } = party;
-  const conversationId = row.conversation.id;
-  const recipientId = isBuyer ? row.sellerUserId : row.conversation.buyerId;
-
-  const [unread] = await db
-    .select({ n: count() })
-    .from(conversationMessages)
-    .where(
-      and(
-        eq(conversationMessages.conversationId, conversationId),
-        eq(conversationMessages.senderId, user.id),
-        isNull(conversationMessages.readAt),
-      ),
-    );
-
-  await db.insert(conversationMessages).values({
-    conversationId,
-    senderId: user.id,
-    kind: values.kind,
-    body: values.body,
-    productId: values.productId ?? null,
-    attachmentPath: values.attachmentPath ?? null,
-    meta: values.meta ?? null,
-  });
-  await db
-    .update(conversations)
-    .set({ lastMessageAt: sql`now()` })
-    .where(eq(conversations.id, conversationId));
-
-  await publish([recipientId, user.id], { type: "message", conversationId });
-
-  if (unread.n === 0) {
-    const preview = messagePreview({
-      kind: values.kind ?? "text",
-      body: values.body,
-      meta: values.meta ?? null,
-    });
-    await notify(recipientId, {
-      type: "message_received",
-      title: isBuyer
-        ? "Nouveau message d'un acheteur"
-        : `Nouveau message de ${row.shopName}`,
-      body: preview.length > 120 ? `${preview.slice(0, 117)}…` : preview,
-      link: isBuyer
-        ? `/vendeur/messages/${conversationId}`
-        : `/compte/messages/${conversationId}`,
-      email: !isOnline(recipientId),
-    });
-  }
-
-  revalidatePath(`/compte/messages/${conversationId}`);
-  revalidatePath(`/vendeur/messages/${conversationId}`);
-  revalidatePath("/compte/messages");
-  revalidatePath("/vendeur/messages");
-}
 
 /**
  * Envoi d'un message texte (MVP n°150, 155) : réservé aux deux parties de la

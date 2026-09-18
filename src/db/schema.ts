@@ -306,6 +306,9 @@ export const orders = pgTable("orders", {
   shippingDetails: text("shipping_details"),
   subtotalFcfa: integer("subtotal_fcfa").notNull(),
   deliveryFeeFcfa: integer("delivery_fee_fcfa").notNull(),
+  // Frais de service acheteur (docs/CHANGEMENTS.md §5) : % du sous-total,
+  // revenu plateforme non remboursable. Inclus dans totalFcfa.
+  serviceFeeFcfa: integer("service_fee_fcfa").notNull().default(0),
   totalFcfa: integer("total_fcfa").notNull(),
   // Escrow : commission plateforme prélevée au versement vendeur
   commissionFcfa: integer("commission_fcfa"),
@@ -658,6 +661,8 @@ export const messageKindEnum = pgEnum("message_kind", [
   "image",
   "file", // document PDF
   "audio", // message vocal
+  "quote_request", // demande de devis (acheteur)
+  "purchase_order", // bon de commande (vendeur), cf. purchaseOrders
 ]);
 
 export type MessageMeta = {
@@ -669,6 +674,8 @@ export type MessageMeta = {
   };
   file?: { name: string; size: number; contentType: string };
   audio?: { durationSec: number };
+  quote?: { quantity: number; note: string | null };
+  purchaseOrder?: { number: string };
 };
 
 export const conversationMessages = pgTable(
@@ -692,6 +699,12 @@ export const conversationMessages = pgTable(
     // Pièce jointe privée dans Storage (chat/{firebaseUid}/...), lue via
     // /api/messages/[id]/attachment (parties de la conversation + admins).
     attachmentPath: text("attachment_path"),
+    // Bon de commande présenté par le message (kind = purchase_order) : la
+    // carte affiche son état courant (envoyé, accepté, refusé…).
+    purchaseOrderId: uuid("purchase_order_id").references(
+      (): AnyPgColumn => purchaseOrders.id,
+      { onDelete: "cascade" },
+    ),
     meta: jsonb("meta").$type<MessageMeta>(),
     // Lu par le destinataire (l'autre partie de la conversation).
     readAt: timestamp("read_at", { withTimezone: true }),
@@ -730,3 +743,63 @@ export const contactViolations = pgTable(
   },
   (table) => [index("contact_violations_user_idx").on(table.userId)],
 );
+
+// Bons de commande émis dans le chat (docs/CHANGEMENTS.md §5, lot 3) : le
+// vendeur fixe librement prix, livraison et durée de validité ; accepté par
+// l'acheteur, le bon devient une commande normale (orderId). « Expiré » se
+// déduit de expiresAt (pas de statut stocké).
+export const purchaseOrderStatusEnum = pgEnum("purchase_order_status", [
+  "sent",
+  "accepted",
+  "declined",
+  "cancelled",
+]);
+
+export const purchaseOrders = pgTable(
+  "purchase_orders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    number: text("number").notNull().unique(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellerProfiles.id, { onDelete: "cascade" }),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: purchaseOrderStatusEnum("status").notNull().default("sent"),
+    subtotalFcfa: integer("subtotal_fcfa").notNull(),
+    deliveryFeeFcfa: integer("delivery_fee_fcfa").notNull(),
+    note: text("note"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    declineReason: text("decline_reason"),
+    orderId: uuid("order_id").references(() => orders.id, {
+      onDelete: "set null",
+    }),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("purchase_orders_conv_idx").on(table.conversationId)],
+);
+
+// Lignes d'un bon : produit du catalogue du vendeur ou ligne libre
+// (productId null). Titre et photo figés à l'émission.
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  purchaseOrderId: uuid("purchase_order_id")
+    .notNull()
+    .references(() => purchaseOrders.id, { onDelete: "cascade" }),
+  productId: uuid("product_id").references(() => products.id, {
+    onDelete: "set null",
+  }),
+  title: text("title").notNull(),
+  imageUrl: text("image_url"),
+  unitPriceFcfa: integer("unit_price_fcfa").notNull(),
+  quantity: integer("quantity").notNull(),
+  totalFcfa: integer("total_fcfa").notNull(),
+  position: integer("position").notNull().default(0),
+});

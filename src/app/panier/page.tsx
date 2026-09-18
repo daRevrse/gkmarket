@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatPct } from "@/lib/format";
 import { readGuestCart } from "@/lib/guest-cart";
 import { productPath } from "@/lib/product-url";
 import { ClearCartButton, QuantityStepper, RemoveItemButton } from "./cart-controls";
@@ -19,7 +19,7 @@ export default async function PanierPage() {
     ? await getCart(user.id)
     : await getGuestCart(await readGuestCart());
   const cartProductIds = cart.groups.flatMap((group) =>
-    group.lines.map((line) => line.productId),
+    group.lines.flatMap((line) => (line.productId ? [line.productId] : [])),
   );
 
   return (
@@ -72,7 +72,7 @@ export default async function PanierPage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <Link
-                          href={productPath({ id: line.productId, title: line.title })}
+                          href={productPath({ id: line.productId ?? line.itemId, title: line.title })}
                           className="block truncate text-sm font-medium hover:text-emerald"
                         >
                           {line.title}
@@ -122,6 +122,14 @@ export default async function PanierPage() {
                   {cart.groups.length > 1 ? "s" : ""}) :{" "}
                   <span className="text-ink">{formatFcfa(cart.deliveryTotal)}</span>
                 </p>
+                {cart.serviceFeeTotal > 0 ? (
+                  <p>
+                    Frais de service ({formatPct(cart.serviceFeePct)}) :{" "}
+                    <span className="text-ink">
+                      {formatFcfa(cart.serviceFeeTotal)}
+                    </span>
+                  </p>
+                ) : null}
                 <p className="mt-1 font-display text-lg font-extrabold text-ink">
                   Total : <span className="text-gold">{formatFcfa(cart.total)}</span>
                 </p>

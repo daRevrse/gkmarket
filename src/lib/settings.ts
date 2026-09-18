@@ -4,7 +4,9 @@ import { db } from "@/db";
 import { platformSettings } from "@/db/schema";
 import {
   DELIVERY_FEE_PER_SELLER_FCFA,
+  MOBILE_MONEY_FEE_PCT,
   PLATFORM_COMMISSION_RATE,
+  SERVICE_FEE_PCT,
 } from "@/lib/pricing";
 
 // Paramètres éditables par l'admin (MVP n°267, 270, 271), avec repli sur les
@@ -14,12 +16,25 @@ export type PlatformSettings = {
   commissionRatePct: number;
   /** Frais de livraison forfaitaires par vendeur, en FCFA. */
   deliveryFeeFcfa: number;
+  /** Frais de service acheteur, en % du sous-total de chaque commande. */
+  serviceFeePct: number;
+  /** Frais Mobile Money répercutés à la recharge du wallet, en %. */
+  mobileMoneyFeePct: number;
 };
 
 export const SETTING_KEYS = {
   commissionRatePct: "commission_rate_pct",
   deliveryFeeFcfa: "delivery_fee_fcfa",
+  serviceFeePct: "service_fee_pct",
+  mobileMoneyFeePct: "mobile_money_fee_pct",
 } as const;
+
+function pctOr(value: string | undefined, max: number, fallback: number) {
+  const n = Number(value);
+  return value !== undefined && Number.isFinite(n) && n >= 0 && n <= max
+    ? n
+    : fallback;
+}
 
 export async function getPlatformSettings(): Promise<PlatformSettings> {
   const rows = await db.select().from(platformSettings);
@@ -37,6 +52,12 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
       Number.isFinite(fee) && fee >= 0 && fee <= 100000
         ? Math.round(fee)
         : DELIVERY_FEE_PER_SELLER_FCFA,
+    serviceFeePct: pctOr(map.get(SETTING_KEYS.serviceFeePct), 20, SERVICE_FEE_PCT),
+    mobileMoneyFeePct: pctOr(
+      map.get(SETTING_KEYS.mobileMoneyFeePct),
+      10,
+      MOBILE_MONEY_FEE_PCT,
+    ),
   };
 }
 

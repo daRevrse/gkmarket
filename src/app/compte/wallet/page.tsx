@@ -6,6 +6,7 @@ import { walletTransactions } from "@/db/schema";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
+import { getPlatformSettings } from "@/lib/settings";
 import { getOrCreateWallet } from "@/lib/wallet";
 import { RechargeForm, WithdrawForm } from "./wallet-forms";
 
@@ -22,6 +23,7 @@ export default async function WalletPage() {
   if (!user) redirect("/connexion");
 
   const wallet = await getOrCreateWallet(user.id);
+  const { mobileMoneyFeePct } = await getPlatformSettings();
   const transactions = await db
     .select()
     .from(walletTransactions)
@@ -55,7 +57,7 @@ export default async function WalletPage() {
           <h2 className="mb-4 font-display text-lg font-bold">
             Recharger mon wallet
           </h2>
-          <RechargeForm />
+          <RechargeForm mobileMoneyFeePct={mobileMoneyFeePct} />
         </Card>
         <Card>
           <h2 className="mb-4 font-display text-lg font-bold">

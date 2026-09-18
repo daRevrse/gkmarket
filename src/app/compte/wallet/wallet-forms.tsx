@@ -6,10 +6,17 @@ import { rechargeWallet, withdrawFromWallet } from "./actions";
 import { FormError, FormField } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatFcfa, formatPct } from "@/lib/format";
+import { feeFromPct } from "@/lib/orders";
 
 const OPERATORS = ["Flooz", "Tmoney", "MTN MoMo", "Moov Money"];
 
-export function RechargeForm() {
+export function RechargeForm({
+  mobileMoneyFeePct,
+}: {
+  /** Frais de l'agrégateur répercutés à l'acheteur, en %. */
+  mobileMoneyFeePct: number;
+}) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
   const [operator, setOperator] = useState(OPERATORS[0]);
@@ -72,6 +79,18 @@ export function RechargeForm() {
           {loading ? "Recharge…" : "Recharger"}
         </Button>
       </div>
+      {mobileMoneyFeePct > 0 && Number(amount) > 0 ? (
+        <p className="text-sm text-ink-muted">
+          Frais Mobile Money ({formatPct(mobileMoneyFeePct)}) :{" "}
+          {formatFcfa(feeFromPct(Number(amount), mobileMoneyFeePct))} - montant
+          débité de votre compte :{" "}
+          <span className="text-ink">
+            {formatFcfa(
+              Number(amount) + feeFromPct(Number(amount), mobileMoneyFeePct),
+            )}
+          </span>
+        </p>
+      ) : null}
       <p className="text-xs text-ink-muted">
         Mode développement : la recharge est simulée, aucun vrai paiement.
       </p>

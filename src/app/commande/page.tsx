@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -5,33 +6,83 @@ import { addresses } from "@/db/schema";
 import { SiteHeader } from "@/components/site-header";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatPct } from "@/lib/format";
+import type { CheckoutSource } from "@/lib/orders";
 import { getOrCreateWallet } from "@/lib/wallet";
-import { getCart, getDirectPurchase } from "@/app/panier/queries";
+import {
+  getCart,
+  getDirectPurchase,
+  getPurchaseOrderCheckout,
+  type CartSummary,
+} from "@/app/panier/queries";
 import { CheckoutForm } from "./checkout-form";
 
 export default async function CommandePage({
   searchParams,
 }: {
-  searchParams: Promise<{ produit?: string; qte?: string }>;
+  searchParams: Promise<{ produit?: string; qte?: string; bon?: string }>;
 }) {
-  const { produit, qte } = await searchParams;
-  // « Acheter maintenant » : commande de ce seul article, panier inchangé.
-  const selfPath = produit
-    ? `/commande?produit=${encodeURIComponent(produit)}&qte=${Number(qte) || 1}`
-    : "/commande";
+  const { produit, qte, bon } = await searchParams;
+  // Trois origines : panier (défaut), « Acheter maintenant » (un article,
+  // panier inchangé) ou bon de commande accepté depuis le chat.
+  const selfPath = bon
+    ? `/commande?bon=${encodeURIComponent(bon)}`
+    : produit
+      ? `/commande?produit=${encodeURIComponent(produit)}&qte=${Number(qte) || 1}`
+      : "/commande";
 
   const user = await getCurrentUser();
   // Seul point du parcours où l'authentification est requise. On revient
   // ici après connexion (le panier invité est alors fusionné en base).
   if (!user) redirect(`/connexion?next=${encodeURIComponent(selfPath)}`);
 
-  const direct = produit
-    ? await getDirectPurchase(produit, Number(qte) || 1)
-    : null;
-  if (produit && !direct) redirect("/produits");
-  const cart = direct ? direct.summary : await getCart(user.id);
-  if (cart.groups.length === 0) redirect("/panier");
+  let cart: CartSummary;
+  let source: CheckoutSource | undefined;
+  let heading = "Finaliser ma commande";
+  let subheading: string | null = null;
+
+  if (bon) {
+    const checkout = await getPurchaseOrderCheckout(bon, user.id);
+    if ("error" in checkout) {
+      return (
+        <div className="flex min-h-screen flex-col">
+          <SiteHeader />
+          <main className="mx-auto w-full max-w-xl flex-1 px-4 py-16 md:px-10">
+            <Card className="text-center">
+              <p className="text-ink-muted">{checkout.error}</p>
+              <Link
+                href="/compte/messages"
+                className="mt-3 inline-block font-label text-sm text-emerald hover:underline"
+              >
+                Retour à mes messages ›
+              </Link>
+            </Card>
+          </main>
+        </div>
+      );
+    }
+    cart = checkout.summary;
+    source = { kind: "purchase_order", purchaseOrderId: bon };
+    heading = `Bon de commande ${checkout.number}`;
+    const until = checkout.expiresAt.toLocaleString("fr-FR", {
+      timeZone: "Africa/Lome",
+      day: "2-digit",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    subheading = `Prix négociés avec ${checkout.shopName}, valables jusqu'au ${until}.${checkout.note ? ` Note du vendeur : ${checkout.note}` : ""}`;
+  } else if (produit) {
+    const direct = await getDirectPurchase(produit, Number(qte) || 1);
+    if (!direct) redirect("/produits");
+    cart = direct.summary;
+    source = { kind: "direct", productId: produit, quantity: direct.quantity };
+    heading = "Achat direct";
+    subheading = "Seul cet article est commandé : votre panier reste inchangé.";
+  } else {
+    cart = await getCart(user.id);
+    if (cart.groups.length === 0) redirect("/panier");
+  }
 
   const userAddresses = await db
     .select()
@@ -45,13 +96,9 @@ export default async function CommandePage({
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:px-10">
-        <h1 className="font-display text-2xl font-extrabold">
-          {direct ? "Achat direct" : "Finaliser ma commande"}
-        </h1>
-        {direct ? (
-          <p className="mt-1 text-sm text-ink-muted">
-            Seul cet article est commandé : votre panier reste inchangé.
-          </p>
+        <h1 className="font-display text-2xl font-extrabold">{heading}</h1>
+        {subheading ? (
+          <p className="mt-1 text-sm text-ink-muted">{subheading}</p>
         ) : null}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -67,11 +114,7 @@ export default async function CommandePage({
             }))}
             walletBalance={wallet.balanceFcfa}
             total={cart.total}
-            direct={
-              direct && produit
-                ? { productId: produit, quantity: direct.quantity }
-                : undefined
-            }
+            source={source}
             returnPath={selfPath}
           />
 
@@ -109,10 +152,22 @@ export default async function CommandePage({
                     <span>Livraison</span>
                     <span>{formatFcfa(cart.deliveryTotal)}</span>
                   </p>
+                  {cart.serviceFeeTotal > 0 ? (
+                    <p className="flex justify-between text-ink-muted">
+                      <span>Frais de service ({formatPct(cart.serviceFeePct)})</span>
+                      <span>{formatFcfa(cart.serviceFeeTotal)}</span>
+                    </p>
+                  ) : null}
                   <p className="mt-2 flex justify-between font-display text-lg font-extrabold">
                     <span>Total</span>
                     <span className="text-gold">{formatFcfa(cart.total)}</span>
                   </p>
+                  {cart.serviceFeeTotal > 0 ? (
+                    <p className="mt-2 text-xs text-ink-muted">
+                      Les frais de service financent le paiement sécurisé et
+                      la protection acheteur ; ils ne sont pas remboursables.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </Card>

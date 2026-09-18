@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
       .from(orders)
       .where(inArray(orders.status, [...PAID_STATUSES])),
     db
-      .select({ value: sum(orders.totalFcfa) })
+      .select({ value: sum(sql`${orders.totalFcfa} - ${orders.serviceFeeFcfa}`) })
       .from(orders)
       .where(inArray(orders.status, [...ESCROW_STATUSES])),
     db

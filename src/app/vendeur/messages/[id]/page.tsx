@@ -5,9 +5,16 @@ import { db } from "@/db";
 import { conversations, users } from "@/db/schema";
 import { MessageComposer } from "@/components/messaging/message-composer";
 import { MessageThread } from "@/components/messaging/message-thread";
+import { PurchaseOrderComposer } from "@/components/messaging/purchase-order-form";
 import { Card } from "@/components/ui/card";
 import { requireApprovedSeller } from "@/lib/auth";
 import { loadThread, markConversationRead } from "@/lib/messaging";
+import {
+  loadPurchaseOrderViews,
+  loadShopCatalog,
+  purchaseOrderPrefill,
+} from "@/lib/purchase-orders";
+import { getPlatformSettings } from "@/lib/settings";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,11 +24,18 @@ export default async function VendeurConversationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ sujet?: string }>;
+  searchParams: Promise<{
+    sujet?: string;
+    bon?: string;
+    produit?: string;
+    qte?: string;
+    id?: string;
+  }>;
 }) {
   const user = await requireApprovedSeller();
   const { id } = await params;
-  const { sujet } = await searchParams;
+  const query = await searchParams;
+  const { sujet } = query;
   if (!UUID_RE.test(id)) notFound();
 
   const [row] = await db
@@ -33,8 +47,19 @@ export default async function VendeurConversationPage({
   if (!row || row.conversation.sellerId !== user.sellerProfile.id) notFound();
 
   await markConversationRead(id, user.id, row.conversation.buyerId);
-  const messages = await loadThread(id);
+  const [messages, catalog, settings] = await Promise.all([
+    loadThread(id),
+    loadShopCatalog(user.sellerProfile.id),
+    getPlatformSettings(),
+  ]);
+  const [purchaseOrders, prefill] = await Promise.all([
+    loadPurchaseOrderViews(
+      messages.flatMap((m) => (m.purchaseOrderId ? [m.purchaseOrderId] : [])),
+    ),
+    purchaseOrderPrefill(id, catalog, query),
+  ]);
   const buyerName = row.buyerName ?? "Acheteur";
+  const threadPath = `/vendeur/messages/${id}`;
 
   return (
     <main className="w-full max-w-3xl flex-1">
@@ -56,8 +81,23 @@ export default async function VendeurConversationPage({
           meId={user.id}
           conversationId={id}
           otherName={buyerName}
+          viewer="seller"
+          purchaseOrders={purchaseOrders}
+          serviceFeePct={settings.serviceFeePct}
+          sellerThreadPath={threadPath}
         />
         <div className="border-t border-white/[0.06] pt-4">
+          <div className="mb-3">
+            {/* Clé : un nouvel accès (devis, produit, modification) repart à neuf. */}
+            <PurchaseOrderComposer
+              key={`${query.bon ?? ""}-${query.produit ?? ""}-${query.id ?? ""}-${query.qte ?? ""}`}
+              conversationId={id}
+              catalog={catalog}
+              defaultDeliveryFee={settings.deliveryFeeFcfa}
+              serviceFeePct={settings.serviceFeePct}
+              prefill={prefill}
+            />
+          </div>
           <MessageComposer conversationId={id} initialBody={sujet ?? ""} />
         </div>
       </Card>

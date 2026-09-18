@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { logAdmin } from "@/lib/admin-log";
 import { getCurrentUser } from "@/lib/auth";
 import { loadThread } from "@/lib/messaging";
+import { loadPurchaseOrderViews } from "@/lib/purchase-orders";
+import { getPlatformSettings } from "@/lib/settings";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -46,6 +48,12 @@ export default async function AdminConversationPage({
     details: `${row.buyerName ?? "Acheteur"} et ${row.shopName}`,
   });
   const messages = await loadThread(id);
+  const [purchaseOrders, { serviceFeePct }] = await Promise.all([
+    loadPurchaseOrderViews(
+      messages.flatMap((m) => (m.purchaseOrderId ? [m.purchaseOrderId] : [])),
+    ),
+    getPlatformSettings(),
+  ]);
   const buyerName = row.buyerName ?? "Acheteur";
 
   return (
@@ -79,6 +87,9 @@ export default async function AdminConversationPage({
           messages={messages}
           meId={row.sellerUserId}
           conversationId={id}
+          viewer="admin"
+          purchaseOrders={purchaseOrders}
+          serviceFeePct={serviceFeePct}
           senderNames={{
             [row.conversation.buyerId]: buyerName,
             [row.sellerUserId]: row.shopName,

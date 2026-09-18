@@ -16,6 +16,7 @@ import {
 import { getCurrentUser, type CurrentUser } from "@/lib/auth";
 import { disputeReasonLabels, disputeResolutionLabels } from "@/lib/disputes";
 import { formatFcfa } from "@/lib/format";
+import { refundableFcfa } from "@/lib/orders";
 import { adminUserIds, notify, notifyMany } from "@/lib/notify";
 import { commissionFromRate, getPlatformSettings } from "@/lib/settings";
 import { logAdmin } from "@/lib/admin-log";
@@ -265,8 +266,10 @@ export async function resolveDispute(
 
   let refund = 0;
   let sellerPart = 0;
-  if (input.resolution === "refund_total") {
-    refund = order.totalFcfa;
+  const fullRefund = input.resolution === "refund_total";
+  if (fullRefund) {
+    // Tout sauf les frais de service, non remboursables (CHANGEMENTS.md §5).
+    refund = refundableFcfa(order);
   } else if (input.resolution === "refund_partial") {
     refund = Math.floor(input.refundFcfa ?? 0);
     if (refund < 1 || refund >= order.subtotalFcfa) {
@@ -305,8 +308,8 @@ export async function resolveDispute(
     await tx
       .update(orders)
       .set({
-        status: refund === order.totalFcfa ? "refunded" : "delivered",
-        deliveredAt: refund === order.totalFcfa ? null : new Date(),
+        status: fullRefund ? "refunded" : "delivered",
+        deliveredAt: fullRefund ? null : new Date(),
         commissionFcfa: commission,
         updatedAt: new Date(),
       })
@@ -318,7 +321,7 @@ export async function resolveDispute(
         type: "order_refund",
         amountFcfa: refund,
         orderId: order.id,
-        description: `Litige ${order.number} - remboursement ${refund === order.totalFcfa ? "intégral" : "partiel"}`,
+        description: `Litige ${order.number} - remboursement ${fullRefund ? "intégral" : "partiel"}`,
       });
     }
 
@@ -328,7 +331,7 @@ export async function resolveDispute(
         type: "sale_income",
         amountFcfa: sellerPart - commission,
         orderId: order.id,
-        description: `Litige ${order.number} - versement de ${formatFcfa(sellerPart)} moins ${formatFcfa(commission)} de commission (5 %)`,
+        description: `Litige ${order.number} - versement de ${formatFcfa(sellerPart)} moins ${formatFcfa(commission)} de commission (${commissionRatePct} %)`,
       });
     }
 

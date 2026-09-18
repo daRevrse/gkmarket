@@ -14,6 +14,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { renderTransactionalEmail, sendEmail } from "@/lib/email";
 import { releaseEscrowForOrder } from "@/lib/escrow";
 import { formatFcfa } from "@/lib/format";
+import { refundableFcfa } from "@/lib/orders";
 import { generateInvoicePdf } from "@/lib/invoice";
 import { notify } from "@/lib/notify";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
@@ -178,7 +179,8 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
     if (order.status === "paid") {
       await applyWalletMovement(tx, wallet.id, {
         type: "order_refund",
-        amountFcfa: order.totalFcfa,
+        // Frais de service non remboursables (docs/CHANGEMENTS.md §5).
+        amountFcfa: refundableFcfa(order),
         orderId: order.id,
         description: `Remboursement commande ${order.number} annulée`,
       });

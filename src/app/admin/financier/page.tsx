@@ -19,20 +19,29 @@ export default async function AdminFinancierPage() {
   const [
     [escrow],
     [commissions],
+    [serviceFees],
     [refunds],
     [recharges],
     [walletLiability],
     [pendingWithdrawals],
     transactions,
   ] = await Promise.all([
+    // Frais de service exclus : acquis à la plateforme dès le paiement.
     db
-      .select({ value: sum(orders.totalFcfa), nb: sql<number>`count(*)::int` })
+      .select({
+        value: sum(sql`${orders.totalFcfa} - ${orders.serviceFeeFcfa}`),
+        nb: sql<number>`count(*)::int`,
+      })
       .from(orders)
       .where(inArray(orders.status, ["paid", "processing", "shipped", "disputed"])),
     db
       .select({ value: sum(orders.commissionFcfa) })
       .from(orders)
       .where(isNotNull(orders.commissionFcfa)),
+    db
+      .select({ value: sum(orders.serviceFeeFcfa) })
+      .from(orders)
+      .where(isNotNull(orders.paidAt)),
     db
       .select({ value: sum(walletTransactions.amountFcfa) })
       .from(walletTransactions)
@@ -66,6 +75,10 @@ export default async function AdminFinancierPage() {
     {
       label: "Commissions perçues",
       value: formatFcfa(Number(commissions.value ?? 0)),
+    },
+    {
+      label: "Frais de service perçus",
+      value: formatFcfa(Number(serviceFees.value ?? 0)),
     },
     {
       label: "Remboursements émis",

@@ -8,6 +8,7 @@ import {
   disputes,
   orderItems,
   orders,
+  purchaseOrders,
   sellerProfiles,
   users,
 } from "@/db/schema";
@@ -32,11 +33,21 @@ export default async function CommandeDetailPage({
   const { id } = await params;
 
   const [row] = await db
-    .select({ order: orders, shopName: sellerProfiles.shopName })
+    .select({
+      order: orders,
+      shopName: sellerProfiles.shopName,
+      // Commande issue d'un bon de commande négocié dans le chat.
+      purchaseOrder: {
+        id: purchaseOrders.id,
+        number: purchaseOrders.number,
+      },
+    })
     .from(orders)
     .innerJoin(sellerProfiles, eq(sellerProfiles.id, orders.sellerId))
+    .leftJoin(purchaseOrders, eq(purchaseOrders.orderId, orders.id))
     .where(and(eq(orders.id, id), eq(orders.buyerId, user.id)))
-    .limit(1);
+    .limit(1)
+    .catch(() => []);
   if (!row) notFound();
 
   const items = await db
@@ -95,6 +106,19 @@ export default async function CommandeDetailPage({
             month: "long",
             year: "numeric",
           })}
+          {row.purchaseOrder ? (
+            <>
+              {" · "}
+              <a
+                href={`/api/bons/${row.purchaseOrder.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-emerald hover:underline"
+              >
+                bon de commande {row.purchaseOrder.number}
+              </a>
+            </>
+          ) : null}
         </p>
         <form
           action={contactSeller.bind(
@@ -159,6 +183,12 @@ export default async function CommandeDetailPage({
               <span>Livraison</span>
               <span>{formatFcfa(row.order.deliveryFeeFcfa)}</span>
             </p>
+            {row.order.serviceFeeFcfa > 0 ? (
+              <p className="flex justify-between text-ink-muted">
+                <span>Frais de service</span>
+                <span>{formatFcfa(row.order.serviceFeeFcfa)}</span>
+              </p>
+            ) : null}
             <p className="mt-2 flex justify-between font-display text-lg font-extrabold">
               <span>Total</span>
               <span className="text-gold">{formatFcfa(row.order.totalFcfa)}</span>

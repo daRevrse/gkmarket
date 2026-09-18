@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { getCurrentUser } from "@/lib/auth";
+import { formatFcfa } from "@/lib/format";
+import { feeFromPct } from "@/lib/orders";
 import { normalizeTogoPhone } from "@/lib/phone";
+import { getPlatformSettings } from "@/lib/settings";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
 const MIN_AMOUNT = 100;
@@ -41,12 +44,17 @@ export async function rechargeWallet(
     return { error: "Paiement réel non configuré (agrégateur à venir)." };
   }
 
+  // Frais de l'agrégateur à la charge de l'acheteur : débités en plus sur
+  // son Mobile Money, le wallet est crédité du montant demandé.
+  const { mobileMoneyFeePct } = await getPlatformSettings();
+  const fee = feeFromPct(amountFcfa, mobileMoneyFeePct);
+
   const wallet = await getOrCreateWallet(user.id);
   await db.transaction(async (tx) => {
     await applyWalletMovement(tx, wallet.id, {
       type: "recharge",
       amountFcfa,
-      description: `Recharge ${operator} (simulée)`,
+      description: `Recharge ${operator} (simulée)${fee > 0 ? ` - frais Mobile Money ${formatFcfa(fee)} à votre charge` : ""}`,
     });
   });
 

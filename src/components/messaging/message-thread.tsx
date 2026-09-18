@@ -5,17 +5,30 @@ import Link from "next/link";
 import { DocumentTextIcon } from "@heroicons/react/24/outline";
 import type { MessageMeta } from "@/db/schema";
 import { AudioMessage } from "@/components/messaging/audio-message";
+import {
+  PurchaseOrderCard,
+  type ThreadViewer,
+} from "@/components/messaging/purchase-order-card";
 import { useRealtime } from "@/components/realtime/realtime-provider";
 import { formatFcfa } from "@/lib/format";
+import type { PurchaseOrderView } from "@/lib/purchase-orders";
 import { productPath } from "@/lib/product-url";
 import { cn } from "@/lib/utils";
 
 export type ThreadMessage = {
   id: string;
   senderId: string;
-  kind: "text" | "product" | "image" | "file" | "audio";
+  kind:
+    | "text"
+    | "product"
+    | "image"
+    | "file"
+    | "audio"
+    | "quote_request"
+    | "purchase_order";
   body: string;
   productId: string | null;
+  purchaseOrderId: string | null;
   meta: MessageMeta | null;
   readAt: Date | null;
   createdAt: Date;
@@ -47,9 +60,73 @@ function fileSize(bytes: number) {
     : `${Math.max(1, Math.round(bytes / 1024))} Ko`;
 }
 
-function MessageContent({ message }: { message: ThreadMessage }) {
+type DealContext = {
+  viewer: ThreadViewer;
+  purchaseOrders: Record<string, PurchaseOrderView>;
+  serviceFeePct: number;
+  /** Fil vendeur : base des liens « Établir / modifier un bon de commande ». */
+  sellerThreadPath?: string;
+};
+
+function MessageContent({
+  message,
+  deal,
+}: {
+  message: ThreadMessage;
+  deal: DealContext;
+}) {
   const attachmentUrl = `/api/messages/${message.id}/attachment`;
   switch (message.kind) {
+    case "purchase_order": {
+      const po = message.purchaseOrderId
+        ? deal.purchaseOrders[message.purchaseOrderId]
+        : undefined;
+      if (!po) return <p className="text-sm text-ink-muted">Bon de commande</p>;
+      return (
+        <PurchaseOrderCard
+          po={po}
+          viewer={deal.viewer}
+          serviceFeePct={deal.serviceFeePct}
+          editHref={
+            deal.sellerThreadPath
+              ? `${deal.sellerThreadPath}?bon=modifier&id=${po.id}`
+              : undefined
+          }
+        />
+      );
+    }
+    case "quote_request": {
+      const quote = message.meta?.quote;
+      const product = message.meta?.product;
+      return (
+        <div className="flex w-72 max-w-full flex-col gap-2 text-sm">
+          <p className="font-display font-bold">Demande de devis</p>
+          {product ? (
+            <p>
+              {product.title}{" "}
+              <span className="text-ink-muted">
+                ({formatFcfa(product.priceFcfa)} au catalogue)
+              </span>
+            </p>
+          ) : null}
+          <p className="text-ink-muted">
+            Quantité souhaitée :{" "}
+            <span className="text-ink">{quote?.quantity ?? "-"}</span>
+          </p>
+          {quote?.note ? (
+            <p className="whitespace-pre-line text-ink-muted">{quote.note}</p>
+          ) : null}
+          {deal.viewer === "seller" && deal.sellerThreadPath ? (
+            <Link
+              href={`${deal.sellerThreadPath}?bon=nouveau${message.productId ? `&produit=${message.productId}` : ""}&qte=${quote?.quantity ?? 1}`}
+              className="font-label text-xs text-emerald hover:underline"
+            >
+              Établir un bon de commande ›
+            </Link>
+          ) : null}
+        </div>
+      );
+    }
     case "product": {
       const product = message.meta?.product;
       if (!product) return null;
@@ -79,12 +156,22 @@ function MessageContent({ message }: { message: ThreadMessage }) {
         </div>
       );
       return message.productId ? (
-        <Link
-          href={productPath({ id: message.productId, title: product.title })}
-          className="block hover:opacity-90"
-        >
-          {card}
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            href={productPath({ id: message.productId, title: product.title })}
+            className="block hover:opacity-90"
+          >
+            {card}
+          </Link>
+          {deal.viewer === "seller" && deal.sellerThreadPath ? (
+            <Link
+              href={`${deal.sellerThreadPath}?bon=nouveau&produit=${message.productId}`}
+              className="px-1 font-label text-xs text-emerald hover:underline"
+            >
+              Proposer un bon de commande ›
+            </Link>
+          ) : null}
+        </div>
       ) : (
         <div className="opacity-60">
           {card}
@@ -148,10 +235,19 @@ export function MessageThread({
   conversationId,
   otherName,
   senderNames,
+  viewer,
+  purchaseOrders = {},
+  serviceFeePct = 0,
+  sellerThreadPath,
 }: {
   messages: ThreadMessage[];
   meId: string;
   conversationId: string;
+  viewer: ThreadViewer;
+  /** Bons de commande référencés par les messages, à jour de leur état. */
+  purchaseOrders?: Record<string, PurchaseOrderView>;
+  serviceFeePct?: number;
+  sellerThreadPath?: string;
   /** Nom de l'interlocuteur, pour « … écrit ». */
   otherName?: string;
   /** Vue modération : nom de l'auteur au-dessus de chaque bulle. */
@@ -183,6 +279,7 @@ export function MessageThread({
   }, [messages.length, typing]);
 
   const lastMineIndex = messages.findLastIndex((m) => m.senderId === meId);
+  const deal: DealContext = { viewer, purchaseOrders, serviceFeePct, sellerThreadPath };
 
   return (
     <div
@@ -200,6 +297,8 @@ export function MessageThread({
           index === 0 ||
           dayKey(messages[index - 1].createdAt) !== dayKey(message.createdAt);
         const media = message.kind === "image" || message.kind === "product";
+        const card =
+          message.kind === "purchase_order" || message.kind === "quote_request";
         return (
           <div key={message.id} className="flex flex-col gap-3">
             {newDay ? (
@@ -216,13 +315,13 @@ export function MessageThread({
               <div
                 className={cn(
                   "max-w-[80%] rounded-2xl",
-                  media ? "p-2" : "px-4 py-2.5",
+                  media ? "p-2" : card ? "p-4" : "px-4 py-2.5",
                   mine
                     ? "rounded-br-sm bg-gold/15 text-ink"
                     : "rounded-bl-sm border border-white/[0.08] bg-white/[0.04]",
                 )}
               >
-                <MessageContent message={message} />
+                <MessageContent message={message} deal={deal} />
                 <p
                   className={cn(
                     "mt-1 font-label text-[10px] text-ink-muted",

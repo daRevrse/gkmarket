@@ -72,6 +72,12 @@ export const DELIVERY_FEE_PER_SELLER_FCFA = 1000;
 // (ils financeront les livreurs au module Livraison).
 export const PLATFORM_COMMISSION_RATE = 0.05;
 
+// Frais à la charge de l'acheteur (docs/CHANGEMENTS.md §5), paramétrables
+// par l'admin : frais de service (% du sous-total, par commande) et frais
+// de l'agrégateur Mobile Money répercutés à la recharge du wallet.
+export const SERVICE_FEE_PCT = 1;
+export const MOBILE_MONEY_FEE_PCT = 0;
+
 export function commissionFcfa(subtotalFcfa: number): number {
   return Math.round(subtotalFcfa * PLATFORM_COMMISSION_RATE);
 }

@@ -11,11 +11,14 @@ import {
 import { MessageComposer } from "@/components/messaging/message-composer";
 import { MessageThread } from "@/components/messaging/message-thread";
 import { ProductInquiryCard } from "@/components/messaging/product-inquiry-card";
+import { QuoteRequestComposer } from "@/components/messaging/quote-request-form";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { loadThread, markConversationRead } from "@/lib/messaging";
 import { basePriceFcfa } from "@/lib/pricing";
+import { loadPurchaseOrderViews, loadShopCatalog } from "@/lib/purchase-orders";
+import { getPlatformSettings } from "@/lib/settings";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -78,12 +81,16 @@ export default async function ConversationPage({
 
   await markConversationRead(id, user.id, row.sellerUserId);
 
-  const [messages, product] = await Promise.all([
+  const shopOpen = row.shopStatus === "approved";
+  const [messages, product, catalog, { serviceFeePct }] = await Promise.all([
     loadThread(id),
-    row.shopStatus === "approved"
-      ? inquiryProduct(produit, row.conversation.sellerId)
-      : null,
+    shopOpen ? inquiryProduct(produit, row.conversation.sellerId) : null,
+    shopOpen ? loadShopCatalog(row.conversation.sellerId) : [],
+    getPlatformSettings(),
   ]);
+  const purchaseOrders = await loadPurchaseOrderViews(
+    messages.flatMap((m) => (m.purchaseOrderId ? [m.purchaseOrderId] : [])),
+  );
 
   return (
     <main className="w-full max-w-3xl flex-1">
@@ -120,10 +127,22 @@ export default async function ConversationPage({
           meId={user.id}
           conversationId={id}
           otherName={row.shopName}
+          viewer="buyer"
+          purchaseOrders={purchaseOrders}
+          serviceFeePct={serviceFeePct}
         />
         <div className="border-t border-white/[0.06] pt-4">
           {product ? (
             <ProductInquiryCard conversationId={id} product={product} />
+          ) : null}
+          {shopOpen ? (
+            <div className="mb-3">
+              <QuoteRequestComposer
+                conversationId={id}
+                catalog={catalog}
+                initialProductId={product?.id}
+              />
+            </div>
           ) : null}
           <MessageComposer conversationId={id} initialBody={sujet ?? ""} />
         </div>

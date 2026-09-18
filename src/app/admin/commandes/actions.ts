@@ -11,6 +11,7 @@ import {
   sellerProfiles,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { refundableFcfa } from "@/lib/orders";
 import { notify } from "@/lib/notify";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
@@ -49,12 +50,13 @@ export async function adminCancelOrder(
       .returning({ id: orders.id });
     if (updated.length === 0) throw new Error("conflict");
 
-    // Remboursement intégral si l'acheteur avait payé (fonds en Escrow).
+    // Remboursement si l'acheteur avait payé (fonds en Escrow), hors frais
+    // de service non remboursables (docs/CHANGEMENTS.md §5).
     if (order.paidAt) {
       const buyerWallet = await getOrCreateWallet(order.buyerId, tx);
       await applyWalletMovement(tx, buyerWallet.id, {
         type: "order_refund",
-        amountFcfa: order.totalFcfa,
+        amountFcfa: refundableFcfa(order),
         orderId: order.id,
         description: `Remboursement commande ${order.number} annulée par Deal Lomé`,
       });
@@ -92,7 +94,7 @@ export async function adminCancelOrder(
     type: "order_cancelled",
     title: `Commande ${order.number} annulée par Deal Lomé`,
     body: order.paidAt
-      ? `Vous avez été intégralement remboursé (${order.totalFcfa.toLocaleString("fr-FR")} FCFA sur votre wallet).`
+      ? `Vous avez été remboursé de ${refundableFcfa(order).toLocaleString("fr-FR")} FCFA sur votre wallet${order.serviceFeeFcfa > 0 ? " (frais de service non remboursables)" : ""}.`
       : "La commande a été annulée.",
     link: "/compte/commandes",
     email: true,

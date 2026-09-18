@@ -3,13 +3,16 @@ import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { cartItems, productImages, products, sellerProfiles } from "@/db/schema";
+import { feeFromPct } from "@/lib/orders";
+import { loadAcceptablePurchaseOrder } from "@/lib/purchase-orders";
 import { unitPriceFcfa, isWholesaleApplied } from "@/lib/pricing";
-import { getPlatformSettings } from "@/lib/settings";
+import { getPlatformSettings, type PlatformSettings } from "@/lib/settings";
 import type { GuestCartItem } from "@/lib/guest-cart";
 
 export type CartLine = {
   itemId: string;
-  productId: string;
+  /** Null pour une ligne libre de bon de commande. */
+  productId: string | null;
   title: string;
   imageUrl: string | null;
   quantity: number;
@@ -26,6 +29,8 @@ export type SellerGroup = {
   lines: CartLine[];
   subtotal: number;
   deliveryFee: number;
+  /** Frais de service de la commande de ce vendeur. */
+  serviceFee: number;
 };
 
 export type CartSummary = {
@@ -33,6 +38,8 @@ export type CartSummary = {
   itemCount: number;
   subtotal: number;
   deliveryTotal: number;
+  serviceFeeTotal: number;
+  serviceFeePct: number;
   total: number;
 };
 
@@ -49,11 +56,19 @@ const EMPTY_CART: CartSummary = {
   itemCount: 0,
   subtotal: 0,
   deliveryTotal: 0,
+  serviceFeeTotal: 0,
+  serviceFeePct: 0,
   total: 0,
 };
 
-/** Construit le récapitulatif (groupé par vendeur, prix de gros appliqués). */
-function buildCartSummary(rows: CartRow[], deliveryFee: number): CartSummary {
+/**
+ * Construit le récapitulatif (groupé par vendeur, prix de gros appliqués).
+ * Une commande par vendeur : livraison et frais de service par groupe.
+ */
+function buildCartSummary(
+  rows: CartRow[],
+  settings: PlatformSettings,
+): CartSummary {
   const groups = new Map<string, SellerGroup>();
   for (const row of rows) {
     // Les produits dépubliés entre-temps restent visibles mais le checkout les bloque.
@@ -75,7 +90,8 @@ function buildCartSummary(rows: CartRow[], deliveryFee: number): CartSummary {
       shopName: row.shopName,
       lines: [],
       subtotal: 0,
-      deliveryFee,
+      deliveryFee: settings.deliveryFeeFcfa,
+      serviceFee: 0,
     };
     group.lines.push(line);
     group.subtotal += line.lineTotal;
@@ -83,17 +99,35 @@ function buildCartSummary(rows: CartRow[], deliveryFee: number): CartSummary {
   }
 
   const groupList = [...groups.values()];
-  const subtotal = groupList.reduce((sum, group) => sum + group.subtotal, 0);
-  const deliveryTotal = groupList.reduce(
-    (sum, group) => sum + group.deliveryFee,
-    0,
+  for (const group of groupList) {
+    group.serviceFee = feeFromPct(group.subtotal, settings.serviceFeePct);
+  }
+  return summarizeGroups(
+    groupList,
+    rows.reduce((sum, row) => sum + row.quantity, 0),
+    settings.serviceFeePct,
   );
+}
+
+/** Totaux d'un récapitulatif à partir de ses groupes vendeur. */
+export function summarizeGroups(
+  groups: SellerGroup[],
+  itemCount: number,
+  serviceFeePct: number,
+): CartSummary {
+  const sumOf = (pick: (group: SellerGroup) => number) =>
+    groups.reduce((sum, group) => sum + pick(group), 0);
+  const subtotal = sumOf((group) => group.subtotal);
+  const deliveryTotal = sumOf((group) => group.deliveryFee);
+  const serviceFeeTotal = sumOf((group) => group.serviceFee);
   return {
-    groups: groupList,
-    itemCount: rows.reduce((sum, row) => sum + row.quantity, 0),
+    groups,
+    itemCount,
     subtotal,
     deliveryTotal,
-    total: subtotal + deliveryTotal,
+    serviceFeeTotal,
+    serviceFeePct,
+    total: subtotal + deliveryTotal + serviceFeeTotal,
   };
 }
 
@@ -119,7 +153,6 @@ export async function getCart(userId: string): Promise<CartSummary> {
     .where(eq(cartItems.userId, userId))
     .orderBy(asc(cartItems.createdAt));
 
-  const { deliveryFeeFcfa } = await getPlatformSettings();
   return buildCartSummary(
     rows.map((row) => ({
       itemId: row.item.id,
@@ -128,7 +161,7 @@ export async function getCart(userId: string): Promise<CartSummary> {
       imageUrl: row.imageUrl,
       quantity: row.item.quantity,
     })),
-    deliveryFeeFcfa,
+    await getPlatformSettings(),
   );
 }
 
@@ -188,8 +221,7 @@ export async function getGuestCart(
     })
     .filter((row): row is CartRow => row !== null);
 
-  const { deliveryFeeFcfa } = await getPlatformSettings();
-  return buildCartSummary(cartRows, deliveryFeeFcfa);
+  return buildCartSummary(cartRows, await getPlatformSettings());
 }
 
 /**
@@ -231,7 +263,7 @@ export async function getDirectPurchase(
     row.product.minOrderQty,
     Math.min(Number.isInteger(quantity) ? quantity : 1, row.product.stock),
   );
-  const { deliveryFeeFcfa } = await getPlatformSettings();
+  const settings = await getPlatformSettings();
   return {
     quantity: clamped,
     summary: buildCartSummary(
@@ -244,7 +276,63 @@ export async function getDirectPurchase(
           quantity: clamped,
         },
       ],
-      deliveryFeeFcfa,
+      settings,
     ),
+  };
+}
+
+/**
+ * Bon de commande à accepter : récapitulatif aux prix négociés (lignes du
+ * bon, livraison fixée par le vendeur) + frais de service, ou motif du refus.
+ */
+export async function getPurchaseOrderCheckout(
+  purchaseOrderId: string,
+  buyerId: string,
+): Promise<
+  | { error: string }
+  | {
+      summary: CartSummary;
+      number: string;
+      shopName: string;
+      expiresAt: Date;
+      note: string | null;
+    }
+> {
+  const loaded = await loadAcceptablePurchaseOrder(purchaseOrderId, buyerId);
+  if ("error" in loaded) {
+    return { error: loaded.error ?? "Bon de commande invalide." };
+  }
+  const { po, shopName, items } = loaded;
+
+  const { serviceFeePct } = await getPlatformSettings();
+  const group: SellerGroup = {
+    sellerId: po.sellerId,
+    shopName,
+    lines: items.map((item) => ({
+      itemId: item.id,
+      productId: item.productId,
+      title: item.title,
+      imageUrl: item.imageUrl,
+      quantity: item.quantity,
+      minOrderQty: 1,
+      stock: item.quantity,
+      unitPrice: item.unitPriceFcfa,
+      wholesaleApplied: false,
+      lineTotal: item.totalFcfa,
+    })),
+    subtotal: po.subtotalFcfa,
+    deliveryFee: po.deliveryFeeFcfa,
+    serviceFee: feeFromPct(po.subtotalFcfa, serviceFeePct),
+  };
+  return {
+    summary: summarizeGroups(
+      [group],
+      items.reduce((sum, item) => sum + item.quantity, 0),
+      serviceFeePct,
+    ),
+    number: po.number,
+    shopName,
+    expiresAt: po.expiresAt,
+    note: po.note,
   };
 }

@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFcfa } from "@/lib/format";
+import { refundableFcfa } from "@/lib/orders";
 import { notify } from "@/lib/notify";
 import { applyWalletMovement, getOrCreateWallet } from "@/lib/wallet";
 
@@ -155,7 +156,8 @@ export async function refuseOrder(
     if (order.paidAt && wallet) {
       await applyWalletMovement(tx, wallet.id, {
         type: "order_refund",
-        amountFcfa: order.totalFcfa,
+        // Frais de service non remboursables (docs/CHANGEMENTS.md §5).
+        amountFcfa: refundableFcfa(order),
         orderId: order.id,
         description: `Remboursement commande ${order.number} refusée par le vendeur`,
       });
@@ -191,7 +193,7 @@ export async function refuseOrder(
   await notify(order.buyerId, {
     type: "order_cancelled",
     title: `Commande ${order.number} refusée par le vendeur`,
-    body: `Motif : ${motive}.${order.paidAt ? ` Vous avez été intégralement remboursé (${formatFcfa(order.totalFcfa)}).` : ""}`,
+    body: `Motif : ${motive}.${order.paidAt ? ` Vous avez été remboursé de ${formatFcfa(refundableFcfa(order))}${order.serviceFeeFcfa > 0 ? " (frais de service non remboursables)" : ""}.` : ""}`,
     link: `/compte/commandes/${order.id}`,
     email: true,
   });

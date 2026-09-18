@@ -10,13 +10,19 @@ import { Input } from "@/components/ui/input";
 export function SettingsForm({
   commissionRatePct,
   deliveryFeeFcfa,
+  serviceFeePct,
+  mobileMoneyFeePct,
 }: {
   commissionRatePct: number;
   deliveryFeeFcfa: number;
+  serviceFeePct: number;
+  mobileMoneyFeePct: number;
 }) {
   const router = useRouter();
   const [commission, setCommission] = useState(String(commissionRatePct));
   const [fee, setFee] = useState(String(deliveryFeeFcfa));
+  const [servicePct, setServicePct] = useState(String(serviceFeePct));
+  const [mobilePct, setMobilePct] = useState(String(mobileMoneyFeePct));
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,6 +35,8 @@ export function SettingsForm({
     const result = await updatePlatformSettings({
       commissionRatePct: Number(commission),
       deliveryFeeFcfa: Number(fee),
+      serviceFeePct: Number(servicePct),
+      mobileMoneyFeePct: Number(mobilePct),
     });
     setLoading(false);
     if (result.error) {
@@ -73,12 +81,39 @@ export function SettingsForm({
             required
           />
         </FormField>
+        <FormField label="Frais de service acheteur (%)" htmlFor="servicePct">
+          <Input
+            id="servicePct"
+            type="number"
+            min={0}
+            max={20}
+            step="0.1"
+            value={servicePct}
+            onChange={(e) => setServicePct(e.target.value)}
+            required
+          />
+        </FormField>
+        <FormField label="Frais Mobile Money répercutés (%)" htmlFor="mobilePct">
+          <Input
+            id="mobilePct"
+            type="number"
+            min={0}
+            max={10}
+            step="0.1"
+            value={mobilePct}
+            onChange={(e) => setMobilePct(e.target.value)}
+            required
+          />
+        </FormField>
       </div>
 
       <p className="text-xs text-ink-muted">
         La commission s&apos;applique aux prochains versements vendeurs
-        (déblocage des fonds) ; les frais de livraison aux prochains paniers.
-        Les commandes déjà passées ne changent pas.
+        (déblocage des fonds) ; les frais de livraison et de service aux
+        prochains paniers (frais de service non remboursables) ; les frais
+        Mobile Money aux prochaines recharges de wallet - à aligner sur le
+        contrat de l&apos;agrégateur. Les commandes déjà passées ne changent
+        pas.
       </p>
 
       <Button type="submit" loading={loading} className="self-start">

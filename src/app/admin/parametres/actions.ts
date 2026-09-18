@@ -16,6 +16,8 @@ import { SETTING_KEYS } from "@/lib/settings";
 export async function updatePlatformSettings(input: {
   commissionRatePct: number;
   deliveryFeeFcfa: number;
+  serviceFeePct: number;
+  mobileMoneyFeePct: number;
 }): Promise<{ error?: string }> {
   const admin = await getCurrentUser();
   if (!admin?.isAdmin) return { error: "Réservé aux administrateurs." };
@@ -29,9 +31,20 @@ export async function updatePlatformSettings(input: {
     return { error: "Les frais de livraison doivent être entre 0 et 100 000 FCFA." };
   }
 
+  const servicePct = Number(input.serviceFeePct);
+  if (!Number.isFinite(servicePct) || servicePct < 0 || servicePct > 20) {
+    return { error: "Les frais de service doivent être entre 0 et 20 %." };
+  }
+  const mobilePct = Number(input.mobileMoneyFeePct);
+  if (!Number.isFinite(mobilePct) || mobilePct < 0 || mobilePct > 10) {
+    return { error: "Les frais Mobile Money doivent être entre 0 et 10 %." };
+  }
+
   const entries: [string, string][] = [
     [SETTING_KEYS.commissionRatePct, String(pct)],
     [SETTING_KEYS.deliveryFeeFcfa, String(fee)],
+    [SETTING_KEYS.serviceFeePct, String(servicePct)],
+    [SETTING_KEYS.mobileMoneyFeePct, String(mobilePct)],
   ];
   for (const [key, value] of entries) {
     await db
@@ -45,11 +58,12 @@ export async function updatePlatformSettings(input: {
 
   await logAdmin(admin.id, "Paramètres plateforme modifiés", {
     targetType: "parametres",
-    details: `commission ${pct} % · livraison ${fee} FCFA`,
+    details: `commission ${pct} % · livraison ${fee} FCFA · frais de service ${servicePct} % · Mobile Money ${mobilePct} %`,
   });
 
   revalidatePath("/admin/parametres");
   revalidatePath("/panier");
   revalidatePath("/commande");
+  revalidatePath("/compte/wallet");
   return {};
 }

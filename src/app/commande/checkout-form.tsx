@@ -7,6 +7,7 @@ import { createOrder } from "./actions";
 import { FormError } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import type { CheckoutSource } from "@/lib/orders";
 import { cn } from "@/lib/utils";
 
 export type CheckoutAddress = {
@@ -28,14 +29,14 @@ export function CheckoutForm({
   addresses,
   walletBalance,
   total,
-  direct,
+  source,
   returnPath,
 }: {
   addresses: CheckoutAddress[];
   walletBalance: number;
   total: number;
-  /** Achat direct d'un seul article (hors panier). */
-  direct?: { productId: string; quantity: number };
+  /** Achat direct ou bon de commande (défaut : le panier). */
+  source?: CheckoutSource;
   /** Page de commande courante (retour après ajout d'adresse). */
   returnPath: string;
 }) {
@@ -60,7 +61,7 @@ export function CheckoutForm({
       return;
     }
     setLoading(true);
-    const result = await createOrder(addressId, payment === "wallet", direct);
+    const result = await createOrder(addressId, payment === "wallet", source);
     if (result.error || !result.groupId) {
       setError(result.error ?? "La commande a échoué.");
       setLoading(false);

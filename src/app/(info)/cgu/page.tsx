@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function CguPage() {
   return (
     <>
-      <LegalTitle updated="10 juillet 2026">
+      <LegalTitle updated="18 septembre 2026">
         Conditions générales d&apos;utilisation
       </LegalTitle>
 
@@ -44,6 +44,18 @@ export default function CguPage() {
           Vous vous engagez à ne pas publier de contenu illicite, trompeur ou
           contrefait, à ne pas contourner le système de paiement sécurisé de la
           plateforme, et à respecter les lois en vigueur au Togo.
+        </p>
+        <p>
+          <strong className="text-ink">Échanges sur la plateforme.</strong>{" "}
+          Les discussions, commandes et paiements entre acheteurs et vendeurs
+          doivent rester sur Deal Lomé : c&apos;est ce qui permet la protection
+          du paiement sécurisé et le traitement des litiges. Le partage de
+          numéros de téléphone, d&apos;adresses email, de liens externes ou
+          d&apos;identifiants d&apos;autres messageries (dans les messages, les
+          fiches produit ou la boutique) est interdit et automatiquement
+          bloqué. Toute tentative est signalée à la modération, qui peut
+          examiner les conversations concernées et suspendre ou bannir le
+          compte en cas de récidive.
         </p>
       </LegalSection>
 

@@ -43,8 +43,10 @@ export async function generateInvoicePdf(input: {
   items: OrderItem[];
   shopName: string;
   shopCity: string;
+  /** Exemplaire vendeur : sans le téléphone de l'acheteur (anti-contournement). */
+  hideBuyerPhone?: boolean;
 }): Promise<Uint8Array> {
-  const { order, items, shopName, shopCity } = input;
+  const { order, items, shopName, shopCity, hideBuyerPhone } = input;
 
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]); // A4 en points
@@ -116,7 +118,9 @@ export async function generateInvoicePdf(input: {
   );
   y -= 13;
   page.drawText("Vendeur vérifié Deal Lomé", { x: left, y, size: 10, font, color: MUTED });
-  page.drawText(pdfSafe(order.shippingPhone), { x: 320, y, size: 10, font, color: MUTED });
+  if (!hideBuyerPhone) {
+    page.drawText(pdfSafe(order.shippingPhone), { x: 320, y, size: 10, font, color: MUTED });
+  }
 
   // Tableau des lignes
   y -= 36;

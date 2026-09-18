@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { count, eq } from "drizzle-orm";
+import { count, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  contactViolations,
   courierProfiles,
   disputes,
   productReports,
@@ -25,8 +26,13 @@ export default async function AdminLayout({
   const user = await getCurrentUser();
   if (!user?.isAdmin) redirect("/");
 
-  const [[pendingSellers], [pendingCouriers], [openDisputes], [openReports]] =
-    await Promise.all([
+  const [
+    [pendingSellers],
+    [pendingCouriers],
+    [openDisputes],
+    [openReports],
+    [openViolations],
+  ] = await Promise.all([
       db
         .select({ value: count() })
         .from(sellerProfiles)
@@ -43,6 +49,10 @@ export default async function AdminLayout({
         .select({ value: count() })
         .from(productReports)
         .where(eq(productReports.status, "open")),
+      db
+        .select({ value: count() })
+        .from(contactViolations)
+        .where(isNull(contactViolations.reviewedAt)),
     ]);
 
   const badge = (n: number) => (n > 0 ? String(n) : undefined);
@@ -70,6 +80,12 @@ export default async function AdminLayout({
           label: "Litiges",
           icon: "shield",
           badge: badge(openDisputes.value),
+        },
+        {
+          href: "/admin/surveillance",
+          label: "Surveillance",
+          icon: "eye",
+          badge: badge(openViolations.value),
         },
       ],
     },

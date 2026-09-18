@@ -6,6 +6,17 @@ www.deallome.com {
 }
 
 deallome.com {
-	encode gzip zstd
-	reverse_proxy app:3000
+	# Flux temps réel (SSE) : ni compression ni mise en tampon.
+	@realtime path /api/realtime
+	handle @realtime {
+		reverse_proxy app:3000 {
+			flush_interval -1
+			header_down -Content-Encoding
+		}
+	}
+
+	handle {
+		encode gzip zstd
+		reverse_proxy app:3000
+	}
 }

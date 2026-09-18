@@ -52,6 +52,7 @@ export async function GET(
     items,
     shopName: row.shopName,
     shopCity: row.shopCity,
+    hideBuyerPhone: !user.isAdmin && row.order.buyerId !== user.id,
   });
 
   return new NextResponse(Buffer.from(pdf), {

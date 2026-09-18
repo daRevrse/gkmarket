@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sellerProfiles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { CONTACT_BLOCKED_PUBLIC } from "@/lib/contact-guard";
+import { blockContactInfo } from "@/lib/moderation";
 import { normalizeTogoPhone } from "@/lib/phone";
 
 export type SellerApplicationInput = {
@@ -34,6 +36,15 @@ export async function submitSellerApplication(
   }
   if (!input.termsAccepted) {
     return { error: "Vous devez accepter les conditions vendeur." };
+  }
+  if (
+    await blockContactInfo(
+      user.id,
+      `${input.shopName}\n${input.shopDescription ?? ""}`,
+      { context: "shop" },
+    )
+  ) {
+    return { error: CONTACT_BLOCKED_PUBLIC };
   }
 
   // Les documents doivent appartenir au dossier KYC de l'utilisateur :

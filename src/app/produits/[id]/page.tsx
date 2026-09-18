@@ -279,14 +279,14 @@ export default async function ProduitPage({
                     null,
                     product.sellerId,
                     canonical,
-                    `Bonjour, à propos de « ${product.title} » : `,
+                    { productId: product.id },
                   )}
                 >
                   <button
                     type="submit"
                     className="font-label text-sm text-emerald hover:underline"
                   >
-                    Contacter le vendeur ›
+                    Discuter avec le vendeur ›
                   </button>
                 </form>
               </div>

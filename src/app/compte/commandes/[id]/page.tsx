@@ -101,7 +101,7 @@ export default async function CommandeDetailPage({
             null,
             row.order.sellerId,
             `/compte/commandes/${row.order.id}`,
-            `Au sujet de ma commande ${row.order.number} : `,
+            { sujet: `Au sujet de ma commande ${row.order.number} : ` },
           )}
           className="mt-2"
         >

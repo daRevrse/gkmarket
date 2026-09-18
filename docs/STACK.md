@@ -16,13 +16,14 @@ pour le MVP et les points encore ouverts.
 | Emails transactionnels | Brevo (plan gratuit, 300 emails/jour) | Domaine `deallome.com` à authentifier dans Brevo (SPF/DKIM/DMARC via DNS Vercel) ; expéditeur `no-reply@deallome.com` sans boîte mail. Réception : redirection gratuite (ImprovMX/Cloudflare) pour le MVP. |
 | Domaine | **deallome.com chez Vercel** (décision 2026-06-12, cf. CHANGEMENTS.md §4) | Plateforme renommée « Deal Lomé ». |
 | Versionnement / CI | Git + GitHub (+ GitHub Actions) | Branches de fonctionnalité + PR ; CI : lint, tests, migrations. |
+| Chat temps réel | **Postgres LISTEN/NOTIFY + SSE** (décision 2026-09-18) | Aucune brique supplémentaire : une connexion d'écoute par processus Next, diffusion aux onglets ouverts par Server-Sent Events. Firestore écarté (double source de vérité). |
+| Appels audio/vidéo, recherche par image | **Auto-hébergés sur le VPS** (décision 2026-09-18, cf. CHANGEMENTS.md §5) | Appels : WebRTC + serveur relais TURN sur le VPS. Recherche par image : modèle d'embeddings local + pgvector. À dimensionner (charge partagée avec la prod). |
 
 ## Points en attente de décision
 
 | Sujet | Options | Recommandation |
 |---|---|---|
 | Hébergement frontend | Vercel Pro (~20 $/mois, previews auto, zéro ops) vs auto-hébergement sur le VPS Contabo (0 €, previews manuelles) | Démarrer sur Vercel (gratuit en développement, previews pour les démos), trancher au lancement commercial. Next.js est portable : bascule possible sans réécriture. Firebase Hosting/App Hosting écarté (statique seulement / immature). |
-| Chat temps réel (messagerie MVP) | Firestore vs Postgres + WebSockets/SSE | À trancher au moment du module Communication. |
 | Responsabilité incidents livraison | Vendeur vs livreur | En cours d'analyse côté métier (voir CHANGEMENTS.md §1). |
 
 ## Abandonné

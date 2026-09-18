@@ -2,18 +2,31 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, count, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, count, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   conversationMessages,
   conversations,
   orders,
+  productImages,
+  products,
   sellerProfiles,
+  type MessageMeta,
 } from "@/db/schema";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { CONTACT_BLOCKED_MESSAGE } from "@/lib/contact-guard";
+import { adminStorage } from "@/lib/firebase/admin";
+import { messagePreview } from "@/lib/messaging";
+import { blockContactInfo } from "@/lib/moderation";
 import { notify } from "@/lib/notify";
+import { basePriceFcfa } from "@/lib/pricing";
+import { isOnline, publish } from "@/lib/realtime";
 
 const MAX_BODY = 2000;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const MAX_AUDIO_SECONDS = 180;
+
+type SendResult = { error?: string; blocked?: boolean };
 
 /** Charge une conversation avec l'utilisateur de la boutique. */
 async function getConversation(conversationId: string) {
@@ -28,6 +41,248 @@ async function getConversation(conversationId: string) {
     .where(eq(conversations.id, conversationId))
     .limit(1);
   return row ?? null;
+}
+
+type ConversationRow = NonNullable<Awaited<ReturnType<typeof getConversation>>>;
+
+/** Vérifie que l'utilisateur connecté est l'une des deux parties. */
+async function openAsParty(
+  conversationId: string,
+): Promise<
+  | { error: string }
+  | { user: CurrentUser; row: ConversationRow; isBuyer: boolean }
+> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Connectez-vous pour envoyer un message." };
+  const row = await getConversation(conversationId).catch(() => null);
+  if (!row) return { error: "Conversation introuvable." };
+  const isBuyer = row.conversation.buyerId === user.id;
+  const isSeller = row.sellerUserId === user.id;
+  if (!isBuyer && !isSeller) return { error: "Accès refusé." };
+  return { user, row, isBuyer };
+}
+
+/**
+ * Enregistre un message puis prévient : temps réel pour les deux parties
+ * (autres onglets compris), notification au destinataire uniquement s'il
+ * n'avait aucun message non lu de l'expéditeur (évite le spam) - doublée
+ * d'un email s'il n'est pas connecté.
+ */
+async function deliver(
+  party: { user: CurrentUser; row: ConversationRow; isBuyer: boolean },
+  values: {
+    kind: (typeof conversationMessages.$inferInsert)["kind"];
+    body: string;
+    productId?: string;
+    attachmentPath?: string;
+    meta?: MessageMeta;
+  },
+): Promise<void> {
+  const { user, row, isBuyer } = party;
+  const conversationId = row.conversation.id;
+  const recipientId = isBuyer ? row.sellerUserId : row.conversation.buyerId;
+
+  const [unread] = await db
+    .select({ n: count() })
+    .from(conversationMessages)
+    .where(
+      and(
+        eq(conversationMessages.conversationId, conversationId),
+        eq(conversationMessages.senderId, user.id),
+        isNull(conversationMessages.readAt),
+      ),
+    );
+
+  await db.insert(conversationMessages).values({
+    conversationId,
+    senderId: user.id,
+    kind: values.kind,
+    body: values.body,
+    productId: values.productId ?? null,
+    attachmentPath: values.attachmentPath ?? null,
+    meta: values.meta ?? null,
+  });
+  await db
+    .update(conversations)
+    .set({ lastMessageAt: sql`now()` })
+    .where(eq(conversations.id, conversationId));
+
+  await publish([recipientId, user.id], { type: "message", conversationId });
+
+  if (unread.n === 0) {
+    const preview = messagePreview({
+      kind: values.kind ?? "text",
+      body: values.body,
+      meta: values.meta ?? null,
+    });
+    await notify(recipientId, {
+      type: "message_received",
+      title: isBuyer
+        ? "Nouveau message d'un acheteur"
+        : `Nouveau message de ${row.shopName}`,
+      body: preview.length > 120 ? `${preview.slice(0, 117)}…` : preview,
+      link: isBuyer
+        ? `/vendeur/messages/${conversationId}`
+        : `/compte/messages/${conversationId}`,
+      email: !isOnline(recipientId),
+    });
+  }
+
+  revalidatePath(`/compte/messages/${conversationId}`);
+  revalidatePath(`/vendeur/messages/${conversationId}`);
+  revalidatePath("/compte/messages");
+  revalidatePath("/vendeur/messages");
+}
+
+/**
+ * Envoi d'un message texte (MVP n°150, 155) : réservé aux deux parties de la
+ * conversation. Les coordonnées (téléphone, email, liens, autres
+ * messageries) bloquent l'envoi et placent l'auteur sous surveillance.
+ */
+export async function sendMessage(
+  conversationId: string,
+  body: string,
+): Promise<SendResult> {
+  const trimmed = body.trim();
+  if (!trimmed) return { error: "Votre message est vide." };
+  if (trimmed.length > MAX_BODY) {
+    return { error: `Message trop long (${MAX_BODY} caractères max).` };
+  }
+
+  const party = await openAsParty(conversationId);
+  if ("error" in party) return { error: party.error };
+
+  const blocked = await blockContactInfo(party.user.id, trimmed, {
+    context: "message",
+    conversationId,
+  });
+  if (blocked) return { error: CONTACT_BLOCKED_MESSAGE, blocked: true };
+
+  await deliver(party, { kind: "text", body: trimmed });
+  return {};
+}
+
+/**
+ * Envoi d'une fiche produit dans le fil (« Se renseigner sur ce produit ») :
+ * le produit doit être en ligne et appartenir à la boutique de la
+ * conversation. Titre, photo et prix sont figés dans le message.
+ */
+export async function sendProductCard(
+  conversationId: string,
+  productId: string,
+): Promise<SendResult> {
+  const party = await openAsParty(conversationId);
+  if ("error" in party) return { error: party.error };
+
+  const [product] = await db
+    .select()
+    .from(products)
+    .innerJoin(sellerProfiles, eq(sellerProfiles.id, products.sellerId))
+    .where(eq(products.id, productId))
+    .limit(1)
+    .catch(() => []);
+  if (
+    !product ||
+    product.products.sellerId !== party.row.conversation.sellerId ||
+    product.products.status !== "published" ||
+    product.seller_profiles.status !== "approved"
+  ) {
+    return { error: "Ce produit n'est plus disponible." };
+  }
+
+  const [image] = await db
+    .select({ url: productImages.url })
+    .from(productImages)
+    .where(eq(productImages.productId, productId))
+    .orderBy(asc(productImages.position))
+    .limit(1);
+
+  await deliver(party, {
+    kind: "product",
+    body: "",
+    productId,
+    meta: {
+      product: {
+        title: product.products.title,
+        imageUrl: image?.url ?? null,
+        priceFcfa: basePriceFcfa(product.products),
+        minOrderQty: product.products.minOrderQty,
+      },
+    },
+  });
+  return {};
+}
+
+export type AttachmentInput = {
+  /** Chemin Storage déjà envoyé par le client : chat/{firebaseUid}/... */
+  path: string;
+  kind: "image" | "file" | "audio";
+  /** Nom d'origine du fichier (documents). */
+  name?: string;
+  /** Durée d'un message vocal, en secondes. */
+  durationSec?: number;
+};
+
+/**
+ * Envoi d'une pièce jointe (photo, PDF) ou d'un message vocal. Le fichier a
+ * été déposé par le client dans son dossier Storage privé ; le serveur en
+ * relit le type et la taille réels avant de l'accepter.
+ */
+export async function sendAttachment(
+  conversationId: string,
+  input: AttachmentInput,
+): Promise<SendResult> {
+  const party = await openAsParty(conversationId);
+  if ("error" in party) return { error: party.error };
+
+  const prefix = `chat/${party.user.firebaseUid}/`;
+  if (!input.path.startsWith(prefix) || input.path.includes("..")) {
+    return { error: "Fichier invalide." };
+  }
+
+  let contentType = "";
+  let size = 0;
+  try {
+    const [metadata] = await adminStorage.bucket().file(input.path).getMetadata();
+    contentType = metadata.contentType ?? "";
+    size = Number(metadata.size ?? 0);
+  } catch {
+    return { error: "Fichier introuvable : réessayez l'envoi." };
+  }
+  if (size <= 0 || size > MAX_ATTACHMENT_BYTES) {
+    return { error: "Fichier trop volumineux (10 Mo max)." };
+  }
+
+  const typeOk =
+    (input.kind === "image" && /^image\/(jpeg|png|webp|gif)$/.test(contentType)) ||
+    (input.kind === "file" && contentType === "application/pdf") ||
+    (input.kind === "audio" && contentType.startsWith("audio/"));
+  if (!typeOk) {
+    return { error: "Format non accepté : photos, PDF ou messages vocaux." };
+  }
+
+  const meta: MessageMeta = {
+    file: {
+      name: (input.name ?? "fichier").slice(0, 120),
+      size,
+      contentType,
+    },
+  };
+  if (input.kind === "audio") {
+    const duration = Math.round(Number(input.durationSec) || 0);
+    if (duration < 1 || duration > MAX_AUDIO_SECONDS) {
+      return { error: "Message vocal invalide (3 minutes max)." };
+    }
+    meta.audio = { durationSec: duration };
+  }
+
+  await deliver(party, {
+    kind: input.kind,
+    body: "",
+    attachmentPath: input.path,
+    meta,
+  });
+  return {};
 }
 
 /** Trouve ou crée la conversation acheteur <-> boutique. */
@@ -64,81 +319,14 @@ async function findOrCreateConversation(buyerId: string, sellerId: string) {
 }
 
 /**
- * Envoi d'un message (MVP n°150, 155) : réservé aux deux parties de la
- * conversation. Le destinataire reçoit une notification in-app uniquement
- * s'il n'avait aucun message non lu (évite le spam de notifications).
- */
-export async function sendMessage(
-  conversationId: string,
-  body: string,
-): Promise<{ error?: string }> {
-  const user = await getCurrentUser();
-  if (!user) return { error: "Connectez-vous pour envoyer un message." };
-
-  const trimmed = body.trim();
-  if (!trimmed) return { error: "Votre message est vide." };
-  if (trimmed.length > MAX_BODY) {
-    return { error: `Message trop long (${MAX_BODY} caractères max).` };
-  }
-
-  const row = await getConversation(conversationId);
-  if (!row) return { error: "Conversation introuvable." };
-  const isBuyer = row.conversation.buyerId === user.id;
-  const isSeller = row.sellerUserId === user.id;
-  if (!isBuyer && !isSeller) return { error: "Accès refusé." };
-
-  // Le destinataire avait-il déjà des messages non lus ?
-  const [unread] = await db
-    .select({ n: count() })
-    .from(conversationMessages)
-    .where(
-      and(
-        eq(conversationMessages.conversationId, conversationId),
-        eq(conversationMessages.senderId, user.id),
-        isNull(conversationMessages.readAt),
-      ),
-    );
-
-  await db.insert(conversationMessages).values({
-    conversationId,
-    senderId: user.id,
-    body: trimmed,
-  });
-  await db
-    .update(conversations)
-    .set({ lastMessageAt: sql`now()` })
-    .where(eq(conversations.id, conversationId));
-
-  if (unread.n === 0) {
-    const recipientId = isBuyer ? row.sellerUserId : row.conversation.buyerId;
-    await notify(recipientId, {
-      type: "message_received",
-      title: isBuyer
-        ? "Nouveau message d'un acheteur"
-        : `Nouveau message de ${row.shopName}`,
-      body: trimmed.length > 120 ? `${trimmed.slice(0, 117)}…` : trimmed,
-      link: isBuyer
-        ? `/vendeur/messages/${conversationId}`
-        : `/compte/messages/${conversationId}`,
-      email: false,
-    });
-  }
-
-  revalidatePath(`/compte/messages/${conversationId}`);
-  revalidatePath(`/vendeur/messages/${conversationId}`);
-  revalidatePath("/compte/messages");
-  revalidatePath("/vendeur/messages");
-  return {};
-}
-
-/**
  * Ouverture d'une conversation avec une boutique depuis une fiche produit ou
- * une commande (côté acheteur). Redirige vers le fil, avec un sujet prérempli.
+ * une commande (côté acheteur). Redirige vers le fil : avec la fiche produit
+ * prête à envoyer, ou un sujet prérempli.
  */
 export async function contactSeller(
   sellerId: string,
   backPath: string,
-  sujet?: string,
+  context?: { productId?: string; sujet?: string },
 ): Promise<void> {
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent(backPath)}`);
@@ -154,9 +342,12 @@ export async function contactSeller(
   if (seller.userId === user.id) redirect(backPath); // sa propre boutique
 
   const conversationId = await findOrCreateConversation(user.id, sellerId);
-  redirect(
-    `/compte/messages/${conversationId}${sujet ? `?sujet=${encodeURIComponent(sujet)}` : ""}`,
-  );
+  const query = context?.productId
+    ? `?produit=${encodeURIComponent(context.productId)}`
+    : context?.sujet
+      ? `?sujet=${encodeURIComponent(context.sujet)}`
+      : "";
+  redirect(`/compte/messages/${conversationId}${query}`);
 }
 
 /**

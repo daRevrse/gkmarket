@@ -76,3 +76,51 @@ dashboard Vercel).
 - **Paiement du livreur :** le livreur est **payé par le vendeur**, via le **Wallet** et le **système Escrow** (mêmes mécanismes que le reste de la plateforme). Le livreur dispose donc d'un Wallet livreur.
 - **Refus de course :** le livreur **peut refuser une course**. Le flux doit prévoir la re-proposition à un autre livreur.
 - **Responsabilité en cas d'incident** (colis perdu/endommagé, vendeur vs livreur) : **en cours d'analyse** — à trancher avant l'implémentation du module litiges/livraison.
+
+---
+
+## 5. Flux acheteur-vendeur : retours des testeurs et propriétaires (2026-09-18)
+
+Retours recueillis auprès des testeurs et des propriétaires, inspirés du
+parcours Alibaba (discuter depuis un article, bon de commande dans le chat,
+profil fournisseur détaillé). Ils avancent plusieurs items de Phase 2/3 de
+l'explosion du projet (favoris, devis B2B, pièces jointes, recherche par
+image, appels).
+
+**Découpage en lots (ordre de réalisation) :**
+
+1. **Chat v2** : messages typés (texte, fiche produit, photo, document,
+   vocal, bon de commande, système), carte produit envoyée depuis un article,
+   temps réel, pièces jointes, messages vocaux, notifications, blocage du
+   contournement.
+2. **Boutons produit** : Acheter maintenant (achat direct, hors panier),
+   Ajouter au panier, Discuter, Ma liste ; « Vus récemment ».
+3. **Bon de commande et paiement dans le chat**, frais de service.
+4. **Recherche** : plein texte français, accents/fautes, synonymes,
+   autocomplétion.
+5. **Profil vendeur** (onglets, indicateurs calculés) et système d'avis.
+6. **Médias** : vidéo produit, téléchargement des médias.
+7. **Recherche par image**, puis **appels audio/vidéo**.
+
+**Décisions des propriétaires :**
+
+- **Frais plateforme** : l'acheteur paie des **frais de service de 1 %** plus
+  les **frais de paiement Mobile Money** (répercutés). La commission vendeur
+  existante (paramétrable, 5 % par défaut) est conservée. **Ces frais ne sont
+  pas remboursés** en cas d'annulation ou de remboursement (seuls le
+  sous-total et la livraison le sont).
+- **Paiement réel** : pas encore de compte marchand FedaPay, la plateforme
+  reste en **mode démo** (wallet et Mobile Money simulés). Le paiement dans le
+  chat est développé sur ce mode et branché sur FedaPay plus tard.
+- **Bon de commande** : l'acheteur **peut demander un devis** ; le vendeur
+  émet le bon, **fixe sa durée de validité** et **fixe librement les prix**.
+  Le bon accepté devient une commande normale (paiement sécurisé, livraison,
+  litige, facture).
+- **Liste** : **une seule liste** par acheteur (« Ma liste »).
+- **Téléchargement des médias** : réservé aux **comptes connectés**, avec
+  **filigrane Deal Lomé**.
+- **Contournement** (numéros, emails, liens WhatsApp/Telegram… dans les
+  échanges) : le message est **bloqué**, l'expéditeur reçoit un
+  **avertissement** et est placé **en surveillance côté admin**.
+- **Appels audio/vidéo et recherche par image** : **auto-hébergés sur le VPS**
+  (pas de service tiers payant).

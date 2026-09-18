@@ -120,6 +120,13 @@
       "when": 1783746643724,
       "tag": "0016_military_killer_shrike",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789699530781,
+      "tag": "0017_chat_v2",
+      "breakpoints": true
     }
   ]
 }

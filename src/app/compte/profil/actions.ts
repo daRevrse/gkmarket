@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sellerProfiles, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { CONTACT_BLOCKED_PUBLIC } from "@/lib/contact-guard";
+import { blockContactInfo } from "@/lib/moderation";
 import { normalizeTogoPhone } from "@/lib/phone";
 
 export type ProfileInput = {
@@ -36,6 +38,24 @@ export async function updateProfile(
 
   const fullName = input.fullName.trim();
   if (!fullName) return { error: "Votre nom est requis." };
+
+  // Anti-contournement : nom et textes publics de la boutique (le téléphone
+  // de contact, privé, sert aux livreurs et n'est pas concerné).
+  const publicText = [
+    fullName,
+    input.shop?.shopName,
+    input.shop?.shopDescription,
+    input.shop?.sellingConditions,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  if (
+    await blockContactInfo(user.id, publicText, {
+      context: input.shop ? "shop" : "profile",
+    })
+  ) {
+    return { error: CONTACT_BLOCKED_PUBLIC };
+  }
 
   await db
     .update(users)

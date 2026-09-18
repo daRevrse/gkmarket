@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { courierProfiles, sellerProfiles, users } from "@/db/schema";
@@ -109,6 +110,11 @@ export default async function AdminUtilisateursPage({
                       </p>
                       <Badge variant={status.variant}>{status.label}</Badge>
                       {user.isAdmin ? <Badge variant="wholesale">Admin</Badge> : null}
+                      {user.watchedAt ? (
+                        <Link href={`/admin/surveillance/${user.id}`}>
+                          <Badge variant="wholesale">Sous surveillance</Badge>
+                        </Link>
+                      ) : null}
                       {shopName && sellerStatus === "approved" ? (
                         <Badge variant="verified">Vendeur</Badge>
                       ) : null}

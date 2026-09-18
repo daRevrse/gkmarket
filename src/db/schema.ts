@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -38,6 +39,9 @@ export const users = pgTable("users", {
   fullName: text("full_name"),
   isAdmin: boolean("is_admin").notNull().default(false),
   status: userStatusEnum("status").notNull().default("active"),
+  // Placé sous surveillance après une tentative de contournement (partage de
+  // coordonnées bloqué, cf. docs/CHANGEMENTS.md §5). Levée par un admin.
+  watchedAt: timestamp("watched_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -604,6 +608,25 @@ export const conversations = pgTable(
   ],
 );
 
+export const messageKindEnum = pgEnum("message_kind", [
+  "text",
+  "product", // fiche produit envoyée depuis un article
+  "image",
+  "file", // document PDF
+  "audio", // message vocal
+]);
+
+export type MessageMeta = {
+  product?: {
+    title: string;
+    imageUrl: string | null;
+    priceFcfa: number;
+    minOrderQty: number;
+  };
+  file?: { name: string; size: number; contentType: string };
+  audio?: { durationSec: number };
+};
+
 export const conversationMessages = pgTable(
   "conversation_messages",
   {
@@ -614,7 +637,18 @@ export const conversationMessages = pgTable(
     senderId: uuid("sender_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    kind: messageKindEnum("kind").notNull().default("text"),
+    // Texte du message ; vide pour une pièce jointe ou une fiche produit seule.
     body: text("body").notNull(),
+    // Fiche produit partagée (kind = product) - la copie dans `meta` garde
+    // titre/photo/prix du moment même si le produit change ou disparaît.
+    productId: uuid("product_id").references(() => products.id, {
+      onDelete: "set null",
+    }),
+    // Pièce jointe privée dans Storage (chat/{firebaseUid}/...), lue via
+    // /api/messages/[id]/attachment (parties de la conversation + admins).
+    attachmentPath: text("attachment_path"),
+    meta: jsonb("meta").$type<MessageMeta>(),
     // Lu par le destinataire (l'autre partie de la conversation).
     readAt: timestamp("read_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -627,4 +661,28 @@ export const conversationMessages = pgTable(
       table.createdAt,
     ),
   ],
+);
+
+// Tentatives de contournement bloquées (coordonnées dans un message, une
+// fiche produit ou la boutique). Alimentent la surveillance côté admin.
+export const contactViolations = pgTable(
+  "contact_violations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    context: text("context").notNull(), // "message" | "product" | "shop"
+    conversationId: uuid("conversation_id").references(() => conversations.id, {
+      onDelete: "set null",
+    }),
+    // Texte bloqué, conservé pour l'examen par la modération.
+    excerpt: text("excerpt").notNull(),
+    reasons: text("reasons").array().notNull(), // phone, email, link, app
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("contact_violations_user_idx").on(table.userId)],
 );

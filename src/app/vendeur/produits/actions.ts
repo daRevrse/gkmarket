@@ -5,7 +5,9 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, productImages, products } from "@/db/schema";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { CONTACT_BLOCKED_PUBLIC } from "@/lib/contact-guard";
 import { adminStorage } from "@/lib/firebase/admin";
+import { blockContactInfo } from "@/lib/moderation";
 
 export type ProductInput = {
   title: string;
@@ -135,6 +137,15 @@ async function deleteStorageFiles(paths: string[]) {
   );
 }
 
+/** Anti-contournement : pas de coordonnées dans le titre ni la description. */
+async function blockedText(user: CurrentUser, input: ProductInput) {
+  return blockContactInfo(
+    user.id,
+    `${input.title}\n${input.description ?? ""}`,
+    { context: "product" },
+  );
+}
+
 export async function createProduct(
   input: ProductInput,
   images: ImageInput[],
@@ -144,6 +155,7 @@ export async function createProduct(
 
   const error = await validate(user, input, images);
   if (error) return { error };
+  if (await blockedText(user, input)) return { error: CONTACT_BLOCKED_PUBLIC };
 
   await db.transaction(async (tx) => {
     const [product] = await tx
@@ -191,6 +203,7 @@ export async function updateProduct(
 
   const error = await validate(user, input, images);
   if (error) return { error };
+  if (await blockedText(user, input)) return { error: CONTACT_BLOCKED_PUBLIC };
 
   const oldImages = await db
     .select({ path: productImages.path })

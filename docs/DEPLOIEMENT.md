@@ -1,6 +1,7 @@
 # Déploiement — Deal Lomé (deallome.com)
 
-Dernière mise à jour : 2026-09-11 (reconstruction sur un nouveau VPS après la
+Dernière mise à jour : 2026-09-21 (déploiement des lots 5 à 7). Historique :
+2026-09-11 (reconstruction sur un nouveau VPS après la
 perte de l'ancien, `144.91.84.51`, pour non-paiement). Runbook des commandes
 réellement utilisées pour mettre en production et redéployer la plateforme.
 
@@ -173,7 +174,32 @@ propriétaire, **lecture client refusée** — passage par les routes serveur),
 puis refus global. Les copies de sauvegarde (`backups/`) tombent dans le
 refus global : seul le compte de service y accède.
 
-### 2.6 Seed des catégories (idempotent)
+### 2.6 Recherche par image (depuis le lot 7)
+
+Le build de l'app **télécharge le modèle CLIP (~86 Mo)** et installe le
+runtime ONNX : compter plusieurs minutes de plus et ~1,2 Go d'image finale.
+Rien à configurer ensuite — le modèle est embarqué, la production ne fait
+aucun appel sortant.
+
+Deux pièges déjà rencontrés :
+
+- **Traçage de la sortie standalone** : `outputFileTracingIncludes`
+  (next.config.ts) doit lister `onnxruntime-node`, `onnxruntime-common`
+  **et** `@huggingface/transformers`. Sans cela le build passe, mais le
+  conteneur échoue à l'exécution sur
+  `Cannot find module onnxruntime-common/dist/cjs/index.js` et **toute page
+  important le moteur tombe en 500** (dont `/produits`). Vérification avant
+  déploiement : `node .next/standalone/server.js` en local puis
+  `curl localhost:<port>/produits`.
+- **Index visuel vide au premier déploiement** : les photos ne sont
+  indexées que si leur fichier est réellement dans Storage. Le catalogue de
+  démonstration (`drizzle/seed-demo.sql`) pointe vers des URLs Unsplash avec
+  des chemins `demo/…` inexistants : ces photos sont comptées « illisibles »
+  et la recherche par image ne renvoie rien tant que de vrais produits n'ont
+  pas été publiés. Lancer l'indexation depuis **/admin/recherche → Recherche
+  par image** (lots de 25).
+
+### 2.7 Seed des catégories (idempotent)
 
 ```bash
 ssh -i /c/Users/Administrateur/.ssh/deallome_vps deploy@161.97.182.152 \

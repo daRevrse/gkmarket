@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@huggingface/transformers": "^4.3.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "firebase": "^12.14.0",
@@ -39,5 +40,8 @@
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "sharp": "^0.34.5"
   }
 }

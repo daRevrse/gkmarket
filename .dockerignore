@@ -13,3 +13,5 @@ docker-compose*.yml
 .env.*
 !.env.example
 *.log
+# modèle CLIP : téléchargé dans l'étape builder, jamais depuis le contexte
+models

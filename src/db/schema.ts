@@ -7,6 +7,7 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -219,6 +220,40 @@ export const productImages = pgTable("product_images", {
   path: text("path").notNull(),
   url: text("url").notNull(),
   position: integer("position").notNull().default(0),
+});
+
+// Recherche par image (docs/CHANGEMENTS.md §5, lot 7) : vecteur CLIP de
+// chaque photo produit, calculé sur le VPS (aucun service tiers). Les
+// vecteurs sont normalisés, donc le produit scalaire vaut le cosinus.
+export const productImageEmbeddings = pgTable(
+  "product_image_embeddings",
+  {
+    imageId: uuid("image_id")
+      .primaryKey()
+      .references(() => productImages.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    embedding: real("embedding").array().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("product_image_embeddings_product_idx").on(table.productId)],
+);
+
+// Recherches par photo : le vecteur et une vignette servent à réafficher les
+// résultats (URL partageable, rechargement) ; purgées après quelques jours.
+export const imageSearches = pgTable("image_searches", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  embedding: real("embedding").array().notNull(),
+  /** Vignette JPEG encodée en base64 (sans préfixe data:). */
+  thumbnail: text("thumbnail").notNull(),
+  results: integer("results").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // Panier (itération 4) - lié au compte, un article par produit.

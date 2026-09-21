@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, productImages, products } from "@/db/schema";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth";
 import { CONTACT_BLOCKED_PUBLIC } from "@/lib/contact-guard";
 import { adminStorage } from "@/lib/firebase/admin";
+import { indexProduct } from "@/lib/image-index";
 import { blockContactInfo } from "@/lib/moderation";
 
 export type ProductInput = {
@@ -164,7 +166,7 @@ export async function createProduct(
   if (error) return { error };
   if (await blockedText(user, input)) return { error: CONTACT_BLOCKED_PUBLIC };
 
-  await db.transaction(async (tx) => {
+  const productId = await db.transaction(async (tx) => {
     const [product] = await tx
       .insert(products)
       .values({ sellerId: user.sellerProfile!.id, ...toValues(input, video) })
@@ -177,7 +179,11 @@ export async function createProduct(
         position: index,
       })),
     );
+    return product.id;
   });
+
+  // Index visuel (lot 7) : calcul CLIP après la réponse, jamais bloquant.
+  after(() => indexProduct(productId));
 
   revalidatePath("/vendeur/produits");
   return {};
@@ -232,6 +238,9 @@ export async function updateProduct(
       })),
     );
   });
+
+  // Les photos sont recréées à chaque enregistrement : on réindexe.
+  after(() => indexProduct(productId));
 
   const kept = new Set(images.map((image) => image.path));
   await deleteStorageFiles([

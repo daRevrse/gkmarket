@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { searchSynonyms } from "@/db/schema";
 import { logAdmin } from "@/lib/admin-log";
 import { getCurrentUser } from "@/lib/auth";
+import { indexPending } from "@/lib/image-index";
 import { normalizeQuery } from "@/lib/search";
 
 /**
@@ -55,4 +56,28 @@ export async function deleteSynonymGroup(id: string): Promise<{ error?: string }
   });
   revalidatePath("/admin/recherche");
   return {};
+}
+
+/**
+ * Indexation visuelle par lots (lot 7) : calcule les vecteurs CLIP des
+ * photos publiées qui n'en ont pas encore. Un lot par clic, pour garder la
+ * main sur la charge du serveur.
+ */
+export async function indexImages(): Promise<{
+  error?: string;
+  done?: number;
+  failed?: number;
+}> {
+  const admin = await getCurrentUser();
+  if (!admin?.isAdmin) return { error: "Réservé aux administrateurs." };
+
+  const { done, failed } = await indexPending(25);
+  if (done > 0 || failed > 0) {
+    await logAdmin(admin.id, "Indexation visuelle", {
+      targetType: "recherche",
+      details: `${done} photo(s) indexée(s)${failed > 0 ? `, ${failed} illisible(s)` : ""}`,
+    });
+  }
+  revalidatePath("/admin/recherche");
+  return { done, failed };
 }

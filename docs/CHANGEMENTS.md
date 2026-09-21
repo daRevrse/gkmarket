@@ -132,8 +132,14 @@ image, appels).
   sous 5 commandes livrées (badge « Nouveau vendeur »).
 
 **Avancement :** lots 1 à 4 livrés en production le 2026-09-21 ; lots 5
-(profil vendeur détaillé et avis) et 6 (vidéo produit, téléchargement
-filigrané des médias) développés le 2026-09-21.
+(profil vendeur détaillé et avis), 6 (vidéo produit, téléchargement
+filigrané des médias) et 7a (recherche par image) développés le 2026-09-21.
+
+**Décision du 2026-09-21 (lot 7) :** la recherche par image utilise un
+modèle **CLIP exécuté sur notre VPS**, sans service tiers ni appel sortant.
+Les **appels audio/vidéo sont reportés** à un lot ultérieur, après la mise
+en production et l'épreuve des lots 5 et 6 ; ils demanderont un serveur
+relais TURN (coturn) pour aboutir sur les réseaux mobiles togolais.
 
 **Limite connue du lot 6 :** le filigrane s'applique aux photos
 téléchargées, pas à la vidéo (il faudrait un ré-encodage ffmpeg sur le VPS),

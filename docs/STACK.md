@@ -231,7 +231,7 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
   sécurité : exécution aussi à l'ouverture du dashboard admin, et bouton
   manuel sur `/admin/financier`.
 
-## Flux acheteur-vendeur (conception — lots 1 à 6, 2026-09-18)
+## Flux acheteur-vendeur (conception — lots 1 à 7, 2026-09-18)
 
 Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
 
@@ -309,6 +309,28 @@ Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
   partielles : la marquer demanderait un ré-encodage ffmpeg sur le VPS. Les
   photos affichées restent publiques dans Storage — le filigrane porte sur le
   fichier téléchargé, c'est un marquage d'usage, pas une protection.
+- **Recherche par image** (migration 0024) : encodeur visuel **CLIP
+  (`Xenova/clip-vit-base-patch32`, quantifié q8, ~86 Mo)** exécuté sur notre
+  VPS via `@huggingface/transformers` + `onnxruntime-node` — aucun service
+  tiers, aucun appel sortant à l'exécution (`scripts/fetch-clip-model.mjs`
+  embarque le modèle dans l'image Docker, `env.allowRemoteModels = false` en
+  production). Chaque photo publiée a un vecteur 512-d normalisé
+  (`product_image_embeddings`), calculé après la réponse (`after()`) à
+  l'enregistrement d'une fiche, avec rattrapage par lots de 25 depuis
+  `/admin/recherche` (les photos illisibles y sont signalées). La recherche
+  (`POST /api/recherche/image`, corps = le fichier, 8 Mo max) enregistre le
+  vecteur et une vignette dans `image_searches` puis renvoie une URL
+  partageable `/produits?image=<id>`, où les filtres et la pagination du
+  catalogue s'appliquent normalement. Similarité = produit scalaire
+  (fonction SQL `dot_product`, les vecteurs étant normalisés), avec un seuil
+  absolu (`IMAGE_SEARCH_MIN_SCORE`, 0,72) **et** une marge relative au
+  meilleur score (`IMAGE_SEARCH_MARGIN`, 0,1) — CLIP resserre les scores, le
+  seuil seul laisserait passer tout le catalogue. Ces deux valeurs sont des
+  points de départ à ajuster sur de vraies recherches. Passer à pgvector si
+  l'index dépasse quelques dizaines de milliers de photos.
+  ⚠️ **Une seule copie de `sharp`** est tolérée dans le processus : le
+  `overrides` de package.json force la version de Next, car deux libvips
+  chargées ensemble cassent toute opération image.
 
 ## Administration
 

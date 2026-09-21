@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   ArrowTrendingUpIcon,
   BuildingStorefrontIcon,
+  CameraIcon,
   ClockIcon,
   MagnifyingGlassIcon,
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
+import { Spinner } from "@/components/ui/spinner";
 import type { SearchSuggestions } from "@/app/api/recherche/suggestions/route";
 import { formatFcfa } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -58,6 +60,11 @@ export function SearchBox({ defaultQuery = "" }: { defaultQuery?: string }) {
   const listId = useId();
   const [value, setValue] = useState(defaultQuery);
   const [open, setOpen] = useState(false);
+  // Recherche par photo (lot 7) : envoi du fichier, puis ouverture des
+  // résultats visuels.
+  const photoInput = useRef<HTMLInputElement>(null);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [data, setData] = useState<SearchSuggestions | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
   const [active, setActive] = useState(-1);
@@ -110,6 +117,30 @@ export function SearchBox({ defaultQuery = "" }: { defaultQuery?: string }) {
     setOpen(false);
     setValue(q);
     router.push(`/produits?q=${encodeURIComponent(q)}`);
+  }
+
+  /** Envoie la photo choisie et ouvre les résultats visuels. */
+  async function searchByPhoto(file: File) {
+    setPhotoError(null);
+    setPhotoLoading(true);
+    try {
+      const response = await fetch("/api/recherche/image", {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setPhotoError(data.error ?? "La recherche par photo a échoué.");
+        return;
+      }
+      setOpen(false);
+      router.push(`/produits?image=${data.id}`);
+    } catch {
+      setPhotoError("La recherche par photo a échoué. Réessayez.");
+    } finally {
+      setPhotoLoading(false);
+    }
   }
 
   function choose(item: Item) {
@@ -175,8 +206,40 @@ export function SearchBox({ defaultQuery = "" }: { defaultQuery?: string }) {
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
-        className="w-full rounded-md border border-white/10 bg-white/5 py-2.5 pr-4 pl-9 text-sm text-ink placeholder:text-ink-muted/60 focus:border-emerald focus:outline-none"
+        className="w-full rounded-md border border-white/10 bg-white/5 py-2.5 pr-11 pl-9 text-sm text-ink placeholder:text-ink-muted/60 focus:border-emerald focus:outline-none"
       />
+      {/* Recherche par photo : appareil photo sur mobile, fichier ailleurs. */}
+      <button
+        type="button"
+        title="Rechercher avec une photo"
+        aria-label="Rechercher avec une photo"
+        disabled={photoLoading}
+        onClick={() => photoInput.current?.click()}
+        className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-white/5 hover:text-emerald disabled:opacity-60"
+      >
+        {photoLoading ? (
+          <Spinner className="size-4" />
+        ) : (
+          <CameraIcon className="size-4" />
+        )}
+      </button>
+      <input
+        ref={photoInput}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void searchByPhoto(file);
+        }}
+      />
+      {photoError ? (
+        <p className="absolute inset-x-0 top-full z-50 mt-1 rounded-md border border-danger/40 bg-navy-deep px-3 py-2 text-xs text-danger">
+          {photoError}
+        </p>
+      ) : null}
 
       {showPanel ? (
         <div

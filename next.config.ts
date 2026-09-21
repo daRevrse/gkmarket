@@ -9,7 +9,17 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(__dirname),
   },
-  serverExternalPackages: ["firebase-admin"],
+  // Modules natifs (libvips, onnxruntime) : jamais bundlés par Turbopack.
+  serverExternalPackages: [
+    "firebase-admin",
+    "@huggingface/transformers",
+    "onnxruntime-node",
+  ],
+  // Le binaire onnxruntime est chargé dynamiquement : le traçage ne le voit
+  // pas et la sortie standalone partirait sans lui (recherche par image HS).
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/onnxruntime-node/**"],
+  },
 };
 
 export default nextConfig;

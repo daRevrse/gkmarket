@@ -3,7 +3,9 @@ import { asc } from "drizzle-orm";
 import { db } from "@/db";
 import { searchSynonyms } from "@/db/schema";
 import { Card } from "@/components/ui/card";
+import { pendingImageIndex } from "@/lib/image-index";
 import { popularSearches, unmetSearches } from "@/lib/search";
+import { ImageIndexRunner } from "./image-index";
 import { SynonymManager } from "./synonym-manager";
 
 /**
@@ -11,10 +13,11 @@ import { SynonymManager } from "./synonym-manager";
  * servies des 30 derniers jours, synonymes locaux.
  */
 export default async function AdminRecherchePage() {
-  const [popular, unmet, groups] = await Promise.all([
+  const [popular, unmet, groups, imageIndex] = await Promise.all([
     popularSearches(15, false),
     unmetSearches(15),
     db.select().from(searchSynonyms).orderBy(asc(searchSynonyms.createdAt)),
+    pendingImageIndex(),
   ]);
 
   return (
@@ -72,6 +75,27 @@ export default async function AdminRecherchePage() {
           )}
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <h2 className="font-display text-lg font-bold">Recherche par image</h2>
+        <p className="mt-1 max-w-2xl text-sm text-ink-muted">
+          Chaque photo publiée reçoit une empreinte visuelle, calculée sur
+          notre serveur, qui permet de retrouver un produit à partir d&apos;une
+          photo. Les nouvelles fiches sont indexées automatiquement ; ce bouton
+          sert au rattrapage du catalogue existant.
+        </p>
+        <p className="mt-3 text-sm">
+          <span className="font-display text-xl font-bold text-gold">
+            {imageIndex.indexed}
+          </span>{" "}
+          photo(s) indexée(s) ·{" "}
+          <span className="font-display text-xl font-bold text-gold">
+            {imageIndex.pending}
+          </span>{" "}
+          en attente
+        </p>
+        <ImageIndexRunner pending={imageIndex.pending} />
+      </Card>
 
       <Card className="mt-6">
         <h2 className="font-display text-lg font-bold">Synonymes</h2>

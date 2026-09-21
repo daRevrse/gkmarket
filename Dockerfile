@@ -5,6 +5,8 @@ FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+# Binaires GPU d'onnxruntime inutiles : l'inférence CLIP tourne sur le CPU.
+RUN rm -f node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime_providers_cuda.so node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime_providers_tensorrt.so
 
 # ---- builder : build Next.js en sortie standalone ----
 FROM node:22-bookworm-slim AS builder
@@ -21,6 +23,8 @@ ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY \
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
     NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID \
     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+# Modèle CLIP embarqué : la production ne télécharge rien à l'exécution.
+RUN node scripts/fetch-clip-model.mjs
 RUN npm run build
 
 # ---- migrator : applique les migrations Drizzle (one-shot) ----
@@ -43,6 +47,8 @@ RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs -m nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Encodeur visuel (recherche par image) : ~86 Mo, lu au premier usage.
+COPY --from=builder --chown=nextjs:nodejs /app/models ./models
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]

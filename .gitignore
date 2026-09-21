@@ -51,3 +51,6 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# modèle CLIP (recherche par image) : téléchargé au build, jamais commité
+/models

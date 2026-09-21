@@ -13,11 +13,18 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, productImages, products, sellerProfiles } from "@/db/schema";
+import {
+  categories,
+  imageSearches,
+  productImages,
+  products,
+  sellerProfiles,
+} from "@/db/schema";
 import { ProductCard } from "@/components/product-card";
 import { ProductSuggestions } from "@/components/product-suggestions";
 import { SiteHeader } from "@/components/site-header";
 import { catalogSelection } from "@/lib/catalog";
+import { visualMatches } from "@/lib/image-index";
 import { productRatingSql, ratedAtLeast, withRatings } from "@/lib/reviews";
 import {
   productSearch,
@@ -36,6 +43,8 @@ type SearchParams = {
   prix_max?: string;
   en_stock?: string;
   note_min?: string;
+  /** Identifiant d'une recherche par photo (lot 7). */
+  image?: string;
   tri?: string;
   page?: string;
 };
@@ -118,6 +127,31 @@ export default async function CataloguePage({
       filters.push(eq(products.categoryId, selected.id));
     }
   }
+  // Recherche par photo : on récupère d'abord les produits visuellement
+  // proches, puis les filtres et la pagination habituels s'y appliquent.
+  const [imageSearch] = params.image
+    ? await db
+        .select({
+          thumbnail: imageSearches.thumbnail,
+          embedding: imageSearches.embedding,
+        })
+        .from(imageSearches)
+        .where(eq(imageSearches.id, params.image))
+        .limit(1)
+        .catch(() => [])
+    : [];
+  const visual = imageSearch ? await visualMatches(imageSearch.embedding) : null;
+  if (visual) {
+    filters.push(
+      visual.length > 0
+        ? inArray(
+            products.id,
+            visual.map((match) => match.productId),
+          )
+        : sql`false`,
+    );
+  }
+
   const prixMin = Number(params.prix_min);
   if (prixMin > 0) filters.push(gte(products.priceFcfa, prixMin));
   const prixMax = Number(params.prix_max);
@@ -151,10 +185,20 @@ export default async function CataloguePage({
   }
 
   const where = and(...filters, ...(search ? [search.where] : []));
-  // Tri : pertinence par défaut dès qu'il y a une recherche.
-  const sort = params.tri || (search ? "pertinence" : "recents");
+  // Tri : ressemblance sur une recherche par photo, sinon pertinence dès
+  // qu'il y a une requête texte.
+  const sort = params.tri || (search ? "pertinence" : visual ? "image" : "recents");
+  // Ordre exact renvoyé par la recherche visuelle (du plus proche au moins).
+  const visualOrder =
+    visual && visual.length > 0
+      ? sql`array_position(ARRAY[${sql.raw(
+          visual.map((match) => `'${match.productId}'::uuid`).join(","),
+        )}], ${products.id})`
+      : null;
   const orderBy =
-    sort === "prix-asc"
+    sort === "image" && visualOrder
+      ? [asc(visualOrder)]
+      : sort === "prix-asc"
       ? [asc(products.priceFcfa)]
       : sort === "prix-desc"
         ? [desc(products.priceFcfa)]
@@ -203,11 +247,41 @@ export default async function CataloguePage({
       <SiteHeader query={params.q} />
       <main className="mx-auto w-full max-w-(--container-page) flex-1 px-4 py-8 md:px-10">
         <h1 className="font-display text-2xl font-extrabold">
-          {selected ? selected.name : params.q ? `Résultats pour « ${params.q} »` : "Catalogue"}
+          {imageSearch
+            ? "Produits ressemblant à votre photo"
+            : selected
+              ? selected.name
+              : params.q
+                ? `Résultats pour « ${params.q} »`
+                : "Catalogue"}
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
           {total} produit{total > 1 ? "s" : ""}
         </p>
+
+        {imageSearch ? (
+          <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`data:image/jpeg;base64,${imageSearch.thumbnail}`}
+              alt="Photo recherchée"
+              className="size-20 shrink-0 rounded-md object-cover"
+            />
+            <div className="min-w-0">
+              <p className="text-sm">
+                {total > 0
+                  ? "Les produits du catalogue les plus proches de cette photo, du plus ressemblant au moins ressemblant."
+                  : "Aucun produit du catalogue ne ressemble à cette photo."}
+              </p>
+              <Link
+                href="/produits"
+                className="mt-1 inline-block font-label text-sm text-emerald hover:underline"
+              >
+                Revenir au catalogue ›
+              </Link>
+            </div>
+          </div>
+        ) : null}
 
         {/* Catégories principales */}
         <div className="mt-4 flex flex-wrap gap-2">
@@ -267,6 +341,9 @@ export default async function CataloguePage({
           {params.categorie ? (
             <input type="hidden" name="categorie" value={params.categorie} />
           ) : null}
+          {params.image ? (
+            <input type="hidden" name="image" value={params.image} />
+          ) : null}
           <label className="flex flex-col gap-1 text-xs text-ink-muted">
             Prix min (FCFA)
             <input
@@ -317,6 +394,7 @@ export default async function CataloguePage({
               className="rounded-md border border-white/10 bg-navy-deep px-3 py-2 text-sm text-ink focus:border-emerald focus:outline-none"
             >
               {search ? <option value="pertinence">Pertinence</option> : null}
+              {visual ? <option value="image">Ressemblance</option> : null}
               <option value="recents">Plus récents</option>
               <option value="notes">Mieux notés</option>
               <option value="prix-asc">Prix croissant</option>
@@ -362,7 +440,9 @@ export default async function CataloguePage({
         {items.length === 0 ? (
           <>
             <p className="mt-12 text-center text-ink-muted">
-              Aucun produit ne correspond à votre recherche.
+              {imageSearch
+                ? "Aucun produit ne ressemble à cette photo pour le moment."
+                : "Aucun produit ne correspond à votre recherche."}
             </p>
             <ProductSuggestions title="Découvrez plutôt ces produits" />
           </>

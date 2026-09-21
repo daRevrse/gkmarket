@@ -110,9 +110,15 @@ npm run db:generate     # crée drizzle/XXXX_nom.sql — à commiter avec le cod
 ```bash
 ssh -i /c/Users/Administrateur/.ssh/deallome_vps deploy@161.97.182.152 '
   cd ~/deallome && git pull --quiet &&
-  docker compose -f docker-compose.prod.yml --profile tools run --rm migrator
+  docker compose -f docker-compose.prod.yml --profile tools run --rm --build migrator
 '
 ```
+
+> **`--build` obligatoire** : l'image `migrator` copie le dossier `drizzle/`
+> à sa construction. Sans lui, une image en cache rejouerait les anciennes
+> migrations et ignorerait les nouvelles (l'étape sortirait en succès sans
+> rien appliquer). Vérifier ensuite le compte appliqué :
+> `docker compose -f docker-compose.prod.yml exec -T db psql -U deallome -d deallome -tAc "select count(*) from drizzle.__drizzle_migrations"`.
 
 3. Enchaîner avec la routine 1.3 (build + up de l'app).
 
@@ -150,7 +156,24 @@ ssh -i /c/Users/Administrateur/.ssh/deallome_vps deploy@161.97.182.152 \
 Le certificat TLS se renouvelle tout seul. Si le domaine change : mettre à
 jour le DNS (A → 161.97.182.152) **avant** de redémarrer Caddy.
 
-### 2.5 Seed des catégories (idempotent)
+### 2.5 Règles de sécurité Firebase Storage
+
+`storage.rules` est **le fichier de référence** : il doit refléter ce qui est
+en ligne (il avait divergé de règles publiées à la main dans la console).
+Avant toute publication, relire les règles réellement déployées — sinon on
+supprime silencieusement un dossier autorisé (ex. `logos/`) :
+
+```bash
+npx firebase deploy --only storage --project deallome-staging
+```
+
+Dossiers couverts : `logos/` et `products/` (lecture publique, écriture par
+le propriétaire), `kyc/`, `disputes/`, `proofs/` et `chat/` (écriture par le
+propriétaire, **lecture client refusée** — passage par les routes serveur),
+puis refus global. Les copies de sauvegarde (`backups/`) tombent dans le
+refus global : seul le compte de service y accède.
+
+### 2.6 Seed des catégories (idempotent)
 
 ```bash
 ssh -i /c/Users/Administrateur/.ssh/deallome_vps deploy@161.97.182.152 \

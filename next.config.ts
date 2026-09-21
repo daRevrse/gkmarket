@@ -15,10 +15,15 @@ const nextConfig: NextConfig = {
     "@huggingface/transformers",
     "onnxruntime-node",
   ],
-  // Le binaire onnxruntime est chargé dynamiquement : le traçage ne le voit
-  // pas et la sortie standalone partirait sans lui (recherche par image HS).
+  // Le runtime onnxruntime est chargé dynamiquement : le traçage n'en garde
+  // qu'une partie (binaire absent, et seulement la variante ESM de
+  // onnxruntime-common) et la recherche par image tombe en 500 à l'exécution.
   outputFileTracingIncludes: {
-    "/**": ["./node_modules/onnxruntime-node/**"],
+    "/**": [
+      "./node_modules/onnxruntime-node/**",
+      "./node_modules/onnxruntime-common/**",
+      "./node_modules/@huggingface/transformers/**",
+    ],
   },
 };
 

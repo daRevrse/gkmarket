@@ -1,58 +1,62 @@
 rules_version = '2';
 
-// Documents KYC : chaque utilisateur ne peut écrire que dans son dossier.
-// Aucune lecture côté client — la consultation passe par le serveur
-// (firebase-admin contourne ces règles), réservée aux admins.
 service firebase.storage {
   match /b/{bucket}/o {
-    match /kyc/{userId}/{fileName} {
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 5 * 1024 * 1024;
-      allow read: if false;
-    }
 
-    // Photos produit : publiques en lecture (catalogue), écriture par le
-    // vendeur dans son propre dossier, images uniquement.
-    match /products/{userId}/{fileName} {
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 5 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
+    // Images publiques (logos de boutique, photos de produits) :
+    // lecture publique, écriture par le propriétaire connecté.
+    match /logos/{uid}/{allPaths=**} {
       allow read: if true;
-    }
-
-    // Preuves de livraison : écrites par le livreur dans son dossier.
-    // Lecture interdite côté client — consultation via /api/proofs, qui
-    // vérifie que le demandeur est partie prenante de la course.
-    match /proofs/{userId}/{fileName} {
       allow write: if request.auth != null
-                   && request.auth.uid == userId
+                   && request.auth.uid == uid
                    && request.resource.size < 5 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
+    }
+    match /products/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Documents privés (pièces d'identité KYC, preuves de litige et de
+    // livraison) : jamais lisibles côté client — ils sont consultés par le
+    // serveur (SDK Admin). Écriture par le propriétaire connecté uniquement.
+    match /kyc/{uid}/{allPaths=**} {
       allow read: if false;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 5 * 1024 * 1024;
+    }
+    match /disputes/{uid}/{allPaths=**} {
+      allow read: if false;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 5 * 1024 * 1024;
+    }
+    match /proofs/{uid}/{allPaths=**} {
+      allow read: if false;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 5 * 1024 * 1024;
     }
 
     // Pièces jointes de la messagerie (photos, PDF, messages vocaux) :
-    // écrites par l'expéditeur dans son dossier. Lecture interdite côté
-    // client - consultation via /api/messages/[id]/attachment, réservée aux
-    // deux parties de la conversation et aux admins.
-    match /chat/{userId}/{fileName} {
+    // écrites par l'expéditeur, jamais lisibles côté client — consultation
+    // via /api/messages/[id]/attachment, réservée aux deux parties de la
+    // conversation et aux admins.
+    match /chat/{uid}/{allPaths=**} {
+      allow read: if false;
       allow write: if request.auth != null
-                   && request.auth.uid == userId
+                   && request.auth.uid == uid
                    && request.resource.size < 10 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*|application/pdf|audio/.*');
-      allow read: if false;
     }
 
-    // Preuves de litige : écrites par l'acheteur dans son dossier.
-    // Consultation via /api/disputes/evidence (parties prenantes uniquement).
-    match /disputes/{userId}/{fileName} {
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 5 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
-      allow read: if false;
+    // Tout le reste : refusé.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

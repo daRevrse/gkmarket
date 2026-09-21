@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Countdown } from "@/components/countdown";
 import { Badge } from "@/components/ui/badge";
+import { PlayIcon } from "@heroicons/react/24/solid";
 import { Stars } from "@/components/reviews/stars";
 import { WishlistButton } from "@/components/wishlist";
 import { formatFcfa } from "@/lib/format";
@@ -14,6 +15,8 @@ export type CatalogProduct = {
   wholesalePriceFcfa: number | null;
   stock: number;
   imageUrl: string | null;
+  /** Vidéo de présentation : signalée par une pastille sur la carte. */
+  videoUrl?: string | null;
   shopName: string | null;
   promoPriceFcfa?: number | null;
   promoEndsAt?: Date | string | null;
@@ -61,6 +64,14 @@ export function ProductCard({
           ) : promo ? (
             <span className="absolute top-2 left-2 rounded-full bg-danger px-2.5 py-1 font-label text-[11px] font-bold text-navy-deep">
               -{promoPct} %
+            </span>
+          ) : null}
+          {product.videoUrl ? (
+            <span
+              className="absolute right-2 bottom-2 flex size-7 items-center justify-center rounded-full bg-black/60"
+              title="Vidéo disponible"
+            >
+              <PlayIcon className="size-4 text-white" />
             </span>
           ) : null}
           {tag ? (

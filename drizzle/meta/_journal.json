@@ -162,6 +162,13 @@
       "when": 1789999067019,
       "tag": "0022_avis",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790002808585,
+      "tag": "0023_video_produit",
+      "breakpoints": true
     }
   ]
 }

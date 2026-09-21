@@ -35,6 +35,8 @@ function parsePromoEnd(value?: string | null): Date | null {
 }
 
 export type ImageInput = { path: string; url: string };
+/** Vidéo de présentation (lot 6) ; null = pas de vidéo. */
+export type VideoInput = { path: string; url: string } | null;
 
 const MIN_IMAGES = 3;
 const MAX_IMAGES = 10;
@@ -48,6 +50,7 @@ async function validate(
   user: CurrentUser,
   input: ProductInput,
   images: ImageInput[],
+  video: VideoInput,
 ): Promise<string | null> {
   if (!input.title?.trim()) return "Le titre est requis.";
   if (!Number.isInteger(input.priceFcfa) || input.priceFcfa <= 0) {
@@ -66,6 +69,7 @@ async function validate(
   if (images.some((image) => !image.path.startsWith(prefix))) {
     return "Photos invalides.";
   }
+  if (video && !video.path.startsWith(prefix)) return "Vidéo invalide.";
 
   const hasWholesalePrice = input.wholesalePriceFcfa != null;
   const hasWholesaleQty = input.wholesaleMinQty != null;
@@ -110,8 +114,10 @@ async function validate(
   return null;
 }
 
-function toValues(input: ProductInput) {
+function toValues(input: ProductInput, video: VideoInput) {
   return {
+    videoPath: video?.path ?? null,
+    videoUrl: video?.url ?? null,
     title: input.title.trim(),
     description: input.description?.trim() || null,
     categoryId: input.categoryId,
@@ -149,18 +155,19 @@ async function blockedText(user: CurrentUser, input: ProductInput) {
 export async function createProduct(
   input: ProductInput,
   images: ImageInput[],
+  video: VideoInput = null,
 ): Promise<{ error?: string }> {
   const user = await requireApprovedSeller();
   if (!user) return { error: "Réservé aux vendeurs approuvés." };
 
-  const error = await validate(user, input, images);
+  const error = await validate(user, input, images, video);
   if (error) return { error };
   if (await blockedText(user, input)) return { error: CONTACT_BLOCKED_PUBLIC };
 
   await db.transaction(async (tx) => {
     const [product] = await tx
       .insert(products)
-      .values({ sellerId: user.sellerProfile!.id, ...toValues(input) })
+      .values({ sellerId: user.sellerProfile!.id, ...toValues(input, video) })
       .returning({ id: products.id });
     await tx.insert(productImages).values(
       images.map((image, index) => ({
@@ -194,14 +201,14 @@ export async function updateProduct(
   productId: string,
   input: ProductInput,
   images: ImageInput[],
+  video: VideoInput = null,
 ): Promise<{ error?: string }> {
   const user = await requireApprovedSeller();
   if (!user) return { error: "Réservé aux vendeurs approuvés." };
-  if (!(await getOwnedProduct(user, productId))) {
-    return { error: "Produit introuvable." };
-  }
+  const existing = await getOwnedProduct(user, productId);
+  if (!existing) return { error: "Produit introuvable." };
 
-  const error = await validate(user, input, images);
+  const error = await validate(user, input, images, video);
   if (error) return { error };
   if (await blockedText(user, input)) return { error: CONTACT_BLOCKED_PUBLIC };
 
@@ -211,7 +218,10 @@ export async function updateProduct(
     .where(eq(productImages.productId, productId));
 
   await db.transaction(async (tx) => {
-    await tx.update(products).set(toValues(input)).where(eq(products.id, productId));
+    await tx
+      .update(products)
+      .set(toValues(input, video))
+      .where(eq(products.id, productId));
     await tx.delete(productImages).where(eq(productImages.productId, productId));
     await tx.insert(productImages).values(
       images.map((image, index) => ({
@@ -224,9 +234,13 @@ export async function updateProduct(
   });
 
   const kept = new Set(images.map((image) => image.path));
-  await deleteStorageFiles(
-    oldImages.map((image) => image.path).filter((path) => !kept.has(path)),
-  );
+  await deleteStorageFiles([
+    ...oldImages.map((image) => image.path).filter((path) => !kept.has(path)),
+    // Ancienne vidéo remplacée ou retirée.
+    ...(existing.videoPath && existing.videoPath !== video?.path
+      ? [existing.videoPath]
+      : []),
+  ]);
 
   revalidatePath("/vendeur/produits");
   revalidatePath(`/produits/${productId}`);
@@ -258,9 +272,8 @@ export async function deleteProduct(
 ): Promise<{ error?: string }> {
   const user = await requireApprovedSeller();
   if (!user) return { error: "Réservé aux vendeurs approuvés." };
-  if (!(await getOwnedProduct(user, productId))) {
-    return { error: "Produit introuvable." };
-  }
+  const product = await getOwnedProduct(user, productId);
+  if (!product) return { error: "Produit introuvable." };
 
   const images = await db
     .select({ path: productImages.path })
@@ -268,7 +281,10 @@ export async function deleteProduct(
     .where(eq(productImages.productId, productId));
 
   await db.delete(products).where(eq(products.id, productId));
-  await deleteStorageFiles(images.map((image) => image.path));
+  await deleteStorageFiles([
+    ...images.map((image) => image.path),
+    ...(product.videoPath ? [product.videoPath] : []),
+  ]);
 
   revalidatePath("/vendeur/produits");
   revalidatePath("/produits");

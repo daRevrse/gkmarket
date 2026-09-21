@@ -131,5 +131,11 @@ image, appels).
   calculés par la plateforme, jamais déclarés par le vendeur, et masqués
   sous 5 commandes livrées (badge « Nouveau vendeur »).
 
-**Avancement :** lots 1 à 4 livrés en production le 2026-09-21 ; lot 5
-(profil vendeur détaillé et avis) développé le 2026-09-21.
+**Avancement :** lots 1 à 4 livrés en production le 2026-09-21 ; lots 5
+(profil vendeur détaillé et avis) et 6 (vidéo produit, téléchargement
+filigrané des médias) développés le 2026-09-21.
+
+**Limite connue du lot 6 :** le filigrane s'applique aux photos
+téléchargées, pas à la vidéo (il faudrait un ré-encodage ffmpeg sur le VPS),
+et les photos de la fiche restent lisibles publiquement dans Storage — le
+filigrane marque l'usage, il n'empêche pas une capture d'écran.

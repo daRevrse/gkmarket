@@ -231,7 +231,7 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
   sécurité : exécution aussi à l'ouverture du dashboard admin, et bouton
   manuel sur `/admin/financier`.
 
-## Flux acheteur-vendeur (conception — lots 1 à 5, 2026-09-18)
+## Flux acheteur-vendeur (conception — lots 1 à 6, 2026-09-18)
 
 Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
 
@@ -297,6 +297,18 @@ Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
   livrées, taux et délai médian de réponse (90 j), expéditions sous 48 h,
   clients revenus, taux de litiges. Sous 5 commandes livrées, badge
   « Nouveau vendeur » à la place des pourcentages.
+- **Médias produit** (migration 0023) : vidéo de présentation optionnelle
+  (`products.video_path` / `video_url`, Storage `products/{uid}/`, MP4/WebM/
+  MOV, 60 s et 50 Mo maximum, durée vérifiée côté navigateur). Elle ouvre la
+  galerie de la fiche et met une pastille ▶ sur les cartes du catalogue.
+- **Téléchargement des médias** : `/api/medias/[id]` (`?i=` photo, `?video=1`),
+  **réservé aux comptes connectés** et limité aux fiches publiées. Les photos
+  sont servies filigranées « Deal Lomé » (`src/lib/watermark.ts`, sharp :
+  trame diagonale + bandeau titre/boutique/domaine, redimensionnées à
+  2000 px). La vidéo est servie telle quelle, en flux avec requêtes
+  partielles : la marquer demanderait un ré-encodage ffmpeg sur le VPS. Les
+  photos affichées restent publiques dans Storage — le filigrane porte sur le
+  fichier téléchargé, c'est un marquage d'usage, pas une protection.
 
 ## Administration
 

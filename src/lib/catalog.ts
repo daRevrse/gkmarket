@@ -14,6 +14,7 @@ export const catalogSelection = {
   promoPriceFcfa: products.promoPriceFcfa,
   promoEndsAt: products.promoEndsAt,
   imageUrl: productImages.url,
+  videoUrl: products.videoUrl,
   shopName: sellerProfiles.shopName,
 };
 

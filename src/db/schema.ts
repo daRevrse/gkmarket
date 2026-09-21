@@ -194,6 +194,9 @@ export const products = pgTable("products", {
   // Offre promotionnelle temporaire : prix barré jusqu'à l'échéance.
   promoPriceFcfa: integer("promo_price_fcfa"),
   promoEndsAt: timestamp("promo_ends_at", { withTimezone: true }),
+  // Vidéo de présentation (lot 6), optionnelle : Storage products/{uid}/…
+  videoPath: text("video_path"),
+  videoUrl: text("video_url"),
   stock: integer("stock").notNull().default(0),
   minOrderQty: integer("min_order_qty").notNull().default(1),
   weightGrams: integer("weight_grams"),

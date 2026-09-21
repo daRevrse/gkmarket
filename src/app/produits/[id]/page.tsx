@@ -178,7 +178,14 @@ export default async function ProduitPage({
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          <Gallery images={images} title={product.title} />
+          <Gallery
+            images={images}
+            video={product.videoUrl}
+            title={product.title}
+            productId={product.id}
+            productPath={canonical}
+            isLoggedIn={user !== null}
+          />
 
           <div className="flex flex-col gap-5">
             <div>

@@ -9,6 +9,7 @@ import {
   updateProduct,
   type ImageInput,
   type ProductInput,
+  type VideoInput,
 } from "./actions";
 import { FormError, FormField } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,22 @@ import { auth, storage } from "@/lib/firebase/client";
 const MIN_IMAGES = 3;
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+/** Durée maximale de la vidéo produit (cahier des charges MVP n°54). */
+const MAX_VIDEO_SECONDS = 60;
+
+/** Durée d'un fichier vidéo, ou null si le navigateur ne peut pas la lire. */
+function videoDuration(src: string) {
+  return new Promise<number | null>((resolve) => {
+    const element = document.createElement("video");
+    element.preload = "metadata";
+    element.onloadedmetadata = () =>
+      resolve(Number.isFinite(element.duration) ? element.duration : null);
+    element.onerror = () => resolve(null);
+    element.src = src;
+  });
+}
 
 export type CategoryOption = {
   id: string;
@@ -43,9 +60,15 @@ export type ProductFormInitial = {
   weightGrams: number | null;
   prepDelayDays: number;
   images: { path: string; url: string }[];
+  video: { path: string; url: string } | null;
 };
 
 type ImageSlot =
+  | { kind: "existing"; path: string; url: string }
+  | { kind: "new"; file: File; preview: string };
+
+/** Vidéo de présentation : celle déjà en ligne, ou un fichier à téléverser. */
+type VideoSlot =
   | { kind: "existing"; path: string; url: string }
   | { kind: "new"; file: File; preview: string };
 
@@ -90,6 +113,10 @@ export function ProductForm({
     initial?.images.map((image) => ({ kind: "existing" as const, ...image })) ??
       [],
   );
+  const [video, setVideo] = useState<VideoSlot | null>(
+    initial?.video ? { kind: "existing", ...initial.video } : null,
+  );
+  const [videoProgress, setVideoProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Progression de téléversement : % par emplacement + compteur global.
@@ -127,6 +154,32 @@ export function ProductForm({
     });
   }
 
+  async function setVideoFile(file: File | null) {
+    setError(null);
+    if (!file) {
+      setVideo(null);
+      return;
+    }
+    if (!VIDEO_TYPES.includes(file.type)) {
+      setError("Vidéo : formats MP4, WebM ou MOV uniquement.");
+      return;
+    }
+    if (file.size > MAX_VIDEO_SIZE) {
+      setError(`${file.name} dépasse 50 Mo.`);
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    const duration = await videoDuration(preview);
+    if (duration !== null && duration > MAX_VIDEO_SECONDS) {
+      URL.revokeObjectURL(preview);
+      setError(
+        `La vidéo dure ${Math.round(duration)} s : ${MAX_VIDEO_SECONDS} s maximum.`,
+      );
+      return;
+    }
+    setVideo({ kind: "new", file, preview });
+  }
+
   function removeSlot(index: number) {
     setSlots((current) => current.filter((_, i) => i !== index));
   }
@@ -157,6 +210,7 @@ export function ProductForm({
 
     setLoading(true);
     setSlotProgress({});
+    setVideoProgress(null);
     const toUpload = slots.filter((s) => s.kind === "new").length;
     setUploadCount(toUpload > 0 ? { done: 0, total: toUpload } : null);
     try {
@@ -192,6 +246,32 @@ export function ProductForm({
         );
       }
 
+      // Vidéo de présentation : téléversée après les photos, avec sa propre
+      // barre de progression (fichier nettement plus lourd).
+      let videoInput: VideoInput = null;
+      if (video?.kind === "existing") {
+        videoInput = { path: video.path, url: video.url };
+      } else if (video?.kind === "new") {
+        const safeName = video.file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        const path = `products/${firebaseUser.uid}/video-${Date.now()}-${safeName}`;
+        const task = uploadBytesResumable(ref(storage, path), video.file, {
+          contentType: video.file.type,
+        });
+        setVideoProgress(0);
+        await new Promise<void>((resolve, reject) => {
+          task.on(
+            "state_changed",
+            (snapshot) =>
+              setVideoProgress(
+                Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100),
+              ),
+            reject,
+            () => resolve(),
+          );
+        });
+        videoInput = { path, url: await getDownloadURL(task.snapshot.ref) };
+      }
+
       const input: ProductInput = {
         title,
         description,
@@ -209,13 +289,14 @@ export function ProductForm({
       };
 
       const result = initial
-        ? await updateProduct(initial.id, input, images)
-        : await createProduct(input, images);
+        ? await updateProduct(initial.id, input, images, videoInput)
+        : await createProduct(input, images, videoInput);
 
       if (result.error) {
         setError(result.error);
         setLoading(false);
         setUploadCount(null);
+        setVideoProgress(null);
         return;
       }
       router.push("/vendeur/produits");
@@ -224,6 +305,7 @@ export function ProductForm({
       setError("L'envoi a échoué. Réessayez.");
       setLoading(false);
       setUploadCount(null);
+      setVideoProgress(null);
     }
   }
 
@@ -467,6 +549,57 @@ export function ProductForm({
               />
             </label>
           ) : null}
+        </div>
+      </div>
+
+
+      <div className="flex flex-col gap-3">
+        <span className="font-label text-sm font-semibold">
+          Vidéo de présentation (facultative)
+        </span>
+        <p className="-mt-1 text-xs text-ink-muted">
+          MP4, WebM ou MOV, 15 à 60 secondes, 50 Mo maximum. Elle
+          s&apos;affiche en premier dans la galerie de la fiche produit.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          {video ? (
+            <div className="relative h-28 w-44 overflow-hidden rounded-md border border-white/10 bg-black">
+              <video
+                src={video.kind === "existing" ? video.url : video.preview}
+                className="h-full w-full object-contain"
+                controls
+                preload="metadata"
+              />
+              {loading && videoProgress !== null ? (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-navy-deep/75 backdrop-blur-sm">
+                  <Spinner className="size-5 text-gold" />
+                  <span className="font-label text-xs font-semibold text-ink">
+                    {videoProgress} %
+                  </span>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                title="Retirer la vidéo"
+                onClick={() => setVideo(null)}
+                className="absolute top-1 right-1 rounded-sm bg-black/60 px-1.5 py-0.5 text-[10px] text-white hover:bg-danger"
+              >
+                ✕
+              </button>
+            </div>
+          ) : null}
+          <label className="flex h-28 w-44 cursor-pointer items-center justify-center rounded-md border border-dashed border-white/20 px-3 text-center font-label text-sm text-ink-muted hover:border-emerald hover:text-emerald">
+            {video ? "Remplacer la vidéo" : "Ajouter une vidéo"}
+            <input
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime"
+              className="hidden"
+              onChange={(e) => {
+                setVideoFile(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
+            />
+          </label>
         </div>
       </div>
 

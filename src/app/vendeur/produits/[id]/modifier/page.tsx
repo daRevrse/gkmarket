@@ -67,6 +67,10 @@ export default async function ModifierProduitPage({
             weightGrams: product.weightGrams,
             prepDelayDays: product.prepDelayDays,
             images,
+            video:
+              product.videoPath && product.videoUrl
+                ? { path: product.videoPath, url: product.videoUrl }
+                : null,
           }}
         />
       </Card>

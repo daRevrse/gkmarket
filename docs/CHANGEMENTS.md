@@ -124,3 +124,12 @@ image, appels).
   **avertissement** et est placé **en surveillance côté admin**.
 - **Appels audio/vidéo et recherche par image** : **auto-hébergés sur le VPS**
   (pas de service tiers payant).
+- **Avis** : uniquement après **livraison** (mention « Achat vérifié »), non
+  modifiables ; une réponse du vendeur par avis ; masquage par la modération
+  (l'avis sort des moyennes sans être supprimé) ; affichage public
+  anonymisé (prénom + initiale). Les **indicateurs de la boutique** sont
+  calculés par la plateforme, jamais déclarés par le vendeur, et masqués
+  sous 5 commandes livrées (badge « Nouveau vendeur »).
+
+**Avancement :** lots 1 à 4 livrés en production le 2026-09-21 ; lot 5
+(profil vendeur détaillé et avis) développé le 2026-09-21.

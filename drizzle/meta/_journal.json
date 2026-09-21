@@ -155,6 +155,13 @@
       "when": 1789706438092,
       "tag": "0021_recherche_plein_texte",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789999067019,
+      "tag": "0022_avis",
+      "breakpoints": true
     }
   ]
 }

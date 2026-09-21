@@ -18,6 +18,7 @@ import { ProductCard } from "@/components/product-card";
 import { ProductSuggestions } from "@/components/product-suggestions";
 import { SiteHeader } from "@/components/site-header";
 import { catalogSelection } from "@/lib/catalog";
+import { productRatingSql, ratedAtLeast, withRatings } from "@/lib/reviews";
 import {
   productSearch,
   suggestCorrection,
@@ -34,6 +35,7 @@ type SearchParams = {
   prix_min?: string;
   prix_max?: string;
   en_stock?: string;
+  note_min?: string;
   tri?: string;
   page?: string;
 };
@@ -121,6 +123,9 @@ export default async function CataloguePage({
   const prixMax = Number(params.prix_max);
   if (prixMax > 0) filters.push(lte(products.priceFcfa, prixMax));
   if (params.en_stock === "1") filters.push(gt(products.stock, 0));
+  // Filtre sur la note moyenne des avis vérifiés (lot 5).
+  const noteMin = Number(params.note_min);
+  if (noteMin >= 1 && noteMin <= 5) filters.push(ratedAtLeast(noteMin));
 
   // Recherche intelligente (lot 4) : plein texte, synonymes, rayons et
   // boutiques ; sans résultat, correction des fautes de frappe.
@@ -153,9 +158,11 @@ export default async function CataloguePage({
       ? [asc(products.priceFcfa)]
       : sort === "prix-desc"
         ? [desc(products.priceFcfa)]
-        : sort === "pertinence" && search
-          ? [desc(search.rank), desc(products.createdAt)]
-          : [desc(products.createdAt)];
+        : sort === "notes"
+          ? [sql`${productRatingSql} DESC NULLS LAST`, desc(products.createdAt)]
+          : sort === "pertinence" && search
+            ? [desc(search.rank), desc(products.createdAt)]
+            : [desc(products.createdAt)];
 
   const rows = await db
     .select(catalogSelection)
@@ -172,6 +179,7 @@ export default async function CataloguePage({
     .orderBy(...orderBy)
     .limit(PAGE_SIZE)
     .offset((page - 1) * PAGE_SIZE);
+  const items = await withRatings(rows);
 
   // Boutiques dont le nom correspond à la recherche.
   const matchingShops = search
@@ -290,6 +298,18 @@ export default async function CataloguePage({
             En stock uniquement
           </label>
           <label className="flex flex-col gap-1 text-xs text-ink-muted">
+            Note minimum
+            <select
+              name="note_min"
+              defaultValue={params.note_min ?? ""}
+              className="rounded-md border border-white/10 bg-navy-deep px-3 py-2 text-sm text-ink focus:border-emerald focus:outline-none"
+            >
+              <option value="">Toutes</option>
+              <option value="4">4 étoiles et plus</option>
+              <option value="3">3 étoiles et plus</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-ink-muted">
             Trier par
             <select
               name="tri"
@@ -298,6 +318,7 @@ export default async function CataloguePage({
             >
               {search ? <option value="pertinence">Pertinence</option> : null}
               <option value="recents">Plus récents</option>
+              <option value="notes">Mieux notés</option>
               <option value="prix-asc">Prix croissant</option>
               <option value="prix-desc">Prix décroissant</option>
             </select>
@@ -338,7 +359,7 @@ export default async function CataloguePage({
         ) : null}
 
         {/* Grille produits */}
-        {rows.length === 0 ? (
+        {items.length === 0 ? (
           <>
             <p className="mt-12 text-center text-ink-muted">
               Aucun produit ne correspond à votre recherche.
@@ -347,7 +368,7 @@ export default async function CataloguePage({
           </>
         ) : (
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {rows.map((product) => (
+            {items.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

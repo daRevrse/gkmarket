@@ -136,6 +136,14 @@ export default async function CommandeDetailPage({
             Contacter le vendeur ›
           </button>
         </form>
+        {row.order.status === "delivered" ? (
+          <Link
+            href={`/compte/avis/${row.order.id}`}
+            className="mt-2 inline-block font-label text-sm text-emerald hover:underline"
+          >
+            Donner mon avis ›
+          </Link>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-6">

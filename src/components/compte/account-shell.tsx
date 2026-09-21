@@ -48,6 +48,7 @@ export async function AccountShell({
         { href: "/compte/profil", label: "Mon profil", icon: "user" },
         { href: "/compte/commandes", label: "Mes commandes", icon: "package" },
         { href: "/compte/liste", label: "Ma liste", icon: "heart" },
+        { href: "/compte/avis", label: "Mes avis", icon: "star" },
         {
           href: "/compte/messages",
           label: "Messages",
@@ -72,6 +73,7 @@ export async function AccountShell({
           exact: true,
         },
         { href: "/vendeur/produits", label: "Mes produits", icon: "bag" },
+        { href: "/vendeur/avis", label: "Avis reçus", icon: "star" },
         {
           href: "/vendeur/commandes",
           label: "Commandes reçues",

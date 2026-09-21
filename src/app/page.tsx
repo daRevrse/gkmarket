@@ -27,6 +27,7 @@ import { SiteHeader } from "@/components/site-header";
 import { LinkButton } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 import { publishedProducts } from "@/lib/catalog";
+import { withRatings } from "@/lib/reviews";
 import { formatFcfa } from "@/lib/format";
 import { productPath } from "@/lib/product-url";
 
@@ -55,10 +56,12 @@ export default async function Home() {
     .orderBy(asc(categories.position));
   const parents = allCategories.filter((c) => !c.parentId);
 
-  const latest = await publishedProducts()
-    .where(eq(products.status, "published"))
-    .orderBy(desc(products.createdAt))
-    .limit(12);
+  const latest = await withRatings(
+    await publishedProducts()
+      .where(eq(products.status, "published"))
+      .orderBy(desc(products.createdAt))
+      .limit(12),
+  );
 
   // Offres en cours : promo définie et non expirée, les plus urgentes d'abord.
   const promos = await publishedProducts()
@@ -107,7 +110,7 @@ export default async function Home() {
           )
           .orderBy(desc(products.createdAt))
           .limit(6);
-        return { parent, items };
+        return { parent, items: await withRatings(items) };
       }),
     )
   ).filter((s) => s.items.length >= 4);

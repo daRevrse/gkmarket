@@ -9,6 +9,9 @@ import { CONTACT_BLOCKED_PUBLIC } from "@/lib/contact-guard";
 import { blockContactInfo } from "@/lib/moderation";
 import { normalizeTogoPhone } from "@/lib/phone";
 
+/** Photos des locaux publiées sur la vitrine (cf. profile-form.tsx). */
+const MAX_SHOP_PHOTOS = 8;
+
 export type ProfileInput = {
   fullName: string;
   shop?: {
@@ -18,6 +21,13 @@ export type ProfileInput = {
     district: string;
     contactPhone: string;
     sellingConditions: string;
+    // Profil public de l'entreprise (lot 5).
+    contactName: string;
+    contactRole: string;
+    foundedYear: string;
+    deliveryZones: string;
+    /** Photos des locaux (URLs Storage), remplacent la liste existante. */
+    photos: string[];
     payoutMethod: "" | "mobile_money" | "bank";
     mobileMoneyOperator: "" | "flooz" | "tmoney";
     mobileMoneyNumber: string;
@@ -26,6 +36,8 @@ export type ProfileInput = {
     bankIban: string;
     /** URL du logo uploadé (undefined = ne pas modifier). */
     logoUrl?: string | null;
+    /** Photo de l'interlocuteur (undefined = ne pas modifier). */
+    contactPhotoUrl?: string | null;
   };
 };
 
@@ -46,6 +58,9 @@ export async function updateProfile(
     input.shop?.shopName,
     input.shop?.shopDescription,
     input.shop?.sellingConditions,
+    input.shop?.contactName,
+    input.shop?.contactRole,
+    input.shop?.deliveryZones,
   ]
     .filter(Boolean)
     .join("\n");
@@ -82,6 +97,23 @@ export async function updateProfile(
         return { error: "Numéro Mobile Money invalide (format Togo)." };
       }
     }
+    // Année de création : facultative, mais cohérente si renseignée.
+    const thisYear = new Date().getFullYear();
+    const foundedYear = s.foundedYear.trim()
+      ? Number.parseInt(s.foundedYear.trim(), 10)
+      : null;
+    if (
+      foundedYear !== null &&
+      (Number.isNaN(foundedYear) || foundedYear < 1900 || foundedYear > thisYear)
+    ) {
+      return { error: `Année de création invalide (1900 - ${thisYear}).` };
+    }
+
+    const photos = s.photos
+      .map((photo) => photo.trim())
+      .filter((photo) => photo.startsWith("https://"))
+      .slice(0, MAX_SHOP_PHOTOS);
+
     if (payoutMethod === "bank" && !s.bankIban.trim()) {
       return { error: "Renseignez le RIB/IBAN de versement." };
     }
@@ -99,6 +131,11 @@ export async function updateProfile(
         district: s.district.trim() || null,
         contactPhone: s.contactPhone.trim() || null,
         sellingConditions: s.sellingConditions.trim() || null,
+        contactName: s.contactName.trim() || null,
+        contactRole: s.contactRole.trim() || null,
+        foundedYear,
+        deliveryZones: s.deliveryZones.trim() || null,
+        photos,
         payoutMethod,
         mobileMoneyOperator:
           payoutMethod === "mobile_money" && s.mobileMoneyOperator
@@ -110,6 +147,9 @@ export async function updateProfile(
           payoutMethod === "bank" ? s.bankAccountName.trim() || null : null,
         bankIban: payoutMethod === "bank" ? s.bankIban.trim() || null : null,
         ...(s.logoUrl !== undefined ? { logoUrl: s.logoUrl } : {}),
+        ...(s.contactPhotoUrl !== undefined
+          ? { contactPhotoUrl: s.contactPhotoUrl }
+          : {}),
         updatedAt: new Date(),
       })
       .where(eq(sellerProfiles.userId, user.id));
@@ -117,5 +157,6 @@ export async function updateProfile(
 
   revalidatePath("/compte/profil");
   revalidatePath("/compte");
+  if (user.sellerProfile) revalidatePath(`/boutique/${user.sellerProfile.id}`);
   return {};
 }

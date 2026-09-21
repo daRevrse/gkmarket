@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Countdown } from "@/components/countdown";
 import { Badge } from "@/components/ui/badge";
+import { Stars } from "@/components/reviews/stars";
 import { WishlistButton } from "@/components/wishlist";
 import { formatFcfa } from "@/lib/format";
 import { isPromoActive } from "@/lib/pricing";
@@ -16,6 +17,8 @@ export type CatalogProduct = {
   shopName: string | null;
   promoPriceFcfa?: number | null;
   promoEndsAt?: Date | string | null;
+  /** Note moyenne des avis vérifiés (absente si la page ne les charge pas). */
+  rating?: { average: number; count: number } | null;
 };
 
 export function ProductCard({
@@ -83,6 +86,14 @@ export function ProductCard({
             </p>
           )}
           {endsAtIso ? <Countdown endsAt={endsAtIso} className="mt-0.5" /> : null}
+          {product.rating && product.rating.count > 0 ? (
+            <p className="mt-1 flex items-center gap-1.5">
+              <Stars rating={product.rating.average} />
+              <span className="text-xs text-ink-muted">
+                {`(${product.rating.count})`}
+              </span>
+            </p>
+          ) : null}
           {product.shopName ? (
             <p className="mt-0.5 truncate text-xs text-ink-muted">
               {product.shopName}

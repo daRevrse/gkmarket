@@ -103,6 +103,14 @@ export const sellerProfiles = pgTable("seller_profiles", {
   bankIban: text("bank_iban"),
   // Conditions de vente de la boutique (délais, retours, garanties), publiques.
   sellingConditions: text("selling_conditions"),
+  // Profil d'entreprise public (lot 5) : interlocuteur, ancienneté, zones
+  // desservies et photos des locaux (Storage logos/{uid}/...).
+  contactName: text("contact_name"),
+  contactRole: text("contact_role"),
+  contactPhotoUrl: text("contact_photo_url"),
+  foundedYear: integer("founded_year"),
+  deliveryZones: text("delivery_zones"),
+  photos: text("photos").array(),
   // Acceptation des conditions vendeur (CGV vendeur) à la candidature.
   termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
   status: profileStatusEnum("status").notNull().default("pending"),
@@ -832,4 +840,73 @@ export const searchQueries = pgTable(
       .defaultNow(),
   },
   (table) => [index("search_queries_created_idx").on(table.createdAt)],
+);
+
+// Avis (docs/CHANGEMENTS.md §5, lot 5). Uniquement après une commande
+// livrée : tout avis est donc un « achat vérifié ». Un avis produit par
+// article commandé, un avis vendeur par commande.
+
+export const productReviews = pgTable(
+  "product_reviews",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellerProfiles.id, { onDelete: "cascade" }),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(), // 1 à 5
+    comment: text("comment"),
+    sellerReply: text("seller_reply"),
+    repliedAt: timestamp("replied_at", { withTimezone: true }),
+    // Masqué par la modération : exclu de l'affichage et des moyennes.
+    hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("product_reviews_order_product_idx").on(
+      table.orderId,
+      table.productId,
+    ),
+    index("product_reviews_product_idx").on(table.productId),
+    index("product_reviews_seller_idx").on(table.sellerId),
+  ],
+);
+
+// Avis vendeur : trois critères (MVP/Phase 2 n°122-125) notés 1 à 5.
+export const sellerReviews = pgTable(
+  "seller_reviews",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+      .notNull()
+      .unique()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellerProfiles.id, { onDelete: "cascade" }),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    communication: integer("communication").notNull(),
+    shipping: integer("shipping").notNull(),
+    packaging: integer("packaging").notNull(),
+    comment: text("comment"),
+    sellerReply: text("seller_reply"),
+    repliedAt: timestamp("replied_at", { withTimezone: true }),
+    hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("seller_reviews_seller_idx").on(table.sellerId)],
 );

@@ -100,6 +100,7 @@ export default async function AdminLayout({
         },
         { href: "/admin/categories", label: "Catégories", icon: "tag" },
         { href: "/admin/recherche", label: "Recherche", icon: "trending-up" },
+        { href: "/admin/avis", label: "Avis", icon: "star" },
         { href: "/admin/commandes", label: "Commandes", icon: "package" },
         { href: "/admin/financier", label: "Financier", icon: "wallet" },
         { href: "/admin/rapports", label: "Rapports", icon: "trending-up" },

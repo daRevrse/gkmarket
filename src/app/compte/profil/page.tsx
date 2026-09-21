@@ -38,6 +38,14 @@ export default async function ProfilPage() {
                   district: seller.district ?? "",
                   contactPhone: seller.contactPhone ?? "",
                   sellingConditions: seller.sellingConditions ?? "",
+                  contactName: seller.contactName ?? "",
+                  contactRole: seller.contactRole ?? "",
+                  contactPhotoUrl: seller.contactPhotoUrl,
+                  foundedYear: seller.foundedYear
+                    ? String(seller.foundedYear)
+                    : "",
+                  deliveryZones: seller.deliveryZones ?? "",
+                  photos: seller.photos ?? [],
                   payoutMethod:
                     (seller.payoutMethod as "" | "mobile_money" | "bank") ?? "",
                   mobileMoneyOperator:

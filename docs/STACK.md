@@ -231,7 +231,7 @@ Temurin JRE 21 via `winget install EclipseAdoptium.Temurin.21.JRE`).
   sécurité : exécution aussi à l'ouverture du dashboard admin, et bouton
   manuel sur `/admin/financier`.
 
-## Flux acheteur-vendeur (conception — lots 1 à 4, 2026-09-18)
+## Flux acheteur-vendeur (conception — lots 1 à 5, 2026-09-18)
 
 Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
 
@@ -278,6 +278,25 @@ Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
   `search_queries`, écrit une fois par recherche depuis le navigateur
   (pas à chaque rendu) : tendances et demandes non servies en admin
   (`/admin/recherche`) et sur le tableau de bord vendeur.
+- **Avis** (`product_reviews`, `seller_reviews`, migration 0022) : réservés
+  aux commandes **livrées**, donc toujours « Achat vérifié » ; un avis par
+  couple commande/produit et un avis vendeur (communication, expédition,
+  emballage) par commande. Non modifiables après envoi ; le vendeur peut
+  répondre une fois (`/vendeur/avis`), l'admin peut masquer un avis
+  (`/admin/avis`, journalisé) — il disparaît alors des fiches, des boutiques
+  et **des moyennes**. Lecture publique anonymisée (prénom + initiale).
+  `src/lib/reviews.ts` fournit les moyennes (produit, boutique, listes) et
+  le SQL de tri/filtre du catalogue (« Mieux notés », note minimum).
+- **Vitrine vendeur** (`/boutique/[id]`) : onglets Accueil / Produits /
+  Profil / Avis rendus côté serveur (liens `?onglet=`), recherche interne à
+  la boutique (même moteur que le catalogue) et tri. Le profil d'entreprise
+  (interlocuteur + photo, année de création, zones desservies, photos des
+  locaux) est saisi dans `/compte/profil` et soumis à l'anti-contournement.
+  Les **indicateurs de confiance** (`src/lib/shop-stats.ts`) sont calculés
+  à partir des commandes et des messages — jamais déclarés : commandes
+  livrées, taux et délai médian de réponse (90 j), expéditions sous 48 h,
+  clients revenus, taux de litiges. Sous 5 commandes livrées, badge
+  « Nouveau vendeur » à la place des pourcentages.
 
 ## Administration
 

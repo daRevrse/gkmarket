@@ -16,7 +16,13 @@ import { publishedProducts } from "@/lib/catalog";
 import { formatFcfa } from "@/lib/format";
 import { basePriceFcfa, isPromoActive } from "@/lib/pricing";
 import { productIdFromParam, productPath } from "@/lib/product-url";
+import { productRating, productReviewList } from "@/lib/reviews";
 import { isInWishlist, recordProductView } from "@/lib/shopping-list";
+import {
+  ProductReviewList,
+  RatingBreakdown,
+} from "@/components/reviews/review-list";
+import { RatingSummaryLine } from "@/components/reviews/stars";
 import { Gallery } from "./gallery";
 import { ReportProduct } from "./report-product";
 
@@ -117,7 +123,7 @@ export default async function ProduitPage({
       .from(categories)
       .where(eq(categories.parentId, rootId))
   ).map((c) => c.id);
-  const [sellerProducts, similarProducts] = await Promise.all([
+  const [sellerProducts, similarProducts, rating, reviews] = await Promise.all([
     publishedProducts()
       .where(
         and(
@@ -138,6 +144,8 @@ export default async function ProduitPage({
       )
       .orderBy(desc(products.createdAt))
       .limit(6),
+    productRating(product.id),
+    productReviewList(product.id),
   ]);
 
   return (
@@ -180,6 +188,13 @@ export default async function ProduitPage({
               <p className="mt-1 text-sm text-ink-muted">
                 Origine : {product.originCountry}
               </p>
+              <a href="#avis" className="mt-2 inline-block hover:opacity-80">
+                <RatingSummaryLine
+                  average={rating.average}
+                  count={rating.count}
+                  emptyLabel="Pas encore d'avis"
+                />
+              </a>
             </div>
 
             <div className="flex flex-wrap items-baseline gap-3">
@@ -297,6 +312,30 @@ export default async function ProduitPage({
             ) : null}
           </div>
         </div>
+
+        {/* Avis vérifiés : uniquement des acheteurs dont la commande est livrée */}
+        <section id="avis" className="scroll-mt-24 pt-14">
+          <h2 className="mb-5 font-display text-2xl font-bold">
+            Avis sur ce produit
+          </h2>
+          {rating.count === 0 ? (
+            <Card>
+              <p className="text-ink-muted">
+                Aucun avis pour le moment. Seuls les acheteurs ayant reçu ce
+                produit peuvent le noter.
+              </p>
+            </Card>
+          ) : (
+            <Card className="flex flex-col gap-6">
+              <RatingBreakdown summary={rating} />
+              {reviews.length > 0 ? (
+                <div className="border-t border-white/[0.06] pt-2">
+                  <ProductReviewList rows={reviews} shopName={seller.shopName} />
+                </div>
+              ) : null}
+            </Card>
+          )}
+        </section>
 
         {/* Autres produits de la boutique */}
         {sellerProducts.length > 0 ? (

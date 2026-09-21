@@ -133,6 +133,14 @@ export async function releaseEscrowForOrder(
       email: true,
     });
   }
+  // Invitation à noter (Phase 2 n°249) : la commande est livrée, l'acheteur
+  // peut publier un avis « Achat vérifié ».
+  await notify(order.buyerId, {
+    type: "review_request",
+    title: `Donnez votre avis sur la commande ${order.number}`,
+    body: "Votre note aide les autres acheteurs et porte la mention « Achat vérifié ».",
+    link: `/compte/avis/${order.id}`,
+  });
   if (mode === "auto") {
     await notify(order.buyerId, {
       type: "order_delivered",

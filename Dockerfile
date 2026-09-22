@@ -43,6 +43,9 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
+# Polices pour le rendu SVG (filigrane des médias) : sans fontconfig ni
+# police installée, librsvg dessine des carrés à la place du texte.
+RUN apt-get update && apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core  && rm -rf /var/lib/apt/lists/*
 RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs -m nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

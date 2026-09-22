@@ -27,11 +27,7 @@ export async function GET(
 
   // Le média n'est téléchargeable que si la fiche est publique.
   const [product] = await db
-    .select({
-      title: products.title,
-      videoPath: products.videoPath,
-      shopName: sellerProfiles.shopName,
-    })
+    .select({ title: products.title, videoPath: products.videoPath })
     .from(products)
     .innerJoin(
       sellerProfiles,
@@ -66,10 +62,7 @@ export async function GET(
 
   try {
     const [buffer] = await adminStorage.bucket().file(image.path).download();
-    const marked = await watermarkImage(
-      buffer,
-      `${product.title} - ${product.shopName}`,
-    );
+    const marked = await watermarkImage(buffer);
     return new Response(new Uint8Array(marked), {
       headers: {
         "Content-Type": "image/jpeg",

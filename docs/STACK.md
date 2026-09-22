@@ -309,6 +309,11 @@ Retours testeurs/propriétaires, cf. CHANGEMENTS.md §5.
   partielles : la marquer demanderait un ré-encodage ffmpeg sur le VPS. Les
   photos affichées restent publiques dans Storage — le filigrane porte sur le
   fichier téléchargé, c'est un marquage d'usage, pas une protection.
+  Le filigrane est **centré** (marque + domaine, contour foncé pour rester
+  lisible sur packshot blanc comme sur photo sombre) et **exige une police
+  dans l'image Docker** : `node:*-slim` n'embarque ni fontconfig ni police,
+  et librsvg dessine alors des carrés vides à la place du texte — constaté
+  en production, corrigé par `fontconfig` + `fonts-dejavu-core`.
 - **Recherche par image** (migration 0024) : encodeur visuel **CLIP
   (`Xenova/clip-vit-base-patch32`, quantifié q8, ~86 Mo)** exécuté sur notre
   VPS via `@huggingface/transformers` + `onnxruntime-node` — aucun service
